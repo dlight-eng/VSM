@@ -130,8 +130,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <button class="hbtn"    id="bcon" onclick="setTool('connect')">→ З'єднати</button>
   <button class="hbtn"    id="bgrp" onclick="setTool('group')" title="G — намалювати групу">⬜ Група</button>
   <div class="hsep"></div>
+  <button class="hbtn" id="bundo" onclick="undo()" title="Ctrl+Z" style="opacity:.35">↩ Undo</button>
+  <button class="hbtn" id="bredo" onclick="redo()" title="Ctrl+Y" style="opacity:.35">↪ Redo</button>
+  <div class="hsep"></div>
   <button class="hbtn" onclick="saveMap()">💾 Зберегти</button>
   <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
+  <button class="hbtn" onclick="exportSVG()" title="Експорт SVG">SVG</button>
+  <button class="hbtn" onclick="exportPNG()" title="Експорт PNG">PNG</button>
   <button class="hbtn" onclick="document.getElementById('impF').click()">↙ Імпорт</button>
   <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="hsep"></div>
@@ -232,6 +237,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
       <g id="gl"></g><!-- groups -->
       <g id="cl"></g><!-- connections -->
       <g id="el"></g><!-- elements -->
+      <g id="snapl"></g><!-- snap guides -->
       <!-- temp connection line -->
       <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
       <!-- group draw rect -->
@@ -302,9 +308,19 @@ let IDC=1, atab='p';
 const GR=20;
 
 /* pan / zoom */
-let vx=0, vy=0, vz=1;   // viewport offset and scale
+let vx=0, vy=0, vz=1;
 let panning=false, panSt={x:0,y:0};
 const ZMIN=0.15, ZMAX=3;
+
+/* undo/redo */
+let HISTORY=[], FUTURE=[];
+const MAX_HIST=60;
+
+/* clipboard */
+let CLIPBOARD=null;
+
+/* snap guides */
+let snapLines=[];
 
 /* ══════════════════════════════════════
    GEOMETRY
@@ -363,6 +379,154 @@ function fitView(){
   const nz=Math.min(ZMAX,Math.max(ZMIN,Math.min(cw/(maxX-minX),ch/(maxY-minY))));
   vz=nz;vx=-minX*nz+(cw-(maxX-minX)*nz)/2;vy=-minY*nz+(ch-(maxY-minY)*nz)/2;
   applyVP();
+}
+
+/* ═══ UNDO / REDO ═══ */
+function snapshot(){
+  const s=JSON.stringify({ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS});
+  if(HISTORY.length&&HISTORY[HISTORY.length-1]===s)return;
+  HISTORY.push(s);if(HISTORY.length>MAX_HIST)HISTORY.shift();
+  FUTURE=[];
+  updUndoBtn();
+}
+function undo(){
+  if(HISTORY.length<2)return;
+  FUTURE.push(HISTORY.pop());
+  const s=JSON.parse(HISTORY[HISTORY.length-1]);
+  ELS=s.ELS;CONNS=s.CONNS;GROUPS=s.GROUPS||[];
+  GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
+  selId=null;selGid=null;renderAll();showProps();updUndoBtn();
+}
+function redo(){
+  if(!FUTURE.length)return;
+  const s=JSON.parse(FUTURE.pop());
+  HISTORY.push(JSON.stringify(s));
+  ELS=s.ELS;CONNS=s.CONNS;GROUPS=s.GROUPS||[];
+  GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
+  selId=null;selGid=null;renderAll();showProps();updUndoBtn();
+}
+function updUndoBtn(){
+  const u=document.getElementById('bundo'),r=document.getElementById('bredo');
+  if(u)u.style.opacity=HISTORY.length>1?'1':'0.35';
+  if(r)r.style.opacity=FUTURE.length?'1':'0.35';
+}
+
+/* ═══ COPY / PASTE ═══ */
+function copySel(){
+  if(!selId)return;
+  const el=ELS.find(e=>e.id===selId);
+  if(!el)return;
+  CLIPBOARD={el:JSON.parse(JSON.stringify(el))};
+  toast('Скопійовано: '+el.label,'ok');
+}
+function pasteSel(){
+  if(!CLIPBOARD)return;
+  snapshot();
+  const el={...JSON.parse(JSON.stringify(CLIPBOARD.el)),id:newId('e'),x:CLIPBOARD.el.x+40,y:CLIPBOARD.el.y+40};
+  delete el._hid;
+  ELS.push(el);renderAll();selectEl(el.id);
+  CLIPBOARD.el.x+=20;CLIPBOARD.el.y+=20; // next paste offset
+}
+
+/* ═══ SNAP TO ELEMENTS ═══ */
+const SNAP_THRESH=8; // pixels in world coords
+function snapToElements(el,nx,ny){
+  if(!el)return{x:nx,y:ny,lines:[]};
+  const b=bb(el);
+  const lines=[];
+  let sx=nx,sy=ny;
+  const others=ELS.filter(e=>e.id!==el.id&&!e._hid);
+  // snap X (left, center, right of current vs others)
+  const xCands=[];
+  others.forEach(o=>{
+    const ob=bb(o);
+    xCands.push({val:o.x,           lx:o.x,           type:'x',label:'left-left',   oy:o.y,oh:ob.h});
+    xCands.push({val:o.x+ob.w-b.w,  lx:o.x+ob.w-b.w,  type:'x',label:'right-right',  oy:o.y,oh:ob.h});
+    xCands.push({val:o.x+(ob.w-b.w)/2,lx:o.x+(ob.w-b.w)/2,type:'x',label:'center-center',oy:o.y,oh:ob.h});
+  });
+  for(const c of xCands){if(Math.abs(nx-c.val)<SNAP_THRESH){sx=c.val;lines.push({x1:c.lx,y1:Math.min(ny,c.oy)-20,x2:c.lx,y2:Math.max(ny+b.h,c.oy+c.oh)+20,col:'#1a5fa8'});break}}
+  // snap Y
+  const yCands=[];
+  others.forEach(o=>{
+    const ob=bb(o);
+    yCands.push({val:o.y,           ly:o.y,           type:'y',ox:o.x,ow:ob.w});
+    yCands.push({val:o.y+ob.h-b.h,  ly:o.y+ob.h-b.h,  type:'y',ox:o.x,ow:ob.w});
+    yCands.push({val:o.y+(ob.h-b.h)/2,ly:o.y+(ob.h-b.h)/2,type:'y',ox:o.x,ow:ob.w});
+  });
+  for(const c of yCands){if(Math.abs(ny-c.val)<SNAP_THRESH){sy=c.val;lines.push({x1:Math.min(sx,c.ox)-20,y1:c.ly,x2:Math.max(sx+b.w,c.ox+c.ow)+20,y2:c.ly,col:'#1d9e75'});break}}
+  return{x:sx,y:sy,lines};
+}
+function renderSnapLines(lines){
+  const L=document.getElementById('snapl');
+  if(!L)return;
+  if(!lines||!lines.length){L.innerHTML='';return}
+  L.innerHTML=lines.map(l=>`<line x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}" stroke="${l.col}" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>`).join('');
+}
+
+/* ═══ EXPORT PNG / SVG ═══ */
+function exportSVG(){
+  // Get bounding box of all content
+  const all=[...ELS.filter(e=>!e._hid).map(e=>{const b=bb(e);return{x1:e.x,y1:e.y,x2:e.x+b.w,y2:e.y+b.h}}),
+    ...GROUPS.map(g=>({x1:g.x,y1:g.y,x2:g.x+(g.collapsed?170:g.w),y2:g.y+(g.collapsed?78:g.h)}))];
+  if(!all.length){toast('Немає елементів для експорту','err');return}
+  const pad=40;
+  const minX=Math.min(...all.map(r=>r.x1))-pad,minY=Math.min(...all.map(r=>r.y1))-pad;
+  const maxX=Math.max(...all.map(r=>r.x2))+pad,maxY=Math.max(...all.map(r=>r.y2))+pad;
+  const W=maxX-minX,H=maxY-minY;
+
+  // Serialize the world group with offset
+  const world=document.getElementById('world');
+  const clone=world.cloneNode(true);
+  // remove snap lines, draw rect, temp line from clone
+  ['snapl','dr','tl'].forEach(id=>{const el=clone.querySelector('#'+id);if(el)el.remove()});
+
+  const svgStr=`<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${minX} ${minY} ${W} ${H}">
+  <rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="#f4f3f0"/>
+  <style>text{font-family:Arial,sans-serif}</style>
+  ${clone.innerHTML}
+</svg>`;
+  const a=document.createElement('a');
+  const name=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');
+  a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+  a.download=name+'.svg';a.click();toast('SVG збережено','ok');
+}
+
+function exportPNG(){
+  const all=[...ELS.filter(e=>!e._hid).map(e=>{const b=bb(e);return{x1:e.x,y1:e.y,x2:e.x+b.w,y2:e.y+b.h}}),
+    ...GROUPS.map(g=>({x1:g.x,y1:g.y,x2:g.x+(g.collapsed?170:g.w),y2:g.y+(g.collapsed?78:g.h)}))];
+  if(!all.length){toast('Немає елементів для експорту','err');return}
+  const pad=40,sc=2; // 2x for retina
+  const minX=Math.min(...all.map(r=>r.x1))-pad,minY=Math.min(...all.map(r=>r.y1))-pad;
+  const maxX=Math.max(...all.map(r=>r.x2))+pad,maxY=Math.max(...all.map(r=>r.y2))+pad;
+  const W=maxX-minX,H=maxY-minY;
+
+  const world=document.getElementById('world');
+  const clone=world.cloneNode(true);
+  ['snapl','dr','tl'].forEach(id=>{const el=clone.querySelector('#'+id);if(el)el.remove()});
+
+  const svgStr=`<svg xmlns="http://www.w3.org/2000/svg" width="${W*sc}" height="${H*sc}" viewBox="${minX} ${minY} ${W} ${H}">
+    <rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="#f4f3f0"/>
+    <style>text{font-family:Arial,sans-serif}</style>
+    ${clone.innerHTML}
+  </svg>`;
+
+  const img=new Image();
+  const blob=new Blob([svgStr],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  img.onload=()=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=W*sc;canvas.height=H*sc;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    const a=document.createElement('a');
+    const name=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');
+    a.href=canvas.toDataURL('image/png');a.download=name+'.png';a.click();
+    toast('PNG збережено','ok');
+  };
+  img.onerror=()=>{toast('Помилка PNG, спробуйте SVG','err');URL.revokeObjectURL(url)};
+  img.src=url;
 }
 
 /* ══════════════════════════════════════
@@ -629,6 +793,19 @@ function renderConns(){
     lt.setAttribute('font-size','8');lt.setAttribute('fill',cfg.c);lt.setAttribute('font-weight','700');
     lt.setAttribute('font-family','Arial,sans-serif');lt.textContent=cfg.lbl;
     G.appendChild(lt);
+    // note/frequency label
+    if(c.note){
+      const nl=document.createElementNS('http://www.w3.org/2000/svg','text');
+      nl.setAttribute('x',lx);nl.setAttribute('y',ly+10);nl.setAttribute('text-anchor','middle');
+      nl.setAttribute('font-size','8');nl.setAttribute('fill',cfg.c);nl.setAttribute('font-family','Arial,sans-serif');
+      nl.textContent=c.note;G.appendChild(nl);
+    }
+    // click to edit
+    const hit=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    hit.setAttribute('x',lx-24);hit.setAttribute('y',ly-10);hit.setAttribute('width',48);hit.setAttribute('height',c.note?22:14);
+    hit.setAttribute('fill','transparent');hit.style.cursor='pointer';
+    hit.addEventListener('click',ev=>{ev.stopPropagation();selId=null;selGid=null;showConnProps(c)});
+    G.appendChild(hit);
     L.appendChild(G);
   });
 }
@@ -653,6 +830,7 @@ function resolveCenter(elId){
 
 function toggleGrp(id){
   const g=GROUPS.find(x=>x.id===id);if(!g)return;
+  snapshot();
   if(!g.collapsed){
     // collapse: find all elements whose center is inside
     g.childIds=ELS.filter(el=>{const c=ctr(el);return c.x>=g.x&&c.x<=g.x+g.w&&c.y>=g.y&&c.y<=g.y+g.h}).map(e=>e.id);
@@ -678,6 +856,7 @@ function onDrop(e){
   const r=document.getElementById('cv').getBoundingClientRect();
   const{x,y}=screenToWorld(e.clientX-r.left,e.clientY-r.top);
   const el={id:newId('e'),type,x:snap(x),y:snap(y),...JSON.parse(JSON.stringify(DEFS[type]))};
+  snapshot();
   ELS.push(el);renderAll();selectEl(el.id);
 }
 
@@ -760,7 +939,13 @@ function cvMM(e){
   }
   if(drag){
     const el=ELS.find(el=>el.id===drag);
-    if(el){el.x=snap(x-dragOff.x);el.y=snap(y-dragOff.y);renderAll()}
+    if(el){
+      const raw={x:x-dragOff.x,y:y-dragOff.y};
+      const snapped=snapToElements(el,snap(raw.x),snap(raw.y));
+      el.x=snapped.x;el.y=snapped.y;
+      renderSnapLines(snapped.lines);
+      renderAll();
+    }
   }
   if(dragG){
     const g=GROUPS.find(g=>g.id===dragG);
@@ -791,10 +976,15 @@ function cvMU(e){
     if(gw>80&&gh>40){
       const cfg=GC[gkind]||GC.section;
       const ng={id:newId('g'),kind:gkind,label:cfg.label,x:gx,y:gy,w:gw,h:gh,collapsed:false,childIds:[]};
+      snapshot();
       GROUPS.push(ng);selGid=ng.id;selId=null;renderAll();showGrpProps();
       toast('Групу створено','ok');
     }
     return;
+  }
+  if(drag||dragG||resizeG){
+    renderSnapLines([]);
+    snapshot();
   }
   drag=null;dragG=null;resizeG=null;
 }
@@ -818,11 +1008,13 @@ function selectEl(id){selId=id;selGid=null;renderAll();showProps()}
 function delSel(){
   if(selGid){delGrp(selGid);return}
   if(!selId)return;
+  snapshot();
   ELS=ELS.filter(e=>e.id!==selId);
   CONNS=CONNS.filter(c=>c.from!==selId&&c.to!==selId);
   selId=null;renderAll();showProps();
 }
 function delGrp(id){
+  snapshot();
   const g=GROUPS.find(x=>x.id===id);
   if(g&&g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hid});
   GROUPS=GROUPS.filter(x=>x.id!==id);selGid=null;renderAll();showProps();
@@ -847,16 +1039,23 @@ function setToolKind(kind){gkind=kind;setTool('group')}
 
 document.addEventListener('keydown',e=>{
   if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
-  if(e.key==='v'||e.key==='V')setTool('select');
-  if(e.key==='c'||e.key==='C')setTool('connect');
-  if(e.key==='g'||e.key==='G')setTool('group');
-  if(e.key==='f'||e.key==='F')fitView();
+  if(e.key==='v'||e.key==='V'){if(!e.ctrlKey&&!e.metaKey)setTool('select')}
+  if(e.key==='c'||e.key==='C'){if(!e.ctrlKey&&!e.metaKey)setTool('connect')}
+  if(e.key==='g'||e.key==='G'){if(!e.ctrlKey&&!e.metaKey)setTool('group')}
+  if(e.key==='f'||e.key==='F'){if(!e.ctrlKey&&!e.metaKey)fitView()}
   if(e.key==='Escape'){setTool('select');selGid=null;renderAll();showProps()}
   if(e.key==='Delete'||e.key==='Backspace')delSel();
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveMap()}
-  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();vx=40;vy=40;vz=1;applyVP()}
-  if((e.ctrlKey||e.metaKey)&&(e.key==='='||e.key==='+')){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,-1)}
-  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,1)}
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='z'){e.preventDefault();undo()}
+    if(e.key==='y'||e.key==='Z'){e.preventDefault();redo()}
+    if(e.key==='c'){e.preventDefault();copySel()}
+    if(e.key==='v'){e.preventDefault();pasteSel()}
+    if(e.key==='d'){e.preventDefault();copySel();pasteSel()}
+    if(e.key==='s'){e.preventDefault();saveMap()}
+    if(e.key==='0'){e.preventDefault();vx=40;vy=40;vz=1;applyVP()}
+    if(e.key==='='||e.key==='+'){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,-1)}
+    if(e.key==='-'){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,1)}
+  }
 });
 
 /* ══════════════════════════════════════
@@ -882,8 +1081,37 @@ function showConnModal(from,to){
     </div>`).join('')}
     </div><div class="modbts"><button class="mbtn" onclick="cmod()">Скасувати</button></div>`);
 }
-function addConn(f,t,type){CONNS.push({from:f,to:t,type});renderAll()}
-function delConn(f,t){CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));renderAll();showProps()}
+
+function showConnProps(conn){
+  // show connection edit in right panel
+  rtab('p');
+  const ns=document.getElementById('nosel'),f=document.getElementById('pf');
+  const fe=ELS.find(e=>e.id===conn.from),te=ELS.find(e=>e.id===conn.to);
+  const cfg=CC[conn.type]||CC.push;
+  ns.style.display='none';f.style.display='';
+  f.innerHTML=`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">З'єднання · ${cfg.lbl}</div>
+    <div class="mc" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="dot" style="background:${cfg.c}"></div>
+        <span style="font-size:11px">${fe?fe.label:'?'} → ${te?te.label:'?'}</span>
+      </div>
+    </div>
+    <div class="pg"><div class="pl">Мітка / Частота</div>
+      <input class="pi" type="text" value="${conn.note||''}" placeholder="напр. 1×/день" oninput="setConnProp('${conn.from}','${conn.to}','note',this.value)">
+    </div>
+    <div class="pg"><div class="pl">Тип</div>
+      <select class="pi" onchange="setConnProp('${conn.from}','${conn.to}','type',this.value)">
+        ${Object.entries(CC).map(([k,v])=>`<option value="${k}" ${conn.type===k?'selected':''}>${v.lbl}</option>`).join('')}
+      </select>
+    </div>
+    <button class="delbtn" onclick="delConn('${conn.from}','${conn.to}')">✕ Видалити з'єднання</button>`;
+}
+function setConnProp(from,to,k,v){
+  const c=CONNS.find(x=>x.from===from&&x.to===to);if(!c)return;
+  c[k]=v;snapDebounced();renderAll();
+}
+function addConn(f,t,type){snapshot();CONNS.push({from:f,to:t,type});renderAll()}
+function delConn(f,t){snapshot();CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));renderAll();showProps()}
 
 /* ══════════════════════════════════════
    PROPS PANEL
@@ -974,8 +1202,10 @@ function showGrpProps(){
     <button class="delbtn" onclick="delGrp('${g.id}')">✕ Видалити групу</button>`;
 }
 
-function setP(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note'].includes(k))?v:+v;renderAll()}
-function updGrp(id,k,v){const g=GROUPS.find(x=>x.id===id);if(!g)return;g[k]=v;renderAll();showGrpProps()}
+let _snapT=null;
+function snapDebounced(){clearTimeout(_snapT);_snapT=setTimeout(snapshot,600)}
+function setP(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note'].includes(k))?v:+v;snapDebounced();renderAll()}
+function updGrp(id,k,v){const g=GROUPS.find(x=>x.id===id);if(!g)return;g[k]=v;snapDebounced();renderAll();showGrpProps()}
 
 /* ══════════════════════════════════════
    METRICS
@@ -989,13 +1219,36 @@ function updMetrics(){
   const bn=p.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
   const ec=eff<10?'var(--err)':eff<30?'var(--warn)':'var(--ok)';
   const ebg=eff<10?'var(--err-bg)':eff<30?'var(--warn-bg)':'var(--ok-bg)';
+
+  // load balance chart
+  const maxCT=Math.max(tk||0,...p.map(x=>x.ct),1);
+  const chartH=80;
+  const barW=p.length?Math.min(36,Math.floor(200/p.length)-4):36;
+  const chartSVG=p.length?`
+    <div class="sh" style="border-top:none;padding-top:0;margin-top:4px">Баланс навантаження (CT vs Takt)</div>
+    <div style="overflow-x:auto;padding-bottom:4px">
+    <svg width="${Math.max(200,p.length*(barW+6)+20)}" height="${chartH+40}" style="display:block">
+      ${tk?`<line x1="10" y1="${chartH-Math.round((tk/maxCT)*chartH)+2}" x2="${p.length*(barW+6)+14}" y2="${chartH-Math.round((tk/maxCT)*chartH)+2}" stroke="#1d9e75" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <text x="${p.length*(barW+6)+16}" y="${chartH-Math.round((tk/maxCT)*chartH)+6}" font-size="8" fill="#1d9e75" font-family="Arial,sans-serif">Takt ${tk}s</text>`:''}
+      ${p.map((proc,i)=>{
+        const bh=Math.max(2,Math.round((proc.ct/maxCT)*chartH));
+        const bx=10+i*(barW+6),by=chartH-bh+2;
+        const col=isBN(proc)?'#e24b4a':tk&&proc.ct>tk?'#b87316':'#1d9e75';
+        const lbl=proc.label.length>6?proc.label.slice(0,5)+'…':proc.label;
+        return`<rect x="${bx}" y="${by}" width="${barW}" height="${bh}" fill="${col}" rx="2"/>
+        <text x="${bx+barW/2}" y="${by-4}" text-anchor="middle" font-size="8" fill="${col}" font-family="Arial,sans-serif" font-weight="600">${proc.ct}s</text>
+        <text x="${bx+barW/2}" y="${chartH+14}" text-anchor="middle" font-size="8" fill="#666" font-family="Arial,sans-serif">${lbl}</text>`;
+      }).join('')}
+    </svg></div>`:'';
+
   document.getElementById('mc').innerHTML=
     `<div class="mc"><div class="ml">VA Time</div><div class="mv">${fmtT(vat)}</div><div class="ms">${p.length} процес(ів)</div></div>
     <div class="mc"><div class="ml">Час такту</div><div class="mv" style="color:${tk?'var(--ok)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div></div>
     <div class="mc"><div class="ml">NVA (запаси)</div><div class="mv">${invd} дн</div><div class="ms">${fmtT(nva)}</div></div>
     <div class="mc" style="background:${ebg};border-color:${ec}"><div class="ml" style="color:${ec}">Ефективність потоку</div><div class="mv" style="color:${ec}">${eff}%</div><div class="ms" style="color:${ec}">${eff<10?'⚠ Критично':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div></div>
     ${bn?`<div class="mc" style="background:var(--err-bg);border-color:var(--err)"><div class="ml" style="color:var(--err)">Вузьке місце</div><div class="mv" style="font-size:14px;color:var(--err)">${bn.label}</div><div class="ms" style="color:var(--err)">CT=${bn.ct}s${tk?' '+(bn.ct>tk?'▲>такту':'✓≤такту'):''} · Up=${bn.uptime}%</div></div>`:''}
-    <div class="sh" style="border-top:none;padding-top:0">Процеси</div>
+    ${chartSVG}
+    <div class="sh" style="${p.length?'':'border-top:none;padding-top:0'}">Процеси</div>
     ${p.map(x=>{const ib=bn&&x.id===bn.id;const col=ib?'var(--err)':tk&&x.ct>tk?'var(--warn)':'var(--ok)';return`<div class="pr2"><div class="dot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${ib?'<span class="bdg bd">BN</span>':''}</div>`}).join('')}`;
 }
 
@@ -1018,6 +1271,7 @@ function loadState(s){
   document.getElementById('mapName').value=s.name||'VSM';
   IDC=Math.max(ELS.length,GROUPS.length)+10;selId=null;selGid=null;renderAll();showProps();
   setTimeout(fitView,50);
+  setTimeout(snapshot,100);
 }
 function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
 function saveMap(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
@@ -1115,7 +1369,12 @@ function showSettings(){
     <div class="akr"><input class="aki" type="password" id="sk" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
     <button class="aks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('sk').value);toast('Збережено','ok')">✓</button></div>
     <p class="ah">Зберігається тільки у вашому браузері.</p></div>
-    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2);line-height:1.7">VSM Constructor v1.3 · BPI Group<br>Символи: LEI/Toyota VSM Standard<br><b>V</b> — вибір · <b>C</b> — з'єднати · <b>G</b> — група<br><b>F</b> — вписати в екран · <b>Ctrl+0</b> — 100%<br><b>Scroll</b> — масштаб · <b>Space+drag</b> — переміщення<br><b>ПКМ/колесо</b> — масштаб</p></div>
+    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2);line-height:1.8">VSM Constructor v1.4 · BPI Group<br>
+    <b>V</b> вибір · <b>C</b> з'єднати · <b>G</b> група · <b>F</b> вписати<br>
+    <b>Ctrl+Z/Y</b> undo/redo · <b>Ctrl+C/V</b> копія/вставка<br>
+    <b>Ctrl+D</b> дублювати · <b>Ctrl+S</b> зберегти<br>
+    <b>Scroll</b> масштаб · <b>Space+drag</b> переміщення<br>
+    <b>Del</b> видалити · клік на стрілку — редагувати</p></div>
     <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
 }
 function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGid=null;renderAll();showProps()}
@@ -1123,6 +1382,6 @@ function omod(h){document.getElementById('mod').innerHTML=h;document.getElementB
 function cmod(){document.getElementById('movbg').style.display='none'}
 function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
-renderAll();showProps();vx=40;vy=40;applyVP();
+renderAll();showProps();vx=40;vy=40;applyVP();snapshot();updUndoBtn();
 </body>
 </html>
