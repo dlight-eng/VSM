@@ -3,43 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VSM Constructor — TPS & Gemini Analytics</title>
+<title>VSM Constructor — BPI Group</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
-<script type="module">
-  import { GoogleGenAI } from "https://esm.run/@google/genai";
-  window.GoogleGenAI = GoogleGenAI;
-</script>
 <style>
 /* ─── Reset & Base ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f4f3ef;
+  --bg: #f7f6f3;
   --bg2: #ffffff;
-  --bg3: #f0ede6;
-  --text: #1a1a17;
-  --text2: #5d5c58;
-  --text3: #9a9893;
-  --border: rgba(0,0,0,0.1);
-  --border2: rgba(0,0,0,0.2);
-  --accent: #1e5aa3;
-  --accent-bg: #eaf2fc;
-  --success: #198754;
-  --success-bg: #e8f5e9;
-  --warn: #d97706;
-  --warn-bg: #fef3c7;
-  --danger: #dc3545;
-  --danger-bg: #f8d7da;
+  --bg3: #efefeb;
+  --text: #1a1a18;
+  --text2: #5f5e5a;
+  --text3: #9b9a96;
+  --border: rgba(0,0,0,0.12);
+  --border2: rgba(0,0,0,0.22);
+  --accent: #185fa5;
+  --accent-bg: #e6f1fb;
+  --success: #0f6e56;
+  --success-bg: #e1f5ee;
+  --warn: #ba7517;
+  --warn-bg: #faeeda;
+  --danger: #a32d2d;
+  --danger-bg: #fcebeb;
   --radius: 6px;
   --radius-lg: 10px;
   --font: 'Inter', system-ui, -apple-system, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #181816; --bg2: #222220; --bg3: #2c2c29;
-    --text: #e3e2dc; --text2: #9a9893; --text3: #5d5c58;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.18);
-    --accent-bg: #0f2d52; --success-bg: #0c2e1d;
-    --warn-bg: #452703; --danger-bg: #441015;
+    --bg: #1a1a18; --bg2: #242422; --bg3: #2e2e2b;
+    --text: #e8e6df; --text2: #9b9a96; --text3: #5f5e5a;
+    --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+    --accent-bg: #0c2d4a; --success-bg: #04201a;
+    --warn-bg: #2a1c05; --danger-bg: #2a0d0d;
   }
 }
 html, body { height: 100%; overflow: hidden; }
@@ -50,315 +46,134 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 /* ─── Header ─── */
 .header {
-  height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
   background: var(--bg2); border-bottom: 0.5px solid var(--border);
   flex-shrink: 0; user-select: none;
 }
-.logo { font-weight: 700; font-size: 14px; letter-spacing: -0.02em; }
+.logo { font-weight: 600; font-size: 13px; letter-spacing: -0.02em; }
 .logo span { color: var(--accent); }
 .hdr-sep { width: 0.5px; height: 20px; background: var(--border); margin: 0 4px; }
 .hdr-btn {
-  display: flex; align-items: center; gap: 5px; padding: 5px 10px;
+  display: flex; align-items: center; gap: 5px; padding: 4px 9px;
   border: 0.5px solid var(--border); border-radius: var(--radius);
   background: none; color: var(--text); cursor: pointer; font-size: 12px;
   transition: background .12s, border-color .12s; white-space: nowrap;
 }
 .hdr-btn:hover { background: var(--bg3); border-color: var(--border2); }
-.hdr-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+.hdr-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 .hdr-btn i { font-size: 15px; }
 .hdr-spacer { flex: 1; }
 .map-name-input {
-  font-size: 13px; font-weight: 600; background: none; border: none; color: var(--text);
-  border-bottom: 1px dashed var(--border2); padding: 2px 4px; width: 240px; text-align: center;
+  font-size: 13px; font-weight: 500; background: none; border: none; color: var(--text);
+  border-bottom: 1px dashed var(--border); padding: 2px 4px; width: 200px; text-align: center;
 }
 .map-name-input:focus { outline: none; border-bottom-color: var(--accent); }
+.map-name-input::placeholder { color: var(--text3); }
 
 /* ─── Main area ─── */
 .main { display: flex; flex: 1; overflow: hidden; }
 
-/* ─── Sidebar ─── */
+/* ─── Sidebar (palette) ─── */
 .sidebar {
-  width: 180px; flex-shrink: 0; background: var(--bg2);
+  width: 168px; flex-shrink: 0; background: var(--bg2);
   border-right: 0.5px solid var(--border); display: flex; flex-direction: column;
   overflow: hidden;
 }
-.sidebar-section { padding: 12px 10px 4px; }
+.sidebar-section { padding: 10px 8px 4px; }
 .sidebar-title {
-  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--text3); padding: 0 2px 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text3); padding: 0 2px 6px;
 }
 .pal-item {
-  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  display: flex; align-items: center; gap: 7px; padding: 6px 8px;
   border: 0.5px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 5px; cursor: grab; background: var(--bg2); font-size: 12px;
+  margin-bottom: 3px; cursor: grab; background: var(--bg2); font-size: 11px;
   transition: border-color .12s, background .12s;
 }
 .pal-item:hover { border-color: var(--border2); background: var(--bg3); }
 .pal-item:active { cursor: grabbing; }
-.pal-icon { width: 32px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pal-icon { width: 30px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 /* ─── Canvas ─── */
 .canvas-wrap {
   flex: 1; position: relative; overflow: hidden; background: var(--bg);
-  cursor: default; user-select: none;
+  cursor: default;
 }
-#canvas { width: 100%; height: 100%; display: block; background: #faf9f6; }
-.canvas-wrap.connect-mode { cursor: crosshair; }
+#canvas { width: 100%; height: 100%; }
 
 /* ─── Right panel ─── */
 .rpanel {
-  width: 280px; flex-shrink: 0; background: var(--bg2);
+  width: 248px; flex-shrink: 0; background: var(--bg2);
   border-left: 0.5px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
 }
-.rtabs { display: flex; border-bottom: 0.5px solid var(--border); flex-shrink: 0; background: var(--bg); }
+.rtabs { display: flex; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
 .rtab {
-  flex: 1; padding: 10px 4px; font-size: 11px; font-weight: 600; text-align: center;
+  flex: 1; padding: 9px 4px; font-size: 11px; font-weight: 500; text-align: center;
   cursor: pointer; border: none; background: none; color: var(--text2);
-  border-bottom: 2px solid transparent; transition: all .12s;
+  border-bottom: 2px solid transparent; transition: color .12s;
 }
-.rtab.active { color: var(--text); border-bottom-color: var(--accent); background: var(--bg2); }
-.rpanel-body { flex: 1; overflow-y: auto; padding: 14px; }
+.rtab.active { color: var(--text); border-bottom-color: var(--accent); }
+.rpanel-body { flex: 1; overflow-y: auto; padding: 12px; }
 
-/* Props & Forms */
-.prop-group { margin-bottom: 12px; }
-.prop-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 600; }
+/* Props */
+.prop-group { margin-bottom: 10px; }
+.prop-label { font-size: 10px; color: var(--text2); margin-bottom: 3px; font-weight: 500; }
 .prop-input {
-  width: 100%; font-size: 12px; padding: 6px 8px;
+  width: 100%; font-size: 12px; padding: 5px 7px;
   border: 0.5px solid var(--border2); border-radius: var(--radius);
   background: var(--bg); color: var(--text); font-family: var(--font);
 }
 .prop-input:focus { outline: none; border-color: var(--accent); }
-.prop-row { display: flex; gap: 8px; }
+.prop-row { display: flex; gap: 6px; }
 .prop-row .prop-group { flex: 1; }
+.prop-badge {
+  display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 5px;
+  border-radius: 3px; margin-left: 4px; text-transform: uppercase; letter-spacing: .04em;
+}
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-ok { background: var(--success-bg); color: var(--success); }
 
 .section-head {
-  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--text3); padding: 10px 0 6px; border-top: 0.5px solid var(--border); margin-top: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text3); padding: 8px 0 5px; border-top: 0.5px solid var(--border); margin-top: 4px;
 }
-.no-sel { text-align: center; padding: 40px 0; color: var(--text3); font-size: 12px; }
-.no-sel i { font-size: 32px; display: block; margin-bottom: 10px; opacity: .4; }
+.no-sel { text-align: center; padding: 30px 0; color: var(--text3); font-size: 12px; }
+.no-sel i { font-size: 28px; display: block; margin-bottom: 8px; opacity: .35; }
 
 .del-btn {
-  width: 100%; padding: 6px; font-size: 11px; color: var(--danger); margin-top: 14px;
+  width: 100%; padding: 5px; font-size: 11px; color: var(--danger); margin-top: 10px;
   border: 0.5px solid var(--danger); border-radius: var(--radius);
-  background: none; cursor: pointer; font-weight: 500;
+  background: none; cursor: pointer;
 }
 .del-btn:hover { background: var(--danger-bg); }
 
-/* Metrics & AI Output */
+/* Metrics */
 .metric-card {
-  border-radius: var(--radius); padding: 12px; margin-bottom: 10px;
-  border: 0.5px solid var(--border); background: var(--bg);
+  border-radius: var(--radius); padding: 10px 11px; margin-bottom: 8px;
+  border: 0.5px solid var(--border);
 }
-.metric-lbl { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
-.metric-val { font-size: 24px; font-weight: 600; line-height: 1.2; margin-top: 2px; color: var(--text); }
-.metric-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
-.proc-row { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px; }
+.metric-lbl { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+.metric-val { font-size: 22px; font-weight: 500; line-height: 1.2; margin-top: 2px; }
+.metric-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.proc-row { display: flex; align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; }
 .proc-row:hover { background: var(--bg3); }
-.proc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.proc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
+/* AI */
 .ai-run-btn {
-  width: 100%; padding: 10px; font-size: 12px; font-weight: 600;
-  border: none; border-radius: var(--radius);
-  background: var(--accent); color: white; cursor: pointer; margin-bottom: 12px;
+  width: 100%; padding: 8px; font-size: 12px; font-weight: 500;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg3); color: var(--text); cursor: pointer; margin-bottom: 10px;
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: opacity .15s;
+  transition: background .12s;
 }
-.ai-run-btn:hover { opacity: 0.9; }
-.ai-run-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ai-run-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.ai-run-btn:disabled { opacity: .5; cursor: not-allowed; }
 .ai-out {
-  font-size: 12px; line-height: 1.6; color: var(--text);
-  background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 12px;
-  white-space: pre-wrap; word-break: break-word; max-height: 450px; overflow-y: auto;
+  font-size: 12px; line-height: 1.65; color: var(--text2);
+  background: var(--bg3); border-radius: var(--radius); padding: 10px 11px;
+  white-space: pre-wrap; word-break: break-word;
 }
-.ai-hint { font-size: 11px; color: var(--text3); line-height: 1.4; margin-bottom: 10px; }
-
-/* Maps list */
-.map-row {
-  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-  border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 5px;
-  cursor: pointer; transition: all .12s;
-}
-.map-row:hover { border-color: var(--border2); background: var(--bg3); }
-.map-row-name { flex: 1; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.map-row-date { font-size: 10px; color: var(--text3); }
-.map-del-btn { font-size: 13px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 4px; }
-.map-del-btn:hover { color: var(--danger); }
-
-/* Modals & Toasts */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal { background: var(--bg2); border-radius: var(--radius-lg); padding: 20px; width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-.modal-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
-.modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
-.modal-btn { padding: 6px 14px; font-size: 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text); cursor: pointer; }
-.modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.modal-opts { display: flex; flex-direction: column; gap: 6px; }
-.modal-opt { display: flex; align-items: center; gap: 10px; padding: 10px; border: 0.5px solid var(--border); border-radius: var(--radius); cursor: pointer; }
-.modal-opt:hover { border-color: var(--accent); background: var(--accent-bg); }
-
-.toast-area { position: fixed; bottom: 16px; right: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 6px; }
-.toast { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 10px 16px; font-size: 12px; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
-.toast.ok { border-left: 4px solid var(--success); }
-.toast.err { border-left: 4px solid var(--danger); }
-
-.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Timeline bar */
-.timeline { 
-  height: 52px; background: var(--bg2); border-top: 0.5px solid var(--border);
-  display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0; overflow: hidden;
-}
-.tl-label { font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
-.tl-bar-wrap { flex: 1; height: 20px; border-radius: 4px; overflow: hidden; display: flex; background: #e0deda; }
-.tl-va { background: #198754; height: 100%; display: flex; align-items: center; justify-content: center; transition: width 0.3s ease; }
-.tl-nva { background: #dc3545; height: 100%; display: flex; align-items: center; justify-content: center; transition: width 0.3s ease; }
-.tl-bar-lbl { font-size: 10px; color: #fff; font-weight: 700; white-space: nowrap; padding: 0 6px; }
-.tl-stat { font-size: 12px; white-space: nowrap; color: var(--text); }
-.tl-eff { font-size: 12px; font-weight: 700; white-space: nowrap; }
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-</style>
-</head>
-<body>
-<div class="app">
-
-  <div class="header">
-    <div class="logo">VSM <span>Constructor TPS</span></div>
-    <div class="hdr-sep"></div>
-    <input class="map-name-input" id="mapName" type="text" value="Потік створення цінності TPS" placeholder="Назва карти…">
-    <div class="hdr-spacer"></div>
-
-    <button class="hdr-btn active" id="btn-select" onclick="setTool('select')" title="Вибір та панорамування (V)">
-      <i class="ti ti-pointer"></i> Вибір / Панорама
-    </button>
-    <button class="hdr-btn" id="btn-connect" onclick="setTool('connect')" title="З'єднання (C)">
-      <i class="ti ti-arrow-up-right"></i> З'єднати
-    </button>
-
-    <div class="hdr-sep"></div>
-
-    <button class="hdr-btn" onclick="switchRTab('maps')" title="Зберегти / Відкрити карти">
-      <i class="ti ti-folder"></i> Карти
-    </button>
-    <button class="hdr-btn" onclick="saveToLocal()" title="Швидке збереження">
-      <i class="ti ti-device-floppy"></i> Зберегти
-    </button>
-    <button class="hdr-btn" onclick="exportJSON()" title="Експорт JSON">
-      <i class="ti ti-file-export"></i> JSON
-    </button>
-    <button class="hdr-btn" id="importBtn" onclick="document.getElementById('importFile').click()" title="Імпорт JSON">
-      <i class="ti ti-file-import"></i>
-    </button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-
-    <div class="hdr-sep"></div>
-    <button class="hdr-btn" onclick="loadDemo()" title="Завантажити класичний приклад TPS">
-      <i class="ti ti-template"></i> Приклад TPS
-    </button>
-    <button class="hdr-btn" onclick="clearCanvas()" title="Очистити полотно">
-      <i class="ti ti-trash"></i>
-    </button>
-    <button class="hdr-btn" onclick="showSettings()" title="Налаштування">
-      <i class="ti ti-settings"></i>
-    </button>
-  </div>
-
-  <div class="main">
-
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">Символи TPS (Toyota)</div>
-
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'supplier')">
-          <div class="pal-icon">
-            <svg width="28" height="20" viewBox="0 0 30 22"><path d="M2 20 L2 10 L8 5 L8 10 L14 5 L14 10 L20 5 L20 10 L26 5 L26 20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </div>
-          Постачальник
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'process')">
-          <div class="pal-icon">
-            <svg width="28" height="20" viewBox="0 0 30 22"><rect x="2" y="2" width="26" height="14" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="9" x2="28" y2="9" stroke="currentColor" stroke-width="1"/></svg>
-          </div>
-          Процес (Data Box)
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'inventory')">
-          <div class="pal-icon">
-            <svg width="28" height="20" viewBox="0 0 30 22"><polygon points="15,2 28,18 2,18" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </div>
-          Запаси (Triangle)
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'customer')">
-          <div class="pal-icon">
-            <svg width="28" height="20" viewBox="0 0 30 22"><path d="M2 20 L2 10 L8 5 L8 10 L14 5 L14 10 L20 5 L20 10 L26 5 L26 20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </div>
-          Клієнт (Завод)
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'kaizen')">
-          <div class="pal-icon">
-            <svg width="28" height="20" viewBox="0 0 30 22"><path d="M15 2 L18 7 L24 5 L22 11 L28 13 L21 16 L23 22 L16 19 L13 22 L11 17 L5 19 L8 13 L2 10 L9 8 Z" fill="none" stroke="#d97706" stroke-width="1.5"/></svg>
-          </div>
-          Kaizen Burst
-        </div>
-      </div>
-
-      <div class="sidebar-section" style="border-top: 0.5px solid var(--border); margin-top: 4px; padding-top: 10px;">
-        <div class="sidebar-title">Потоки / Навігація</div>
-        <p style="font-size:11px; color:var(--text2); padding:2px; line-height:1.4;">
-          <i class="ti ti-mouse" style="color:var(--accent)"></i> <strong>Коліщатко:</strong> Масштаб (Zoom)<br>
-          <i class="ti ti-hand-finger" style="color:var(--accent)"></i> <strong>Shift + ЛКМ</strong> або середня кнопка миші — переміщення полотна (Pan).
-        </p>
-      </div>
-    </div>
-
-    <div class="canvas-wrap" id="canvasWrap" ondragover="event.preventDefault()" ondrop="onDrop(event)">
-      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"
-        onmousedown="svgMouseDown(event)"
-        onmousemove="svgMouseMove(event)"
-        onmouseup="svgMouseUp(event)"
-        oncontextmenu="return false">
-        <defs>
-          <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M20 0L0 0 0 20" fill="none" stroke="var(--border)" stroke-width="0.5"/>
-          </pattern>
-        </defs>
-        <rect id="gridBg" width="100%" height="100%" fill="url(#grid)"/>
-        <g id="viewport">
-          <g id="connLayer"></g>
-          <g id="elLayer"></g>
-          <g id="tempArrow" style="display:none">
-            <line id="tempLine" stroke="#1e5aa3" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
-          </g>
-        </g>
-      </svg>
-    </div>
-
-    <div class="rpanel">
-      <div class="rtabs">
-        <button class="rtab active" id="rtab-props" onclick="switchRTab('props')">Параметри</button>
-        <button class="rtab" id="rtab-metrics" onclick="switchRTab('metrics')">Метрики</button>
-        <button class="rtab" id="rtab-maps" onclick="switchRTab('maps')">Карти</button>
-        <button class="rtab" id="rtab-ai" onclick="switchRTab('ai')">Gemini ШІ</button>
-      </div>
-      <div class="rpanel-body" id="rpb-props">
-        <div class="no-sel" id="noSelMsg"><i class="ti ti-click"></i>Виберіть елемент TPS<br>для редагування параметрів</div>
-        <div id="propsForm" style="display:none"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-metrics" style="display:none">
-        <div id="metricsContent"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-maps" style="display:none">
-        <div id="mapsContent"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-ai" style="display:none">
-        <div class="prop-label" style="margin-bottom:4px;">Google Gemini API Ключ</div>
-        <div class="ai-key-row" style="display:flex; gap:6px; margin-bottom:8px;">
-          <input class="prop-input" type="password" id="geminiKeyInput" placeholder="AIzaSy…" style="flex:1;">
-          <button class="hdr-btn" onclick="saveApiKey()"><i class="ti ti-check" style="color:var(--success)"></i></button>
-        </div>
-        <p class="ai-hint">Ключ
+.ai-key-row { display: flex; gap: 5px; margin-bottom: 8px; }
+.ai-key-input { flex: 1; font-size: 11px; padding: 4px 7
