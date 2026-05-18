@@ -115,6 +115,28 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 @keyframes sp{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Templates modal */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.tpl-card{border:.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:border-color .1s,background .1s}
+.tpl-card:hover{border-color:var(--accent);background:var(--accent-bg)}
+.tpl-card-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.tpl-card-sub{font-size:10px;color:var(--text2)}
+
+/* Future State comparison panel */
+.fs-compare{background:var(--ok-bg);border:.5px solid var(--ok);border-radius:var(--r);padding:8px 10px;margin-bottom:8px}
+.fs-compare-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:2px 0}
+.fs-delta-pos{color:var(--ok);font-weight:700}
+.fs-delta-neg{color:var(--err);font-weight:700}
+
+@media print{
+  .hdr,.sb,.rp,.tl{display:none!important}
+  .main{flex:1}
+  .cv{width:100%;height:100vh}
+  body{overflow:visible}
+  .app{height:auto}
+  @page{margin:10mm;size:A3 landscape}
+}
 </style>
 </head>
 <body>
@@ -145,6 +167,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="hsep"></div>
   <button class="hbtn" onclick="loadDemo()">▦ Приклад</button>
+  <button class="hbtn" onclick="showTemplates()">📋 Шаблони</button>
+  <button class="hbtn" onclick="printMap()" title="Друк / PDF">🖨 Друк</button>
   <button class="hbtn" onclick="clearAll()">✕ Очистити</button>
   <button class="hbtn" onclick="showSettings()">⚙</button>
 </div>
@@ -264,6 +288,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <div class="rtabs">
     <button class="rtab on" id="rt-p" onclick="rtab('p')">Параметри</button>
     <button class="rtab"    id="rt-m" onclick="rtab('m')">Метрики</button>
+    <button class="rtab"    id="rt-f" onclick="rtab('f')">FS</button>
     <button class="rtab"    id="rt-s" onclick="rtab('s')">Карти</button>
     <button class="rtab"    id="rt-a" onclick="rtab('a')">AI</button>
   </div>
@@ -272,6 +297,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     <div id="pf" style="display:none"></div>
   </div>
   <div class="rpb" id="rp-m" style="display:none"><div id="mc"></div></div>
+  <div class="rpb" id="rp-f" style="display:none"><div id="fspanel"></div></div>
   <div class="rpb" id="rp-s" style="display:none"><div id="sc"></div></div>
   <div class="rpb" id="rp-a" style="display:none">
     <div class="pl">Claude API ключ</div>
@@ -869,9 +895,9 @@ function toggleFS(){
   const btn=document.getElementById('bfs');
   btn.classList.toggle('on',fsMode);
   btn.textContent=fsMode?'◈ Current State':'◈ Future State';
-  // show/hide FS panel info
   renderAll();
-  toast(fsMode?'Future State режим — редагуйте карту майбутнього стану':'Повернуто до Current State');
+  if(atab==='f')renderFSPanel();
+  toast(fsMode?'Future State режим увімкнено':'Повернуто до Current State');
 }
 
 function renderFSLayer(){
@@ -948,8 +974,297 @@ function renderFSDelta(L, x, y){
 }
 
 /* ══════════════════════════════════════
-   GOOGLE SHEETS INTEGRATION
+   FUTURE STATE PANEL
 ══════════════════════════════════════ */
+function renderFSPanel(){
+  const p=document.getElementById('fspanel');if(!p)return;
+  const hasFS=FS_ELS.length>0;
+  const curProcs=getProcs(),curInvs=getInvs(),tk=getTakt();
+  const curVAT=curProcs.reduce((s,x)=>s+x.ct,0);
+  const curNVA=curInvs.reduce((s,i)=>s+i.days,0);
+  const curEff=curVAT>0?Math.round(curVAT/(curVAT+curNVA*28800)*100):0;
+  const curBN=curProcs.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
+
+  let compareHTML='';
+  if(hasFS){
+    const fsProcs=FS_ELS.filter(e=>e.type==='process');
+    const fsInvs=FS_ELS.filter(e=>e.type==='inventory'||e.type==='supermarket');
+    const fsVAT=fsProcs.reduce((s,x)=>s+x.ct,0);
+    const fsNVA=fsInvs.reduce((s,i)=>s+i.days,0);
+    const fsEff=fsVAT>0?Math.round(fsVAT/(fsVAT+fsNVA*28800)*100):0;
+    const fsBN=fsProcs.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
+    const mkDelta=(cur,fs,unit='',reverse=false)=>{
+      const d=fs-cur;const pct=cur?Math.round(Math.abs(d)/cur*100):0;
+      const good=reverse?d>0:d<0;
+      const col=d===0?'var(--text3)':good?'var(--ok)':'var(--err)';
+      const sign=d>0?'+':'';
+      return`<span style="color:${col};font-weight:700">${sign}${d}${unit} (${pct}%)</span>`;
+    };
+    compareHTML=`
+      <div class="fs-compare">
+        <div style="font-size:10px;font-weight:700;color:var(--ok);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Current → Future State</div>
+        <div class="fs-compare-row"><span>VA Time</span><span>${fmtT(curVAT)} → <b>${fmtT(fsVAT)}</b> ${mkDelta(curVAT,fsVAT,'s')}</span></div>
+        <div class="fs-compare-row"><span>Запаси</span><span>${curNVA}дн → <b>${fsNVA}дн</b> ${mkDelta(curNVA,fsNVA,'дн')}</span></div>
+        <div class="fs-compare-row"><span>Ефективність</span><span>${curEff}% → <b>${fsEff}%</b> ${mkDelta(curEff,fsEff,'%',true)}</span></div>
+        <div class="fs-compare-row"><span>Процесів</span><span>${curProcs.length} → <b>${fsProcs.length}</b></span></div>
+        ${fsBN?`<div class="fs-compare-row"><span>Вузьке місце</span><span style="font-size:10px">${curBN?.label||'—'} → <b>${fsBN.label}</b></span></div>`:''}
+      </div>
+      <button class="abtn" onclick="clearFS()" style="margin-bottom:0">✕ Очистити Future State</button>`;
+  }
+
+  p.innerHTML=`
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:10px">Future State</div>
+    <div class="pg"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">
+      Збережи поточний стан як Current State, потім редагуй карту для Future State і порівняй метрики.
+    </p></div>
+
+    <!-- Current State snapshot -->
+    <div class="mc" style="margin-bottom:8px">
+      <div class="ml">Current State (зараз)</div>
+      <div style="font-size:11px;margin-top:4px">VA: <b>${fmtT(curVAT)}</b> · NVA: <b>${curNVA}дн</b> · Eff: <b>${curEff}%</b></div>
+      ${curBN?`<div style="font-size:10px;color:var(--err);margin-top:2px">Bottleneck: ${curBN.label} CT=${curBN.ct}s</div>`:''}
+    </div>
+
+    <button class="abtn" onclick="snapshotFS()" style="margin-bottom:8px">
+      📸 Зберегти як Future State
+    </button>
+
+    ${hasFS?compareHTML:`<div style="font-size:11px;color:var(--text3);text-align:center;padding:16px 0">
+      <div style="font-size:24px;margin-bottom:6px;opacity:.3">◈</div>
+      Future State ще не збережено.<br>Внеси зміни в карту → натисни кнопку вище.
+    </div>`}
+
+    <div class="sh">Режим на карті</div>
+    <button class="abtn" id="fsModeBtn" onclick="toggleFS()" style="margin-bottom:0">
+      ${fsMode?'◈ Вимкнути FS overlay':'◈ Увімкнути FS overlay'}
+    </button>`;
+}
+
+function snapshotFS(){
+  // Save current state as Future State
+  FS_ELS=ELS.map(e=>{const x={...e};delete x._hid;return JSON.parse(JSON.stringify(x))});
+  FS_CONNS=JSON.parse(JSON.stringify(CONNS));
+  snapshot();
+  toast('Future State збережено!','ok');
+  renderFSPanel();
+  renderAll();
+}
+
+function clearFS(){
+  if(!confirm('Очистити Future State?'))return;
+  FS_ELS=[];FS_CONNS=[];
+  snapshot();
+  toast('Future State очищено');
+  renderFSPanel();renderAll();
+}
+
+/* ══════════════════════════════════════
+   TEMPLATES
+══════════════════════════════════════ */
+function showTemplates(){
+  const templates=[
+    {id:'mfg_simple',  icon:'🏭', title:'Машинобудування',    sub:'Постачальник → 3 процеси → Клієнт'},
+    {id:'food',        icon:'🍕', title:'Харчова промисловість',sub:'Сировина → обробка → пакування → збут'},
+    {id:'assembly',    icon:'🔧', title:'Складальне виробництво',sub:'Компоненти → складання → контроль'},
+    {id:'service',     icon:'📋', title:'Сервісний процес',    sub:'Заявка → обробка → виконання → закриття'},
+    {id:'office',      icon:'💼', title:'Офісний процес',      sub:'Вхідний документ → погодження → видача'},
+    {id:'warehouse',   icon:'📦', title:'Складська логістика', sub:'Прийом → зберігання → відвантаження'},
+  ];
+  omod(`<div class="modt">📋 Шаблони VSM карт</div>
+    <div class="tpl-grid">
+      ${templates.map(t=>`
+        <div class="tpl-card" onclick="loadTemplate('${t.id}');cmod()">
+          <div style="font-size:20px;margin-bottom:4px">${t.icon}</div>
+          <div class="tpl-card-title">${t.title}</div>
+          <div class="tpl-card-sub">${t.sub}</div>
+        </div>`).join('')}
+    </div>
+    <div class="modbts"><button class="mbtn" onclick="cmod()">Скасувати</button></div>`);
+}
+
+function loadTemplate(id){
+  const T={
+    mfg_simple:()=>{
+      ELS=[
+        {id:'ts1',type:'supplier',x:20,y:80,label:'Постачальник',lead:5},
+        {id:'tpc',type:'production_control',x:280,y:20,label:'Планування'},
+        {id:'tc1',type:'customer',x:620,y:80,label:'Замовник',demand:400},
+        {id:'ti1',type:'inventory',x:205,y:240,label:'',qty:1000,days:3},
+        {id:'tp1',type:'process',x:60,y:280,label:'Заготівля',ct:55,co:120,uptime:80,operators:2,shifts:1,inv_out:0},
+        {id:'ti2',type:'inventory',x:345,y:240,label:'',qty:500,days:1},
+        {id:'tp2',type:'process',x:210,y:280,label:'Обробка',ct:80,co:60,uptime:75,operators:3,shifts:2,inv_out:0},
+        {id:'ti3',type:'inventory',x:490,y:240,label:'',qty:300,days:1},
+        {id:'tp3',type:'process',x:360,y:280,label:'Складання',ct:45,co:30,uptime:90,operators:2,shifts:2,inv_out:0},
+        {id:'ti4',type:'inventory',x:630,y:240,label:'',qty:150,days:0.5},
+        {id:'tp4',type:'process',x:510,y:280,label:'Контроль',ct:20,co:0,uptime:98,operators:1,shifts:2,inv_out:0},
+        {id:'tt1',type:'truck',x:530,y:80,label:'Щотижня'},
+        {id:'tk1',type:'kaizen',x:245,y:395,label:'SMED',note:''},
+      ];
+      CONNS=[
+        {from:'ts1',to:'tp1',type:'transport'},
+        {from:'tp1',to:'tp2',type:'push'},
+        {from:'tp2',to:'tp3',type:'push'},
+        {from:'tp3',to:'tp4',type:'push'},
+        {from:'tp4',to:'tc1',type:'push'},
+        {from:'tt1',to:'tc1',type:'transport'},
+        {from:'tc1',to:'tpc',type:'info'},
+        {from:'tpc',to:'tp1',type:'info-e',note:'Місячний план'},
+        {from:'tpc',to:'ts1',type:'info-e',note:'Замовлення'},
+      ];
+      document.getElementById('mapName').value='Машинобудування — Current State';
+    },
+    food:()=>{
+      ELS=[
+        {id:'fs1',type:'supplier',x:20,y:80,label:'Сировина',lead:2},
+        {id:'fc1',type:'customer',x:620,y:80,label:'Торгова мережа',demand:800},
+        {id:'fpc',type:'production_control',x:280,y:20,label:'Диспетчер'},
+        {id:'fi1',type:'inventory',x:195,y:240,label:'',qty:3000,days:4},
+        {id:'fp1',type:'process',x:40,y:280,label:'Приймання',ct:30,co:0,uptime:99,operators:2,shifts:3,inv_out:0},
+        {id:'fi2',type:'inventory',x:330,y:240,label:'',qty:1500,days:2},
+        {id:'fp2',type:'process',x:195,y:280,label:'Переробка',ct:120,co:90,uptime:72,operators:6,shifts:3,inv_out:0},
+        {id:'fi3',type:'inventory',x:470,y:240,label:'',qty:800,days:1},
+        {id:'fp3',type:'process',x:345,y:280,label:'Пакування',ct:40,co:45,uptime:85,operators:4,shifts:2,inv_out:0},
+        {id:'fi4',type:'inventory',x:605,y:240,label:'',qty:400,days:0.5},
+        {id:'fp4',type:'process',x:490,y:280,label:'Відвантаження',ct:25,co:0,uptime:95,operators:2,shifts:2,inv_out:0},
+        {id:'ft1',type:'truck',x:530,y:80,label:'Щодня'},
+        {id:'fk1',type:'kaizen',x:230,y:390,label:'TPM',note:'Uptime→85%'},
+      ];
+      CONNS=[
+        {from:'fs1',to:'fp1',type:'transport',note:'Щодня'},
+        {from:'fp1',to:'fp2',type:'push'},
+        {from:'fp2',to:'fp3',type:'push'},
+        {from:'fp3',to:'fp4',type:'push'},
+        {from:'fp4',to:'fc1',type:'push'},
+        {from:'ft1',to:'fc1',type:'transport'},
+        {from:'fc1',to:'fpc',type:'info',note:'Замовлення'},
+        {from:'fpc',to:'fp1',type:'info-e'},
+        {from:'fpc',to:'fs1',type:'info-e'},
+      ];
+      document.getElementById('mapName').value='Харчова промисловість — Current State';
+    },
+    assembly:()=>{
+      ELS=[
+        {id:'as1',type:'supplier',x:20,y:40,label:'Деталі A',lead:3},
+        {id:'as2',type:'supplier',x:20,y:140,label:'Деталі B',lead:7},
+        {id:'ac1',type:'customer',x:600,y:90,label:'OEM Клієнт',demand:300},
+        {id:'apc',type:'production_control',x:280,y:-20,label:'Виробничий план'},
+        {id:'ai1',type:'inventory',x:195,y:240,label:'',qty:800,days:3},
+        {id:'ap1',type:'process',x:60,y:280,label:'Підготовка',ct:35,co:20,uptime:92,operators:1,shifts:2,inv_out:0},
+        {id:'ai2',type:'inventory',x:345,y:240,label:'',qty:400,days:1},
+        {id:'ap2',type:'process',x:210,y:280,label:'Складання',ct:75,co:45,uptime:85,operators:4,shifts:2,inv_out:0},
+        {id:'ai3',type:'inventory',x:480,y:240,label:'',qty:200,days:0.5},
+        {id:'ap3',type:'process',x:360,y:280,label:'Тестування',ct:30,co:10,uptime:96,operators:2,shifts:2,inv_out:0},
+        {id:'ai4',type:'inventory',x:600,y:240,label:'',qty:100,days:0.25},
+        {id:'ap4',type:'process',x:490,y:280,label:'Пакування',ct:15,co:5,uptime:99,operators:1,shifts:2,inv_out:0},
+        {id:'at1',type:'truck',x:510,y:90,label:'2×/тиждень'},
+      ];
+      CONNS=[
+        {from:'as1',to:'ap1',type:'transport'},{from:'as2',to:'ap1',type:'transport'},
+        {from:'ap1',to:'ap2',type:'push'},{from:'ap2',to:'ap3',type:'push'},
+        {from:'ap3',to:'ap4',type:'push'},{from:'ap4',to:'ac1',type:'push'},
+        {from:'at1',to:'ac1',type:'transport'},
+        {from:'ac1',to:'apc',type:'info',note:'Щотижневе замовлення'},
+        {from:'apc',to:'ap1',type:'info-e'},{from:'apc',to:'as1',type:'info-e'},{from:'apc',to:'as2',type:'info-e'},
+      ];
+      document.getElementById('mapName').value='Складальне виробництво — Current State';
+    },
+    service:()=>{
+      ELS=[
+        {id:'sv1',type:'supplier',x:20,y:80,label:'Клієнт (вхід)',lead:0},
+        {id:'sc1',type:'customer',x:600,y:80,label:'Клієнт (вихід)',demand:50},
+        {id:'spc',type:'production_control',x:280,y:20,label:'Диспетчер'},
+        {id:'si1',type:'inventory',x:190,y:240,label:'',qty:25,days:2},
+        {id:'sp1',type:'process',x:40,y:280,label:'Реєстрація',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
+        {id:'si2',type:'inventory',x:330,y:240,label:'',qty:15,days:3},
+        {id:'sp2',type:'process',x:195,y:280,label:'Розгляд',ct:1800,co:0,uptime:80,operators:2,shifts:1,inv_out:0},
+        {id:'si3',type:'inventory',x:465,y:240,label:'',qty:8,days:1},
+        {id:'sp3',type:'process',x:345,y:280,label:'Погодження',ct:900,co:0,uptime:90,operators:1,shifts:1,inv_out:0},
+        {id:'si4',type:'inventory',x:595,y:240,label:'',qty:5,days:0.5},
+        {id:'sp4',type:'process',x:490,y:280,label:'Виконання',ct:600,co:0,uptime:95,operators:2,shifts:1,inv_out:0},
+        {id:'sk1',type:'kaizen',x:240,y:390,label:'Автоматизація',note:''},
+      ];
+      CONNS=[
+        {from:'sv1',to:'sp1',type:'push'},{from:'sp1',to:'sp2',type:'push'},
+        {from:'sp2',to:'sp3',type:'push'},{from:'sp3',to:'sp4',type:'push'},
+        {from:'sp4',to:'sc1',type:'push'},
+        {from:'sc1',to:'spc',type:'info'},{from:'spc',to:'sp1',type:'info-e'},
+      ];
+      document.getElementById('mapName').value='Сервісний процес — Current State';
+    },
+    office:()=>{
+      ELS=[
+        {id:'ov1',type:'supplier',x:20,y:80,label:'Відділ-ініціатор',lead:0},
+        {id:'oc1',type:'customer',x:600,y:80,label:'Одержувач',demand:30},
+        {id:'opc',type:'production_control',x:280,y:20,label:'Керівник'},
+        {id:'oi1',type:'inventory',x:190,y:240,label:'',qty:20,days:2},
+        {id:'op1',type:'process',x:40,y:280,label:'Підготовка',ct:600,co:0,uptime:95,operators:1,shifts:1,inv_out:0},
+        {id:'oi2',type:'inventory',x:330,y:240,label:'',qty:12,days:3},
+        {id:'op2',type:'process',x:195,y:280,label:'Перевірка',ct:1200,co:0,uptime:85,operators:1,shifts:1,inv_out:0},
+        {id:'oi3',type:'inventory',x:465,y:240,label:'',qty:6,days:2},
+        {id:'op3',type:'process',x:345,y:280,label:'Підпис',ct:900,co:0,uptime:70,operators:1,shifts:1,inv_out:0},
+        {id:'oi4',type:'inventory',x:595,y:240,label:'',qty:3,days:0.5},
+        {id:'op4',type:'process',x:490,y:280,label:'Реєстрація',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
+        {id:'ok1',type:'kaizen',x:240,y:390,label:'Цифровізація',note:''},
+      ];
+      CONNS=[
+        {from:'ov1',to:'op1',type:'push'},{from:'op1',to:'op2',type:'push'},
+        {from:'op2',to:'op3',type:'push'},{from:'op3',to:'op4',type:'push'},
+        {from:'op4',to:'oc1',type:'push'},
+        {from:'oc1',to:'opc',type:'info'},{from:'opc',to:'op1',type:'info-e'},
+      ];
+      document.getElementById('mapName').value='Офісний процес — Current State';
+    },
+    warehouse:()=>{
+      ELS=[
+        {id:'wv1',type:'supplier',x:20,y:80,label:'Постачальник',lead:3},
+        {id:'wc1',type:'customer',x:600,y:80,label:'Виробництво',demand:600},
+        {id:'wpc',type:'production_control',x:280,y:20,label:'WMS система'},
+        {id:'wi1',type:'inventory',x:190,y:240,label:'',qty:5000,days:7},
+        {id:'wp1',type:'process',x:40,y:280,label:'Приймання',ct:40,co:0,uptime:96,operators:3,shifts:1,inv_out:0},
+        {id:'wi2',type:'inventory',x:330,y:240,label:'',qty:3000,days:5},
+        {id:'wp2',type:'process',x:195,y:280,label:'Розміщення',ct:25,co:0,uptime:98,operators:4,shifts:1,inv_out:0},
+        {id:'wi3',type:'inventory',x:465,y:240,label:'',qty:1500,days:3},
+        {id:'wp3',type:'process',x:345,y:280,label:'Комплектація',ct:35,co:10,uptime:90,operators:5,shifts:2,inv_out:0},
+        {id:'wi4',type:'inventory',x:595,y:240,label:'',qty:500,days:1},
+        {id:'wp4',type:'process',x:490,y:280,label:'Відвантаження',ct:20,co:0,uptime:97,operators:2,shifts:2,inv_out:0},
+        {id:'wt1',type:'truck',x:510,y:80,label:'Щодня'},
+        {id:'wsm',type:'supermarket',x:180,y:380,label:'Буферний склад',qty:1000,days:2},
+        {id:'wk1',type:'kaizen',x:230,y:475,label:'5S',note:''},
+      ];
+      CONNS=[
+        {from:'wv1',to:'wp1',type:'transport',note:'Щодня'},{from:'wp1',to:'wp2',type:'push'},
+        {from:'wp2',to:'wp3',type:'push'},{from:'wp3',to:'wp4',type:'push'},
+        {from:'wp4',to:'wc1',type:'push'},{from:'wt1',to:'wc1',type:'transport'},
+        {from:'wc1',to:'wpc',type:'info',note:'Замовлення'},{from:'wpc',to:'wp1',type:'info-e'},
+        {from:'wpc',to:'wp3',type:'info-e',note:'Pick list'},{from:'wpc',to:'wv1',type:'info-e'},
+      ];
+      document.getElementById('mapName').value='Складська логістика — Current State';
+    },
+  };
+  if(T[id]){
+    snapshot();
+    GROUPS=[];FS_ELS=[];FS_CONNS=[];selId=null;selGid=null;
+    T[id]();
+    IDC=200;
+    renderAll();showProps();
+    setTimeout(fitView,50);
+    toast('Шаблон завантажено','ok');
+  }
+}
+
+/* ══════════════════════════════════════
+   PRINT
+══════════════════════════════════════ */
+function printMap(){
+  // Before print: fit everything, then call print
+  const prevVx=vx,prevVy=vy,prevVz=vz;
+  fitView();
+  setTimeout(()=>{
+    window.print();
+    // restore after print dialog closes
+    setTimeout(()=>{vx=prevVx;vy=prevVy;vz=prevVz;applyVP()},500);
+  },200);
+}
 function saveToSheets(){
   // Check if GAS URL is configured
   const url=localStorage.getItem('vsm_gas_url')||'';
@@ -1195,12 +1510,21 @@ function renderConns(){
     lt.setAttribute('font-size','8');lt.setAttribute('fill',cfg.c);lt.setAttribute('font-weight','700');
     lt.setAttribute('font-family','Arial,sans-serif');lt.textContent=cfg.lbl;
     G.appendChild(lt);
-    // note/frequency label
+    // note/frequency label — pill badge
     if(c.note){
+      const noteW=Math.min(70, c.note.length*6+10);
+      const nlg=document.createElementNS('http://www.w3.org/2000/svg','g');
+      const nb=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      nb.setAttribute('x',lx-noteW/2);nb.setAttribute('y',ly+8);
+      nb.setAttribute('width',noteW);nb.setAttribute('height',13);
+      nb.setAttribute('rx','6');nb.setAttribute('fill',cfg.c);nb.setAttribute('opacity','0.15');
+      nlg.appendChild(nb);
       const nl=document.createElementNS('http://www.w3.org/2000/svg','text');
-      nl.setAttribute('x',lx);nl.setAttribute('y',ly+10);nl.setAttribute('text-anchor','middle');
-      nl.setAttribute('font-size','8');nl.setAttribute('fill',cfg.c);nl.setAttribute('font-family','Arial,sans-serif');
-      nl.textContent=c.note;G.appendChild(nl);
+      nl.setAttribute('x',lx);nl.setAttribute('y',ly+15);nl.setAttribute('text-anchor','middle');
+      nl.setAttribute('dominant-baseline','central');
+      nl.setAttribute('font-size','7.5');nl.setAttribute('fill',cfg.c);nl.setAttribute('font-family','Arial,sans-serif');nl.setAttribute('font-weight','600');
+      nl.textContent=c.note.length>10?c.note.slice(0,9)+'…':c.note;
+      nlg.appendChild(nl);G.appendChild(nlg);
     }
     // click to edit
     const hit=document.createElementNS('http://www.w3.org/2000/svg','rect');
@@ -1520,12 +1844,13 @@ function delConn(f,t){snapshot();CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));
 ══════════════════════════════════════ */
 function rtab(t){
   atab=t;
-  ['p','m','s','a'].forEach(k=>{
+  ['p','m','f','s','a'].forEach(k=>{
     document.getElementById('rp-'+k).style.display=k===t?'':'none';
     document.getElementById('rt-'+k).classList.toggle('on',k===t);
   });
   if(t==='m')updMetrics();
   if(t==='s')renderMaps();
+  if(t==='f')renderFSPanel();
 }
 
 const FLDS={
