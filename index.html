@@ -587,19 +587,21 @@ function renderElement(el) {
 
 function renderElements() {
   const layer = document.getElementById('elLayer');
+  if (!layer) return;
   layer.innerHTML = '';
   elements.forEach(el => layer.appendChild(renderElement(el)));
 }
 
 function renderConnections() {
   const layer = document.getElementById('connLayer');
+  if (!layer) return;
   layer.innerHTML = '';
   connections.forEach(conn => {
     const from = elements.find(e=>e.id===conn.from);
     const to   = elements.find(e=>e.id===conn.to);
     if (!from||!to) return;
     const fc = elCenter(from), tc = elCenter(to);
-    const color = CONN_COLORS[conn.type]||#888';
+    const color = CONN_COLORS[conn.type]||'#888';
     const dash  = conn.type==='pull'?'7 4':conn.type==='transport'?'3 3':'none';
     const G = svg('g');
     if (conn.type==='info') {
@@ -625,8 +627,8 @@ function palDragStart(e, type) { e.dataTransfer.setData('type', type); }
 function onDrop(e) {
   const type = e.dataTransfer.getData('type');
   if (!EL_DEFAULTS[type]) return;
-  const svg = document.getElementById('canvas');
-  const r = svg.getBoundingClientRect();
+  const svgEl = document.getElementById('canvas');
+  const r = svgEl.getBoundingClientRect();
   const x = snap(e.clientX - r.left);
   const y = snap(e.clientY - r.top);
   const el = { id: newId(), type, x, y, ...JSON.parse(JSON.stringify(EL_DEFAULTS[type])) };
@@ -749,8 +751,10 @@ function showConnectTypeModal(fromId, toId) {
 function switchRTab(t) {
   activeTab = t;
   ['props','metrics','maps','ai'].forEach(tab => {
-    document.getElementById('rpb-'+tab).style.display = tab===t ? '' : 'none';
-    document.getElementById('rtab-'+tab).classList.toggle('active', tab===t);
+    const section = document.getElementById('rpb-'+tab);
+    const trigger = document.getElementById('rtab-'+tab);
+    if (section) section.style.display = tab===t ? '' : 'none';
+    if (trigger) trigger.classList.toggle('active', tab===t);
   });
   if (t==='metrics') updateMetrics();
   if (t==='maps')    renderMapsList();
@@ -764,6 +768,7 @@ function addConn(from, to, type) {
 function showProps() {
   const msg  = document.getElementById('noSelMsg');
   const form = document.getElementById('propsForm');
+  if (!msg || !form) return;
   if (!selectedId) { msg.style.display=''; form.style.display='none'; return; }
   const el = elements.find(e=>e.id===selectedId);
   if (!el) { msg.style.display=''; form.style.display='none'; return; }
@@ -856,6 +861,8 @@ function getProcs()  { return elements.filter(e=>e.type==='process'); }
 function getInvs()   { return elements.filter(e=>e.type==='inventory'); }
 
 function updateMetrics() {
+  const container = document.getElementById('metricsContent');
+  if (!container) return;
   const procs   = getProcs();
   const invs    = getInvs();
   const takt    = getTakt();
@@ -869,7 +876,7 @@ function updateMetrics() {
   const effColor = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
   const effBg    = eff<10?'var(--danger-bg)':eff<30?'var(--warn-bg)':'var(--success-bg)';
 
-  document.getElementById('metricsContent').innerHTML = `
+  container.innerHTML = `
     <div class="metric-card">
       <div class="metric-lbl">Час доданої цінності (VA)</div>
       <div class="metric-val">${fmtT(vaTime)}</div>
@@ -918,6 +925,11 @@ function fmtT(s) {
 }
 
 function updateTimeline() {
+  const bar = document.getElementById('tlBar');
+  const ltLbl = document.getElementById('tlLT');
+  const effLbl = document.getElementById('tlEff');
+  if (!bar || !ltLbl || !effLbl) return;
+
   const vaTime  = getProcs().reduce((s,p)=>s+p.ct,0);
   const invDays = getInvs().reduce((s,i)=>s+i.days,0);
   const nvaTime = invDays*28800;
@@ -925,12 +937,13 @@ function updateTimeline() {
   const eff     = lt>0?Math.round(vaTime/lt*100):0;
   const vaPct   = lt>0?Math.max(2,Math.round(vaTime/lt*100)):5;
   const nvaPct  = 100-vaPct;
-  document.getElementById('tlBar').innerHTML = `
+
+  bar.innerHTML = `
     <div class="tl-va" style="width:${vaPct}%"><span class="tl-bar-lbl">${eff>15?'VA':''}</span></div>
     <div class="tl-nva" style="width:${nvaPct}%"><span class="tl-bar-lbl">${nvaPct>15?'NVA':''}</span></div>`;
-  document.getElementById('tlLT').innerHTML  = `LT: <strong>${fmtT(lt)}</strong>`;
-  document.getElementById('tlEff').style.color = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
-  document.getElementById('tlEff').textContent = eff+'%';
+  ltLbl.innerHTML  = `LT: <strong>${fmtT(lt)}</strong>`;
+  effLbl.style.color = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
+  effLbl.textContent = eff+'%';
 }
 
 /* ══════════════════════════════════════════
@@ -941,15 +954,16 @@ function getState() {
 }
 
 function loadState(state) {
+  if (!state) return;
   elements    = state.elements    || [];
   connections = state.connections || [];
-  document.getElementById('mapName').value = state.name || 'VSM карта';
+  const nameInput = document.getElementById('mapName');
+  if (nameInput) nameInput.value = state.name || 'VSM карта';
   idCnt       = elements.length + 1;
   selectedId  = null;
   renderAll(); showProps();
 }
 
-// LocalStorage — named maps list
 function getAllMaps() {
   try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; }
 }
@@ -973,9 +987,10 @@ function deleteMap(name) {
 }
 
 function renderMapsList() {
+  const mc = document.getElementById('mapsContent');
+  if (!mc) return;
   const maps = getAllMaps();
   const keys = Object.keys(maps);
-  const mc = document.getElementById('mapsContent');
   if (!keys.length) { mc.innerHTML='<div class="empty-maps"><i class="ti ti-folder-open" style="font-size:28px;display:block;margin-bottom:8px;opacity:.35"></i>Немає збережених карт.<br>Натисніть «Зберегти» у шапці.</div>'; return; }
   mc.innerHTML = `
     <div class="prop-group">
@@ -995,7 +1010,6 @@ function renderMapsList() {
     }).join('');
 }
 
-// JSON export/import
 function exportJSON() {
   const json = JSON.stringify(getState(), null, 2);
   const a = document.createElement('a');
@@ -1020,10 +1034,6 @@ function importJSON(e) {
 /* ══════════════════════════════════════════
    AI
 ══════════════════════════════════════════ */
-window.addEventListener('load', ()=>{
-  const key = localStorage.getItem('vsm_api_key')||'';
-  if (key) document.getElementById('aiKeyInput').value = key;
-});
 function saveApiKey() {
   const k = document.getElementById('aiKeyInput').value.trim();
   localStorage.setItem('vsm_api_key', k);
@@ -1059,7 +1069,7 @@ ${procs.map(p=>`  • ${p.label}: CT=${p.ct}s, C/O=${p.co}s, Uptime=${p.uptime}%
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1200,
+        model:'claude-3-5-sonnet-20241022', max_tokens:1200,
         system:`Ти старший Lean-консультант з 15 роками досвіду VSM (Value Stream Mapping). Аналізуй карти потоку та надавай конкретні, практичні рекомендації. Відповідай виключно українською. Структуруй відповідь чітко:
 1. Загальна оцінка (1-2 речення)
 2. Ключові проблеми (3-5 пунктів з конкретними даними)
@@ -1095,7 +1105,7 @@ function showSettings() {
     </div>
     <div class="prop-group">
       <div class="prop-label">Версія</div>
-      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.0 · BPI Group · GitHub Pages</p>
+      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.0 · BPI Group</p>
     </div>
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeModal()">Закрити</button>
@@ -1129,7 +1139,8 @@ function loadDemo() {
     {from:'d_cus', to:'d_p1',  type:'info'},
     {from:'d_cus', to:'d_sup', type:'info'},
   ];
-  document.getElementById('mapName').value = 'Виробнича лінія — поточний стан';
+  const nameInput = document.getElementById('mapName');
+  if (nameInput) nameInput.value = 'Виробнича лінія — поточний стан';
   idCnt = 50; selectedId = null;
   renderAll(); showProps();
   toast('Приклад завантажено','ok');
@@ -1141,13 +1152,17 @@ function loadDemo() {
 function openModal(html) {
   const ov = document.getElementById('modalOverlay');
   const m  = document.getElementById('modal');
+  if (!ov || !m) return;
   m.innerHTML = html;
   ov.style.display=''; m.style.display='';
 }
 function closeModal(e) {
-  if (!e || e.target===document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').style.display='none';
-    document.getElementById('modal').style.display='none';
+  const ov = document.getElementById('modalOverlay');
+  const m  = document.getElementById('modal');
+  if (!ov || !m) return;
+  if (!e || e.target===ov) {
+    ov.style.display='none';
+    m.style.display='none';
   }
 }
 
@@ -1172,6 +1187,7 @@ function showSaveMapsModal() {
 ══════════════════════════════════════════ */
 function toast(msg, type='') {
   const a = document.getElementById('toastArea');
+  if (!a) return;
   const t = document.createElement('div');
   t.className = 'toast '+(type||'');
   t.textContent = msg;
@@ -1182,15 +1198,31 @@ function toast(msg, type='') {
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-renderAll();
-showProps();
-// Load last saved if exists
-const _maps = getAllMaps();
-const _keys = Object.keys(_maps);
-if (_keys.length) {
-  const last = _keys[_keys.length-1];
-  loadState(_maps[last]);
-}
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    // Встановлення API ключа в інпут якщо є
+    const key = localStorage.getItem('vsm_api_key')||'';
+    const keyInput = document.getElementById('aiKeyInput');
+    if (key && keyInput) keyInput.value = key;
+
+    renderAll();
+    showProps();
+    
+    // Безпечне автоматичне завантаження останньої карти
+    const _maps = getAllMaps();
+    if (_maps && typeof _maps === 'object') {
+      const _keys = Object.keys(_maps);
+      if (_keys.length) {
+        const last = _keys[_keys.length - 1];
+        if (_maps[last]) {
+          loadState(_maps[last]);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Помилка ініціалізації конструктора VSM:", err);
+  }
+});
 </script>
 </body>
 </html>
