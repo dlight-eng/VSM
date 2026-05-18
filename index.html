@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSM Constructor — BPI Group</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f6f3;
+  --bg2: #ffffff;
+  --bg3: #efefeb;
+  --text: #1a1a18;
+  --text2: #5f5e5a;
+  --text3: #9b9a96;
+  --border: rgba(0,0,0,0.12);
+  --border2: rgba(0,0,0,0.22);
+  --accent: #185fa5;
+  --accent-bg: #e6f1fb;
+  --success: #0f6e56;
+  --success-bg: #e1f5ee;
+  --warn: #ba7517;
+  --warn-bg: #faeeda;
+  --danger: #a32d2d;
+  --danger-bg: #fcebeb;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a18; --bg2: #242422; --bg3: #2e2e2b;
+    --text: #e8e6df; --text2: #9b9a96; --text3: #5f5e5a;
+    --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+    --accent-bg: #0c2d4a; --success-bg: #04201a;
+    --warn-bg: #2a1c05; --danger-bg: #2a0d0d;
+  }
+}
+html, body { height: 100%; overflow: hidden; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+/* ─── Layout ─── */
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ─── Header ─── */
+.header {
+  height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  background: var(--bg2); border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0; user-select: none;
+}
+.logo { font-weight: 600; font-size: 13px; letter-spacing: -0.02em; }
+.logo span { color: var(--accent); }
+.hdr-sep { width: 0.5px; height: 20px; background: var(--border); margin: 0 4px; }
+.hdr-btn {
+  display: flex; align-items: center; gap: 5px; padding: 4px 9px;
+  border: 0.5px solid var(--border); border-radius: var(--radius);
+  background: none; color: var(--text); cursor: pointer; font-size: 12px;
+  transition: background .12s, border-color .12s; white-space: nowrap;
+}
+.hdr-btn:hover { background: var(--bg3); border-color: var(--border2); }
+.hdr-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.hdr-btn i { font-size: 15px; }
+.hdr-spacer { flex: 1; }
+.map-name-input {
+  font-size: 13px; font-weight: 500; background: none; border: none; color: var(--text);
+  border-bottom: 1px dashed var(--border); padding: 2px 4px; width: 200px; text-align: center;
+}
+.map-name-input:focus { outline: none; border-bottom-color: var(--accent); }
+.map-name-input::placeholder { color: var(--text3); }
+
+/* ─── Main area ─── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ─── Sidebar (palette) ─── */
+.sidebar {
+  width: 168px; flex-shrink: 0; background: var(--bg2);
+  border-right: 0.5px solid var(--border); display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-section { padding: 10px 8px 4px; }
+.sidebar-title {
+  font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text3); padding: 0 2px 6px;
+}
+.pal-item {
+  display: flex; align-items: center; gap: 7px; padding: 6px 8px;
+  border: 0.5px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 3px; cursor: grab; background: var(--bg2); font-size: 11px;
+  transition: border-color .12s, background .12s;
+}
+.pal-item:hover { border-color: var(--border2); background: var(--bg3); }
+.pal-item:active { cursor: grabbing; }
+.pal-icon { width: 30px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ─── Canvas ─── */
+.canvas-wrap {
+  flex: 1; position: relative; overflow: hidden; background: var(--bg);
+  cursor: default;
+}
+#canvas { width: 100%; height: 100%; }
+
+/* ─── Right panel ─── */
+.rpanel {
+  width: 248px; flex-shrink: 0; background: var(--bg2);
+  border-left: 0.5px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
+}
+.rtabs { display: flex; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+.rtab {
+  flex: 1; padding: 9px 4px; font-size: 11px; font-weight: 500; text-align: center;
+  cursor: pointer; border: none; background: none; color: var(--text2);
+  border-bottom: 2px solid transparent; transition: color .12s;
+}
+.rtab.active { color: var(--text); border-bottom-color: var(--accent); }
+.rpanel-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+/* Props */
+.prop-group { margin-bottom: 10px; }
+.prop-label { font-size: 10px; color: var(--text2); margin-bottom: 3px; font-weight: 500; }
+.prop-input {
+  width: 100%; font-size: 12px; padding: 5px 7px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); font-family: var(--font);
+}
+.prop-input:focus { outline: none; border-color: var(--accent); }
+.prop-row { display: flex; gap: 6px; }
+.prop-row .prop-group { flex: 1; }
+.prop-badge {
+  display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 5px;
+  border-radius: 3px; margin-left: 4px; text-transform: uppercase; letter-spacing: .04em;
+}
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-ok { background: var(--success-bg); color: var(--success); }
+
+.section-head {
+  font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text3); padding: 8px 0 5px; border-top: 0.5px solid var(--border); margin-top: 4px;
+}
+.no-sel { text-align: center; padding: 30px 0; color: var(--text3); font-size: 12px; }
+.no-sel i { font-size: 28px; display: block; margin-bottom: 8px; opacity: .35; }
+
+.del-btn {
+  width: 100%; padding: 5px; font-size: 11px; color: var(--danger); margin-top: 10px;
+  border: 0.5px solid var(--danger); border-radius: var(--radius);
+  background: none; cursor: pointer;
+}
+.del-btn:hover { background: var(--danger-bg); }
+
+/* Metrics */
+.metric-card {
+  border-radius: var(--radius); padding: 10px 11px; margin-bottom: 8px;
+  border: 0.5px solid var(--border);
+}
+.metric-lbl { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+.metric-val { font-size: 22px; font-weight: 500; line-height: 1.2; margin-top: 2px; }
+.metric-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.proc-row { display: flex; align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; }
+.proc-row:hover { background: var(--bg3); }
+.proc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* AI */
+.ai-run-btn {
+  width: 100%; padding: 8px; font-size: 12px; font-weight: 500;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg3); color: var(--text); cursor: pointer; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background .12s;
+}
+.ai-run-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.ai-run-btn:disabled { opacity: .5; cursor: not-allowed; }
+.ai-out {
+  font-size: 12px; line-height: 1.65; color: var(--text2);
+  background: var(--bg3); border-radius: var(--radius); padding: 10px 11px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.ai-key-row { display: flex; gap: 5px; margin-bottom: 8px; }
+.ai-key-input { flex: 1; font-size: 11px; padding: 4px 7px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+.ai-save-btn { font-size: 11px; padding: 4px 8px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg3); color: var(--text); cursor: pointer; }
+.ai-save-btn:hover { background: var(--success-bg); color: var(--success); }
+.ai-hint { font-size: 10px; color: var(--text3); line-height: 1.5; margin-bottom: 8px; }
+
+/* Maps list */
+.maps-list { }
+.map-row {
+  display: flex; align-items: center; gap: 6px; padding: 5px 7px;
+  border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 4px;
+  cursor: pointer; transition: border-color .12s, background .12s;
+}
+.map-row:hover { border-color: var(--border2); background: var(--bg3); }
+.map-row-name { flex: 1; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.map-row-date { font-size: 10px; color: var(--text3); }
+.map-del-btn { font-size: 13px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 3px; }
+.map-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
+.empty-maps { font-size: 12px; color: var(--text3); text-align: center; padding: 20px 0; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal {
+  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-lg);
+  padding: 20px 22px; width: 340px; max-width: 95vw;
+}
+.modal-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+.modal-btn {
+  padding: 6px 14px; font-size: 12px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text); cursor: pointer;
+}
+.modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.modal-btn:hover { opacity: .85; }
+.modal-opts { display: flex; flex-direction: column; gap: 8px; }
+.modal-opt {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border: 0.5px solid var(--border); border-radius: var(--radius); cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.modal-opt:hover { border-color: var(--accent); background: var(--accent-bg); }
+.modal-opt i { font-size: 20px; color: var(--accent); }
+.modal-opt-title { font-size: 12px; font-weight: 500; }
+.modal-opt-sub { font-size: 11px; color: var(--text2); }
+
+/* Toasts */
+.toast-area { position: fixed; bottom: 16px; right: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 6px; }
+.toast {
+  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius);
+  padding: 8px 14px; font-size: 12px; min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12); animation: toastIn .2s ease;
+}
+.toast.ok { border-left: 3px solid var(--success); }
+.toast.err { border-left: 3px solid var(--danger); }
+@keyframes toastIn { from { opacity:0; transform: translateY(8px); } }
+
+/* Spinner */
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Connect mode cursor */
+.canvas-wrap.connect-mode { cursor: crosshair; }
+
+/* Timeline bar */
+.timeline { 
+  height: 48px; background: var(--bg2); border-top: 0.5px solid var(--border);
+  display: flex; align-items: center; padding: 0 12px; gap: 8px;
+  flex-shrink: 0; overflow: hidden;
+}
+.tl-label { font-size: 10px; color: var(--text3); white-space: nowrap; }
+.tl-bar-wrap { flex: 1; height: 16px; border-radius: 3px; overflow: hidden; display: flex; }
+.tl-va { background: #1d9e75; height: 100%; display: flex; align-items: center; justify-content: center; }
+.tl-nva { background: #e24b4a; height: 100%; display: flex; align-items: center; justify-content: center; }
+.tl-bar-lbl { font-size: 9px; color: #fff; font-weight: 600; white-space: nowrap; padding: 0 4px; }
+.tl-stat { font-size: 11px; white-space: nowrap; }
+.tl-stat strong { font-weight: 600; }
+.tl-eff { font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ─── HEADER ─── -->
+  <div class="header">
+    <div class="logo">VSM <span>Constructor</span></div>
+    <div class="hdr-sep"></div>
+    <input class="map-name-input" id="mapName" type="text" value="Нова карта VSM" placeholder="Назва карти…">
+    <div class="hdr-spacer"></div>
+
+    <button class="hdr-btn active" id="btn-select" onclick="setTool('select')" title="Вибір (V)">
+      <i class="ti ti-pointer"></i> Вибір
+    </button>
+    <button class="hdr-btn" id="btn-connect" onclick="setTool('connect')" title="З'єднання (C)">
+      <i class="ti ti-arrow-right"></i> З'єднати
+    </button>
+
+    <div class="hdr-sep"></div>
+
+    <button class="hdr-btn" onclick="showSaveMapsModal()" title="Зберегти / Відкрити карти">
+      <i class="ti ti-folder"></i> Карти
+    </button>
+    <button class="hdr-btn" onclick="saveToLocal()" title="Швидке збереження">
+      <i class="ti ti-device-floppy"></i> Зберегти
+    </button>
+    <button class="hdr-btn" onclick="exportJSON()" title="Експорт JSON">
+      <i class="ti ti-file-export"></i> JSON
+    </button>
+    <button class="hdr-btn" id="importBtn" onclick="document.getElementById('importFile').click()" title="Імпорт JSON">
+      <i class="ti ti-file-import"></i>
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+
+    <div class="hdr-sep"></div>
+    <button class="hdr-btn" onclick="loadDemo()" title="Завантажити приклад">
+      <i class="ti ti-template"></i> Приклад
+    </button>
+    <button class="hdr-btn" onclick="clearCanvas()" title="Очистити полотно">
+      <i class="ti ti-trash"></i>
+    </button>
+    <button class="hdr-btn" onclick="showSettings()" title="Налаштування">
+      <i class="ti ti-settings"></i>
+    </button>
+  </div>
+
+  <!-- ─── MAIN ─── -->
+  <div class="main">
+
+    <!-- Palette -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Елементи</div>
+
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'supplier')">
+          <div class="pal-icon">
+            <svg width="30" height="22" viewBox="0 0 30 22"><rect x="2" y="2" width="26" height="18" rx="9" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9" y1="11" x2="21" y2="11" stroke="currentColor" stroke-width="1.2"/><line x1="15" y1="5" x2="15" y2="17" stroke="currentColor" stroke-width="1.2"/></svg>
+          </div>
+          Постачальник
+        </div>
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'process')">
+          <div class="pal-icon">
+            <svg width="30" height="22" viewBox="0 0 30 22"><rect x="2" y="2" width="26" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+          Процес
+        </div>
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'inventory')">
+          <div class="pal-icon">
+            <svg width="30" height="22" viewBox="0 0 30 22"><polygon points="15,3 28,19 2,19" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+          Запаси / WIP
+        </div>
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'customer')">
+          <div class="pal-icon">
+            <svg width="30" height="22" viewBox="0 0 30 22"><rect x="2" y="2" width="26" height="18" rx="9" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9" y1="11" x2="21" y2="11" stroke="currentColor" stroke-width="1.2"/></svg>
+          </div>
+          Клієнт
+        </div>
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'kaizen')">
+          <div class="pal-icon">
+            <svg width="30" height="22" viewBox="0 0 30 22"><circle cx="15" cy="11" r="8" fill="none" stroke="#e85d30" stroke-width="1.4" stroke-dasharray="3 2"/><text x="15" y="15" font-size="9" text-anchor="middle" fill="#e85d30" font-weight="700">K</text></svg>
+          </div>
+          Kaizen Burst
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="border-top: 0.5px solid var(--border); margin-top: 4px; padding-top: 10px;">
+        <div class="sidebar-title">З'єднання</div>
+        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
+          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#444" stroke-width="1.5"/><polygon points="24,3 30,7 24,11" fill="#444"/></svg>
+          Push потік
+        </div>
+        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
+          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#1d9e75" stroke-width="1.5" stroke-dasharray="5 3"/><polygon points="24,3 30,7 24,11" fill="#1d9e75"/></svg>
+          Pull потік
+        </div>
+        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
+          <svg width="30" height="14" viewBox="0 0 30 14"><path d="M2 7 Q15 1 28 7" fill="none" stroke="#185fa5" stroke-width="1.5"/><polygon points="24,3 30,7 24,11" fill="#185fa5"/></svg>
+          Інфо потік
+        </div>
+        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
+          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#ba7517" stroke-width="1.5" stroke-dasharray="2 2"/><polygon points="24,3 30,7 24,11" fill="#ba7517"/></svg>
+          Зовн. транспорт
+        </div>
+        <p style="font-size:10px; color:var(--text3); padding:5px 2px; line-height:1.5;">
+          Використай інструмент «З'єднати», потім клацни два елементи по черзі.
+        </p>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrap" id="canvasWrap"
+      ondragover="event.preventDefault()"
+      ondrop="onDrop(event)">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"
+        onmousedown="svgMouseDown(event)"
+        onmousemove="svgMouseMove(event)"
+        onmouseup="svgMouseUp(event)"
+        oncontextmenu="return false">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0L0 0 0 20" fill="none" stroke="var(--border)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect id="gridBg" width="100%" height="100%" fill="url(#grid)"/>
+        <g id="connLayer"></g>
+        <g id="elLayer"></g>
+        <g id="tempArrow" style="display:none">
+          <line id="tempLine" stroke="#185fa5" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Right panel -->
+    <div class="rpanel">
+      <div class="rtabs">
+        <button class="rtab active" id="rtab-props" onclick="switchRTab('props')">Параметри</button>
+        <button class="rtab" id="rtab-metrics" onclick="switchRTab('metrics')">Метрики</button>
+        <button class="rtab" id="rtab-maps" onclick="switchRTab('maps')">Карти</button>
+        <button class="rtab" id="rtab-ai" onclick="switchRTab('ai')">AI</button>
+      </div>
+      <div class="rpanel-body" id="rpb-props">
+        <div class="no-sel" id="noSelMsg"><i class="ti ti-hand-finger"></i>Виберіть елемент<br>для редагування</div>
+        <div id="propsForm" style="display:none"></div>
+      </div>
+      <div class="rpanel-body" id="rpb-metrics" style="display:none">
+        <div id="metricsContent"></div>
+      </div>
+      <div class="rpanel-body" id="rpb-maps" style="display:none">
+        <div id="mapsContent"></div>
+      </div>
+      <div class="rpanel-body" id="rpb-ai" style="display:none">
+        <div class="prop-label" style="margin-bottom:4px;">Claude API ключ</div>
+        <div class="ai-key-row">
+          <input class="ai-key-input" type="password" id="aiKeyInput" placeholder="sk-ant-…">
+          <button class="ai-save-btn" onclick="saveApiKey()"><i class="ti ti-check"></i></button>
+        </div>
+        <p class="ai-hint">Ключ зберігається тільки в браузері (localStorage). Отримати: <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p>
+        <button class="ai-run-btn" id="aiRunBtn" onclick="runAi()">
+          <i class="ti ti-sparkles"></i> Проаналізувати потік
+        </button>
+        <div id="aiOut" style="display:none" class="ai-out"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline" id="timeline">
+    <span class="tl-label">Lead Time</span>
+    <div class="tl-bar-wrap" id="tlBar">
+      <div class="tl-va" style="width:10%"><span class="tl-bar-lbl">VA</span></div>
+      <div class="tl-nva" style="width:90%"><span class="tl-bar-lbl">NVA</span></div>
+    </div>
+    <span class="tl-stat" id="tlLT">—</span>
+    <span class="tl-eff" id="tlEff" style="color:var(--text3)">—</span>
+  </div>
+
+</div>
+
+<!-- Modals -->
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModal(event)"></div>
+<div id="modal" class="modal" style="display:none"></div>
+
+<!-- Toast area -->
+<div class="toast-area" id="toastArea"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let elements = [];
+let connections = [];
+let selectedId = null;
+let currentTool = 'select';
+let dragging = null;
+let dragOff = {x:0,y:0};
+let connectStart = null;
+let idCnt = 1;
+let activeTab = 'props';
+const GRID = 20;
+
+/* ══════════════════════════════════════════
+   ELEMENT DEFINITIONS
+══════════════════════════════════════════ */
+const EL_DEFAULTS = {
+  process:   { label:'Процес',        ct:60,  co:30,  uptime:85, operators:1, shifts:1 },
+  inventory: { label:'Запаси',        qty:500, days:2 },
+  customer:  { label:'Клієнт',        demand:500 },
+  supplier:  { label:'Постачальник',  lead:5 },
+  kaizen:    { label:'Kaizen',        note:'Покращення' },
+};
+
+const EL_COLORS = {
+  process:  { fill:'#e6f1fb', stroke:'#185fa5', text:'#0c447c' },
+  inventory:{ fill:'#faeeda', stroke:'#ba7517', text:'#633806' },
+  customer: { fill:'#eaf3de', stroke:'#3b6d11', text:'#27500a' },
+  supplier: { fill:'#eaf3de', stroke:'#3b6d11', text:'#27500a' },
+  kaizen:   { fill:'#faece7', stroke:'#993c1d', text:'#4a1b0c' },
+};
+
+const CONN_COLORS = { push:'#444441', pull:'#1d9e75', info:'#185fa5', transport:'#ba7517' };
+const CONN_NAMES  = { push:'Push',    pull:'Pull',    info:'Інфо',   transport:'Транспорт' };
+
+function elBBox(el) {
+  const sizes = { process:{w:120,h:72}, inventory:{w:90,h:70}, customer:{w:96,h:58}, supplier:{w:96,h:58}, kaizen:{w:56,h:56} };
+  const s = sizes[el.type] || {w:100,h:60};
+  return { x:el.x, y:el.y, w:s.w, h:s.h };
+}
+function elCenter(el) { const b=elBBox(el); return {x:b.x+b.w/2, y:b.y+b.h/2}; }
+
+/* ══════════════════════════════════════════
+   ID
+══════════════════════════════════════════ */
+function newId() { return 'e'+Date.now()+(idCnt++); }
+
+/* ══════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════ */
+function renderAll() {
+  renderConnections();
+  renderElements();
+  updateTimeline();
+  if (activeTab === 'metrics') updateMetrics();
+  if (activeTab === 'maps') renderMapsList();
+}
+
+function svg(tag, attrs, inner) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs||{})) el.setAttribute(k,v);
+  if (inner) el.innerHTML = inner;
+  return el;
+}
+function txt(x,y,content,attrs) {
+  const t = svg('text', {x,y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Inter,system-ui,sans-serif',...(attrs||{})});
+  t.textContent = content;
+  return t;
+}
+
+function isBottleneck(el) {
+  if (el.type !== 'process') return false;
+  const procs = elements.filter(e=>e.type==='process');
+  if (procs.length < 2) return false;
+  return el.ct === Math.max(...procs.map(p=>p.ct));
+}
+function getTakt() {
+  const c = elements.find(e=>e.type==='customer');
+  if (!c||!c.demand) return 0;
+  return Math.round(28800/c.demand);
+}
+
+function renderElement(el) {
+  const G = svg('g', { id:'g_'+el.id, style:'cursor:'+(currentTool==='connect'?'crosshair':'move') });
+  G.addEventListener('mousedown', e=>elMouseDown(e,el.id));
+
+  const c = EL_COLORS[el.type] || EL_COLORS.process;
+  const bn = isBottleneck(el);
+  const tk = getTakt();
+
+  if (el.type === 'process') {
+    const strokeC = bn ? '#a32d2d' : c.stroke;
+    const strokeW = bn ? 2 : 1;
+    G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:72,rx:4,fill:c.fill,stroke:strokeC,'stroke-width':strokeW}));
+    if (bn) G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:5,rx:2,fill:'#e24b4a'}));
+    G.appendChild(txt(el.x+60, el.y+13, el.label, {'font-size':'11','font-weight':'600',fill:c.text}));
+    G.appendChild(svg('line',{x1:el.x+6,y1:el.y+22,x2:el.x+114,y2:el.y+22,stroke:c.stroke,'stroke-width':'0.5'}));
+    const rows = [
+      `CT: ${el.ct}s    C/O: ${el.co}s`,
+      `Uptime: ${el.uptime}%    Op: ${el.operators}`,
+      `Зміни: ${el.shifts}${bn?' ◀ ВУЗЬКЕ':tk&&el.ct>tk?' ▲ > такту':''}`,
+    ];
+    rows.forEach((r,i)=>{
+      const t = svg('text',{x:el.x+7,y:el.y+31+i*13,'font-size':'9','font-family':'Inter,system-ui,sans-serif',fill: i===2&&bn?'#a32d2d':c.text});
+      t.textContent=r; G.appendChild(t);
+    });
+  } else if (el.type === 'inventory') {
+    G.appendChild(svg('polygon',{points:`${el.x+45},${el.y+4} ${el.x+90},${el.y+56} ${el.x},${el.y+56}`,fill:c.fill,stroke:c.stroke,'stroke-width':'1'}));
+    G.appendChild(txt(el.x+45,el.y+38,el.qty.toString(),{'font-size':'11','font-weight':'600',fill:c.text}));
+    G.appendChild(txt(el.x+45,el.y+68,el.days+' дн',{'font-size':'9',fill:c.text}));
+  } else if (el.type === 'customer' || el.type === 'supplier') {
+    G.appendChild(svg('rect',{x:el.x,y:el.y,width:96,height:58,rx:29,fill:c.fill,stroke:c.stroke,'stroke-width':'1'}));
+    G.appendChild(txt(el.x+48,el.y+19,el.label,{'font-size':'11','font-weight':'600',fill:c.text}));
+    G.appendChild(svg('line',{x1:el.x+12,y1:el.y+28,x2:el.x+84,y2:el.y+28,stroke:c.stroke,'stroke-width':'0.5'}));
+    if (el.type==='customer') {
+      G.appendChild(txt(el.x+48,el.y+42,el.demand+' шт/зм',{'font-size':'9',fill:c.text}));
+    } else {
+      G.appendChild(txt(el.x+48,el.y+42,'Плечо: '+el.lead+' дн',{'font-size':'9',fill:c.text}));
+    }
+    if (el.type==='supplier') {
+      G.appendChild(txt(el.x+24,el.y+13,'+',{'font-size':'14','font-weight':'700',fill:c.text}));
+    }
+  } else if (el.type === 'kaizen') {
+    G.innerHTML = `
+      <circle cx="${el.x+28}" cy="${el.y+28}" r="26" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.3" stroke-dasharray="4 2"/>
+      <text x="${el.x+28}" y="${el.y+21}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="${c.text}" font-family="Inter,sans-serif">⚡</text>
+      <text x="${el.x+28}" y="${el.y+34}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="${c.text}" font-family="Inter,sans-serif">${el.label.slice(0,9)}</text>
+    `;
+  }
+
+  // selection ring
+  if (selectedId === el.id) {
+    const b = elBBox(el);
+    const ring = svg('rect',{x:b.x-4,y:b.y-4,width:b.w+8,height:b.h+8,rx:8,fill:'none',stroke:'#185fa5','stroke-width':'1.5','stroke-dasharray':'5 3'});
+    G.insertBefore(ring, G.firstChild);
+  }
+  return G;
+}
+
+function renderElements() {
+  const layer = document.getElementById('elLayer');
+  layer.innerHTML = '';
+  elements.forEach(el => layer.appendChild(renderElement(el)));
+}
+
+function renderConnections() {
+  const layer = document.getElementById('connLayer');
+  layer.innerHTML = '';
+  connections.forEach(conn => {
+    const from = elements.find(e=>e.id===conn.from);
+    const to   = elements.find(e=>e.id===conn.to);
+    if (!from||!to) return;
+    const fc = elCenter(from), tc = elCenter(to);
+    const color = CONN_COLORS[conn.type]||'#888';
+    const dash  = conn.type==='pull'?'7 4':conn.type==='transport'?'3 3':'none';
+    const G = svg('g');
+    if (conn.type==='info') {
+      const mx=(fc.x+tc.x)/2, my=Math.min(fc.y,tc.y)-35;
+      G.appendChild(svg('path',{d:`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`,fill:'none',stroke:color,'stroke-width':'1.5','stroke-dasharray':'5 3','marker-end':'url(#arr)'}));
+    } else {
+      G.appendChild(svg('line',{x1:fc.x,y1:fc.y,x2:tc.x,y2:tc.y,stroke:color,'stroke-width':'1.5','stroke-dasharray':dash,'marker-end':'url(#arr)'}));
+    }
+    // label
+    const mx2=(fc.x+tc.x)/2, my2=(fc.y+tc.y)/2-9;
+    const lt = svg('text',{x:mx2,y:my2,'text-anchor':'middle','font-size':'9','font-family':'Inter,sans-serif',fill:color});
+    lt.textContent = CONN_NAMES[conn.type]||'';
+    G.appendChild(lt);
+    layer.appendChild(G);
+  });
+}
+
+/* ══════════════════════════════════════════
+   INTERACTIONS
+══════════════════════════════════════════ */
+function palDragStart(e, type) { e.dataTransfer.setData('type', type); }
+
+function onDrop(e) {
+  const type = e.dataTransfer.getData('type');
+  if (!EL_DEFAULTS[type]) return;
+  const svg = document.getElementById('canvas');
+  const r = svg.getBoundingClientRect();
+  const x = snap(e.clientX - r.left);
+  const y = snap(e.clientY - r.top);
+  const el = { id: newId(), type, x, y, ...JSON.parse(JSON.stringify(EL_DEFAULTS[type])) };
+  elements.push(el);
+  renderAll();
+  selectEl(el.id);
+}
+
+function snap(v) { return Math.round(v/GRID)*GRID; }
+
+function elMouseDown(e, id) {
+  e.stopPropagation();
+  if (currentTool === 'connect') {
+    if (!connectStart) {
+      connectStart = id;
+      document.getElementById('tempArrow').style.display='';
+    } else if (connectStart !== id) {
+      showConnectTypeModal(connectStart, id);
+      connectStart = null;
+      document.getElementById('tempArrow').style.display='none';
+      renderElements();
+    }
+    return;
+  }
+  selectEl(id);
+  dragging = id;
+  const el = elements.find(e=>e.id===id);
+  const svgR = document.getElementById('canvas').getBoundingClientRect();
+  dragOff = { x: e.clientX - svgR.left - el.x, y: e.clientY - svgR.top - el.y };
+}
+
+function svgMouseDown(e) {
+  if (e.target.id==='gridBg' || e.target===document.getElementById('canvas')) {
+    selectedId = null;
+    connectStart = null;
+    document.getElementById('tempArrow').style.display='none';
+    renderAll();
+    showProps();
+  }
+}
+
+function svgMouseMove(e) {
+  const r = document.getElementById('canvas').getBoundingClientRect();
+  const mx = e.clientX-r.left, my = e.clientY-r.top;
+  if (connectStart) {
+    const from = elements.find(el=>el.id===connectStart);
+    if (from) {
+      const fc = elCenter(from);
+      const tl = document.getElementById('tempLine');
+      tl.setAttribute('x1',fc.x); tl.setAttribute('y1',fc.y);
+      tl.setAttribute('x2',mx);   tl.setAttribute('y2',my);
+    }
+  }
+  if (dragging) {
+    const el = elements.find(e=>e.id===dragging);
+    if (el) { el.x=snap(mx-dragOff.x); el.y=snap(my-dragOff.y); renderAll(); }
+  }
+}
+
+function svgMouseUp() { dragging=null; }
+
+function selectEl(id) {
+  selectedId=id; renderAll(); showProps();
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  elements    = elements.filter(e=>e.id!==selectedId);
+  connections = connections.filter(c=>c.from!==selectedId&&c.to!==selectedId);
+  selectedId  = null;
+  renderAll(); showProps();
+}
+
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  if (e.key==='v'||e.key==='V') setTool('select');
+  if (e.key==='c'||e.key==='C') setTool('connect');
+  if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
+  if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); saveToLocal(); }
+});
+
+/* ══════════════════════════════════════════
+   TOOLS
+══════════════════════════════════════════ */
+function setTool(t) {
+  currentTool = t;
+  connectStart = null;
+  document.getElementById('tempArrow').style.display='none';
+  document.getElementById('btn-select').classList.toggle('active', t==='select');
+  document.getElementById('btn-connect').classList.toggle('active', t==='connect');
+  document.getElementById('canvasWrap').classList.toggle('connect-mode', t==='connect');
+  renderElements();
+}
+
+/* ══════════════════════════════════════════
+   CONNECT MODAL
+══════════════════════════════════════════ */
+function showConnectTypeModal(fromId, toId) {
+  const types = [
+    { key:'push',      icon:'ti-arrow-right',    label:'Push потік',        sub:'Матеріальний потік (виштовхування)' },
+    { key:'pull',      icon:'ti-arrow-left',      label:'Pull потік',        sub:'Матеріальний потік (витягування)' },
+    { key:'info',      icon:'ti-message-circle',  label:'Інформаційний потік', sub:'Замовлення, плани, сигнали' },
+    { key:'transport', icon:'ti-truck',            label:'Зовнішній транспорт', sub:'Доставка від постачальника' },
+  ];
+  const body = `<div class="modal-title">Тип з'єднання</div>
+    <div class="modal-opts">
+      ${types.map(t=>`
+        <div class="modal-opt" onclick="addConn('${fromId}','${toId}','${t.key}');closeModal()">
+          <i class="ti ${t.icon}" style="font-size:20px;color:${CONN_COLORS[t.key]}"></i>
+          <div><div class="modal-opt-title">${t.label}</div><div class="modal-opt-sub">${t.sub}</div></div>
+        </div>`).join('')}
+    </div>
+    <div class="modal-btns"><button class="modal-btn" onclick="closeModal()">Скасувати</button></div>`;
+  openModal(body);
+}
+
+function addConn(from, to, type) {
+  connections.push({from, to, type});
+  renderAll();
+}
+
+/* ══════════════════════════════════════════
+   PROPS PANEL
+══════════════════════════════════════════ */
+function switchRTab(t) {
+  activeTab = t;
+  ['props','metrics','maps','ai'].forEach(tab => {
+    document.getElementById('rpb-'+tab).style.display = tab===t ? '' : 'none';
+    document.getElementById('rtab-'+tab).classList.toggle('active', tab===t);
+  });
+  if (t==='metrics') updateMetrics();
+  if (t==='maps')    renderMapsList();
+}
+
+function showProps() {
+  const msg  = document.getElementById('noSelMsg');
+  const form = document.getElementById('propsForm');
+  if (!selectedId) { msg.style.display=''; form.style.display='none'; return; }
+  const el = elements.find(e=>e.id===selectedId);
+  if (!el) { msg.style.display=''; form.style.display='none'; return; }
+  msg.style.display='none'; form.style.display='';
+
+  const FIELDS = {
+    process: [
+      {key:'label', lbl:'Назва процесу',         type:'text'},
+      {key:'ct',    lbl:'Час циклу CT (сек)',     type:'number', row:true},
+      {key:'co',    lbl:'Переналадка C/O (сек)',  type:'number', row:true},
+      {key:'uptime',lbl:'Доступність (%)',         type:'number', row:true},
+      {key:'operators',lbl:'Операторів',           type:'number', row:true},
+      {key:'shifts',lbl:'Змін на добу',            type:'number'},
+    ],
+    inventory: [
+      {key:'label', lbl:'Назва',              type:'text'},
+      {key:'qty',   lbl:'Кількість (шт)',     type:'number', row:true},
+      {key:'days',  lbl:'Днів запасу',        type:'number', row:true},
+    ],
+    customer:  [
+      {key:'label',  lbl:'Назва',              type:'text'},
+      {key:'demand', lbl:'Попит (шт/зміна)',   type:'number'},
+    ],
+    supplier:  [
+      {key:'label', lbl:'Назва',              type:'text'},
+      {key:'lead',  lbl:'Плече поставки (дн)', type:'number'},
+    ],
+    kaizen:    [
+      {key:'label', lbl:'Назва',    type:'text'},
+      {key:'note',  lbl:'Примітка', type:'text'},
+    ],
+  };
+
+  const flds = FIELDS[el.type]||[];
+  let html = `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:10px;">${el.type} · ${el.id.slice(-6)}</div>`;
+  let i=0;
+  while (i<flds.length) {
+    const f=flds[i];
+    if (f.row && i+1<flds.length && flds[i+1].row) {
+      const f2=flds[i+1];
+      html+=`<div class="prop-row">
+        <div class="prop-group"><div class="prop-label">${f.lbl}</div>
+          <input class="prop-input" type="${f.type}" value="${el[f.key]}" oninput="setProp('${el.id}','${f.key}',this.value)"></div>
+        <div class="prop-group"><div class="prop-label">${f2.lbl}</div>
+          <input class="prop-input" type="${f2.type}" value="${el[f2.key]}" oninput="setProp('${el.id}','${f2.key}',this.value)"></div>
+      </div>`;
+      i+=2;
+    } else {
+      html+=`<div class="prop-group"><div class="prop-label">${f.lbl}</div>
+        <input class="prop-input" type="${f.type}" value="${el[f.key]}" oninput="setProp('${el.id}','${f.key}',this.value)"></div>`;
+      i++;
+    }
+  }
+
+  // connection list
+  const myConns = connections.filter(c=>c.from===el.id||c.to===el.id);
+  if (myConns.length) {
+    html += `<div class="section-head">З'єднання (${myConns.length})</div>`;
+    myConns.forEach(c=>{
+      const other = elements.find(e=>e.id===(c.from===el.id?c.to:c.from));
+      const dir   = c.from===el.id?'→':'←';
+      html += `<div class="proc-row">
+        <div class="proc-dot" style="background:${CONN_COLORS[c.type]}"></div>
+        <span style="flex:1;font-size:11px">${CONN_NAMES[c.type]} ${dir} ${other?other.label:'?'}</span>
+        <button onclick="delConn('${c.from}','${c.to}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 4px;">✕</button>
+      </div>`;
+    });
+  }
+
+  html += `<button class="del-btn" onclick="deleteSelected()"><i class="ti ti-trash"></i> Видалити елемент</button>`;
+  form.innerHTML = html;
+}
+
+function setProp(id, key, val) {
+  const el = elements.find(e=>e.id===id);
+  if (!el) return;
+  el[key] = (isNaN(+val)||val===''||key==='label'||key==='note') ? val : +val;
+  renderAll();
+}
+
+function delConn(from, to) {
+  connections = connections.filter(c=>!(c.from===from&&c.to===to));
+  renderAll(); showProps();
+}
+
+/* ══════════════════════════════════════════
+   METRICS
+══════════════════════════════════════════ */
+function getProcs()  { return elements.filter(e=>e.type==='process'); }
+function getInvs()   { return elements.filter(e=>e.type==='inventory'); }
+
+function updateMetrics() {
+  const procs   = getProcs();
+  const invs    = getInvs();
+  const takt    = getTakt();
+  const vaTime  = procs.reduce((s,p)=>s+p.ct,0);
+  const invDays = invs.reduce((s,i)=>s+i.days,0);
+  const nvaTime = invDays * 28800;
+  const lt      = vaTime + nvaTime;
+  const eff     = lt > 0 ? Math.round(vaTime/lt*100) : 0;
+  const bn      = procs.reduce((b,p)=>(!b||p.ct>b.ct)?p:b,null);
+
+  const effColor = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
+  const effBg    = eff<10?'var(--danger-bg)':eff<30?'var(--warn-bg)':'var(--success-bg)';
+
+  document.getElementById('metricsContent').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-lbl">Час доданої цінності (VA)</div>
+      <div class="metric-val">${fmtT(vaTime)}</div>
+      <div class="metric-sub">${procs.length} процес(ів)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-lbl">Час такту</div>
+      <div class="metric-val" style="color:${takt?'var(--success)':'var(--text3)'}">${takt?takt+'s':'—'}</div>
+      <div class="metric-sub">Вимога: ${elements.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-lbl">Запаси між процесами</div>
+      <div class="metric-val">${invDays} дн</div>
+      <div class="metric-sub">NVA: ${fmtT(nvaTime)}</div>
+    </div>
+    <div class="metric-card" style="background:${effBg};border-color:${effColor}">
+      <div class="metric-lbl" style="color:${effColor}">Ефективність потоку</div>
+      <div class="metric-val" style="color:${effColor}">${eff}%</div>
+      <div class="metric-sub" style="color:${effColor}">${eff<10?'⚠ Критично низька':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div>
+    </div>
+    ${bn?`<div class="metric-card" style="background:var(--danger-bg);border-color:var(--danger)">
+      <div class="metric-lbl" style="color:var(--danger)">Вузьке місце <span class="prop-badge badge-danger">bottleneck</span></div>
+      <div class="metric-val" style="font-size:15px;color:var(--danger)">${bn.label}</div>
+      <div class="metric-sub" style="color:var(--danger)">CT=${bn.ct}s${takt?(' '+(bn.ct>takt?'> такту ⚠':'≤ такту ✓')):''}  Uptime=${bn.uptime}%</div>
+    </div>`:''}
+
+    <div class="section-head">Всі процеси</div>
+    ${procs.map(p=>{
+      const isbn=bn&&p.id===bn.id;
+      const col=isbn?'var(--danger)':takt&&p.ct>takt?'var(--warn)':'var(--success)';
+      return `<div class="proc-row">
+        <div class="proc-dot" style="background:${col}"></div>
+        <span style="flex:1;font-size:11px">${p.label}</span>
+        <span style="font-size:11px;color:${col};font-weight:600">${p.ct}s</span>
+        ${isbn?'<span class="prop-badge badge-danger">BN</span>':''}
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function fmtT(s) {
+  if (!s) return '0s';
+  if (s<60) return s+'s';
+  if (s<3600) return Math.round(s/60)+'хв';
+  return (s/3600).toFixed(1)+'год';
+}
+
+function updateTimeline() {
+  const vaTime  = getProcs().reduce((s,p)=>s+p.ct,0);
+  const invDays = getInvs().reduce((s,i)=>s+i.days,0);
+  const nvaTime = invDays*28800;
+  const lt      = vaTime+nvaTime;
+  const eff     = lt>0?Math.round(vaTime/lt*100):0;
+  const vaPct   = lt>0?Math.max(2,Math.round(vaTime/lt*100)):5;
+  const nvaPct  = 100-vaPct;
+  document.getElementById('tlBar').innerHTML = `
+    <div class="tl-va" style="width:${vaPct}%"><span class="tl-bar-lbl">${eff>15?'VA':''}</span></div>
+    <div class="tl-nva" style="width:${nvaPct}%"><span class="tl-bar-lbl">${nvaPct>15?'NVA':''}</span></div>`;
+  document.getElementById('tlLT').innerHTML  = `LT: <strong>${fmtT(lt)}</strong>`;
+  document.getElementById('tlEff').style.color = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
+  document.getElementById('tlEff').textContent = eff+'%';
+}
+
+/* ══════════════════════════════════════════
+   SAVE / LOAD
+══════════════════════════════════════════ */
+function getState() {
+  return { version:2, name:document.getElementById('mapName').value, ts:Date.now(), elements, connections };
+}
+
+function loadState(state) {
+  elements    = state.elements    || [];
+  connections = state.connections || [];
+  document.getElementById('mapName').value = state.name || 'VSM карта';
+  idCnt       = elements.length + 1;
+  selectedId  = null;
+  renderAll(); showProps();
+}
+
+// LocalStorage — named maps list
+function getAllMaps() {
+  try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; }
+}
+function saveToLocal() {
+  const name = document.getElementById('mapName').value.trim() || 'VSM карта';
+  const maps = getAllMaps();
+  maps[name]  = getState();
+  localStorage.setItem('vsm_maps', JSON.stringify(maps));
+  toast('Збережено: '+name,'ok');
+}
+function loadFromLocal(name) {
+  const maps = getAllMaps();
+  if (maps[name]) { loadState(maps[name]); toast('Відкрито: '+name,'ok'); }
+}
+function deleteMap(name) {
+  const maps = getAllMaps();
+  delete maps[name];
+  localStorage.setItem('vsm_maps', JSON.stringify(maps));
+  renderMapsList();
+  toast('Видалено: '+name);
+}
+
+function renderMapsList() {
+  const maps = getAllMaps();
+  const keys = Object.keys(maps);
+  const mc = document.getElementById('mapsContent');
+  if (!keys.length) { mc.innerHTML='<div class="empty-maps"><i class="ti ti-folder-open" style="font-size:28px;display:block;margin-bottom:8px;opacity:.35"></i>Немає збережених карт.<br>Натисніть «Зберегти» у шапці.</div>'; return; }
+  mc.innerHTML = `
+    <div class="prop-group">
+      <button class="ai-run-btn" onclick="saveToLocal()"><i class="ti ti-device-floppy"></i> Зберегти поточну</button>
+    </div>
+    <div class="section-head" style="border-top:none;padding-top:0">Збережені карти (${keys.length})</div>` +
+    keys.map(name=>{
+      const ts = maps[name].ts ? new Date(maps[name].ts).toLocaleDateString('uk-UA') : '';
+      return `<div class="map-row" onclick="loadFromLocal('${name.replace(/'/g,"\\'")}')">
+        <i class="ti ti-file-text" style="font-size:16px;color:var(--accent)"></i>
+        <div style="flex:1;overflow:hidden">
+          <div class="map-row-name">${name}</div>
+          <div class="map-row-date">${ts} · ${(maps[name].elements||[]).length} ел.</div>
+        </div>
+        <button class="map-del-btn" onclick="event.stopPropagation();if(confirm('Видалити «${name}»?'))deleteMap('${name.replace(/'/g,"\\'")}')">✕</button>
+      </div>`;
+    }).join('');
+}
+
+// JSON export/import
+function exportJSON() {
+  const json = JSON.stringify(getState(), null, 2);
+  const a = document.createElement('a');
+  const name = (document.getElementById('mapName').value.trim()||'vsm').replace(/[^а-яa-z0-9_\- ]/gi,'');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  a.download = name+'.vsm.json';
+  a.click();
+  toast('Файл збережено','ok');
+}
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try { loadState(JSON.parse(ev.target.result)); toast('Імпортовано: '+file.name,'ok'); }
+    catch { toast('Помилка: файл пошкоджений','err'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+/* ══════════════════════════════════════════
+   AI
+══════════════════════════════════════════ */
+window.addEventListener('load', ()=>{
+  const key = localStorage.getItem('vsm_api_key')||'';
+  if (key) document.getElementById('aiKeyInput').value = key;
+});
+function saveApiKey() {
+  const k = document.getElementById('aiKeyInput').value.trim();
+  localStorage.setItem('vsm_api_key', k);
+  toast(k?'API ключ збережено':'Ключ очищено', k?'ok':'');
+}
+
+async function runAi() {
+  const key = localStorage.getItem('vsm_api_key')||'';
+  if (!key) { toast('Спочатку введіть API ключ','err'); switchRTab('ai'); return; }
+  const btn = document.getElementById('aiRunBtn');
+  const out = document.getElementById('aiOut');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Аналізую…';
+  out.style.display=''; out.textContent='';
+
+  const procs   = getProcs();
+  const invs    = getInvs();
+  const takt    = getTakt();
+  const vaTime  = procs.reduce((s,p)=>s+p.ct,0);
+  const invDays = invs.reduce((s,i)=>s+i.days,0);
+  const eff     = vaTime>0 ? Math.round(vaTime/(vaTime+invDays*28800)*100) : 0;
+  const bn      = procs.reduce((b,p)=>(!b||p.ct>b.ct)?p:b,null);
+
+  const summary = `Карта VSM: "${document.getElementById('mapName').value}"
+Процеси (${procs.length}):
+${procs.map(p=>`  • ${p.label}: CT=${p.ct}s, C/O=${p.co}s, Uptime=${p.uptime}%, Оп=${p.operators}, Зміни=${p.shifts}`).join('\n')}
+Запаси між процесами: ${invs.map(i=>`${i.days}дн`).join(', ')||'немає'} → NVA: ${invDays} дн
+Час такту: ${takt}s | Ефективність потоку: ${eff}%
+Вузьке місце: ${bn?bn.label+' CT='+bn.ct+'s':'не визначено'}
+Типи потоків: ${[...new Set(connections.map(c=>CONN_NAMES[c.type]))].join(', ')||'немає'}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1200,
+        system:`Ти старший Lean-консультант з 15 роками досвіду VSM (Value Stream Mapping). Аналізуй карти потоку та надавай конкретні, практичні рекомендації. Відповідай виключно українською. Структуруй відповідь чітко:
+1. Загальна оцінка (1-2 речення)
+2. Ключові проблеми (3-5 пунктів з конкретними даними)
+3. Вузькі місця та дисбаланс навантаження
+4. Типи виявлених втрат (7 видів муда)
+5. Рекомендації для Future State (3-5 конкретних дій)
+Будь конкретним — посилайся на назви процесів та числові показники.`,
+        messages:[{role:'user',content:`Проаналізуй цю VSM карту:\n\n${summary}`}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    out.textContent = data.content?.map(c=>c.text).join('')||'Порожня відповідь';
+  } catch(err) {
+    out.textContent = 'Помилка: '+err.message;
+    toast('AI помилка: '+err.message,'err');
+  }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-sparkles"></i> Проаналізувати знову';
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════ */
+function showSettings() {
+  openModal(`<div class="modal-title"><i class="ti ti-settings"></i> Налаштування</div>
+    <div class="prop-group">
+      <div class="prop-label">Claude API ключ</div>
+      <div class="ai-key-row">
+        <input class="ai-key-input" type="password" id="settApiKey" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
+        <button class="ai-save-btn" onclick="localStorage.setItem('vsm_api_key',document.getElementById('settApiKey').value);toast('Збережено','ok');">Зберегти</button>
+      </div>
+      <p class="ai-hint">Ключ зберігається в localStorage браузера. Не передається нікуди, крім api.anthropic.com.</p>
+    </div>
+    <div class="prop-group">
+      <div class="prop-label">Версія</div>
+      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.0 · BPI Group · GitHub Pages</p>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal()">Закрити</button>
+    </div>`);
+}
+
+/* ══════════════════════════════════════════
+   DEMO
+══════════════════════════════════════════ */
+function loadDemo() {
+  elements = [
+    {id:'d_sup',  type:'supplier',  x:40,  y:80,  label:'ТОВ Метал-Сервіс', lead:5},
+    {id:'d_cus',  type:'customer',  x:540, y:80,  label:'Замовник',          demand:480},
+    {id:'d_i1',   type:'inventory', x:190, y:220, label:'',  qty:2400, days:5},
+    {id:'d_p1',   type:'process',   x:40,  y:260, label:'Штампування', ct:45, co:240, uptime:75, operators:2, shifts:2},
+    {id:'d_i2',   type:'inventory', x:320, y:220, label:'',  qty:900,  days:2},
+    {id:'d_p2',   type:'process',   x:180, y:260, label:'Зварювання',   ct:95, co:60,  uptime:65, operators:3, shifts:1},
+    {id:'d_i3',   type:'inventory', x:450, y:220, label:'',  qty:600,  days:1},
+    {id:'d_p3',   type:'process',   x:320, y:260, label:'Складання',    ct:50, co:30,  uptime:90, operators:4, shifts:2},
+    {id:'d_i4',   type:'inventory', x:580, y:220, label:'',  qty:240,  days:0.5},
+    {id:'d_p4',   type:'process',   x:460, y:260, label:'Контроль ВТК', ct:22, co:0,   uptime:98, operators:1, shifts:2},
+    {id:'d_k1',   type:'kaizen',    x:220, y:360, label:'SMED', note:'C/O 240→30хв'},
+    {id:'d_k2',   type:'kaizen',    x:350, y:360, label:'TPM',  note:'Uptime 65→85%'},
+  ];
+  connections = [
+    {from:'d_sup', to:'d_p1',  type:'transport'},
+    {from:'d_p1',  to:'d_p2',  type:'push'},
+    {from:'d_p2',  to:'d_p3',  type:'push'},
+    {from:'d_p3',  to:'d_p4',  type:'push'},
+    {from:'d_p4',  to:'d_cus', type:'push'},
+    {from:'d_cus', to:'d_p1',  type:'info'},
+    {from:'d_cus', to:'d_sup', type:'info'},
+  ];
+  document.getElementById('mapName').value = 'Виробнича лінія — поточний стан';
+  idCnt = 50; selectedId = null;
+  renderAll(); showProps();
+  toast('Приклад завантажено','ok');
+}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+function openModal(html) {
+  const ov = document.getElementById('modalOverlay');
+  const m  = document.getElementById('modal');
+  m.innerHTML = html;
+  ov.style.display=''; m.style.display='';
+}
+function closeModal(e) {
+  if (!e || e.target===document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').style.display='none';
+    document.getElementById('modal').style.display='none';
+  }
+}
+document.getElementById('modalOverlay').appendChild(document.getElementById('modal'));
+
+/* ══════════════════════════════════════════
+   CLEAR
+══════════════════════════════════════════ */
+function clearCanvas() {
+  if (elements.length>0 && !confirm('Очистити всю карту?')) return;
+  elements=[]; connections=[]; selectedId=null;
+  renderAll(); showProps();
+}
+
+/* ══════════════════════════════════════════
+   SHOWS SAVE MAPS MODAL
+══════════════════════════════════════════ */
+function showSaveMapsModal() {
+  switchRTab('maps');
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+function toast(msg, type='') {
+  const a = document.getElementById('toastArea');
+  const t = document.createElement('div');
+  t.className = 'toast '+(type||'');
+  t.textContent = msg;
+  a.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+renderAll();
+showProps();
+// Load last saved if exists
+const _maps = getAllMaps();
+const _keys = Object.keys(_maps);
+if (_keys.length) {
+  const last = _keys[_keys.length-1];
+  loadState(_maps[last]);
+}
+</script>
+</body>
+</html>
