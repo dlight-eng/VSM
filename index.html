@@ -228,14 +228,23 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
       <pattern id="g5" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#g1)"/><path d="M100 0L0 0 0 100" fill="none" stroke="rgba(0,0,0,.10)" stroke-width=".5"/></pattern>
     </defs>
     <rect id="gridbg" width="100%" height="100%" fill="url(#g5)"/>
-    <g id="gl"></g><!-- groups -->
-    <g id="cl"></g><!-- connections -->
-    <g id="el"></g><!-- elements -->
-    <!-- temp connection line -->
-    <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
-    <!-- group draw rect -->
-    <rect id="dr" style="display:none" fill="rgba(26,95,168,.07)" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
+    <g id="world">
+      <g id="gl"></g><!-- groups -->
+      <g id="cl"></g><!-- connections -->
+      <g id="el"></g><!-- elements -->
+      <!-- temp connection line -->
+      <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
+      <!-- group draw rect -->
+      <rect id="dr" style="display:none" fill="rgba(26,95,168,.07)" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
+    </g>
   </svg>
+  <!-- zoom controls -->
+  <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:4px;z-index:10">
+    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,-1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">+</button>
+    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">−</button>
+    <button onclick="fitView()" title="Вписати все в екран" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⊡</button>
+    <button onclick="vx=40;vy=40;vz=1;applyVP()" title="100%" style="width:28px;height:20px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--text2)"><span id="zind">100%</span></button>
+  </div>
 </div>
 
 <!-- RIGHT PANEL -->
@@ -292,6 +301,11 @@ let drawing=false, drawSt={x:0,y:0};
 let IDC=1, atab='p';
 const GR=20;
 
+/* pan / zoom */
+let vx=0, vy=0, vz=1;   // viewport offset and scale
+let panning=false, panSt={x:0,y:0};
+const ZMIN=0.15, ZMAX=3;
+
 /* ══════════════════════════════════════
    GEOMETRY
 ══════════════════════════════════════ */
@@ -303,8 +317,53 @@ const BBOX={
 function bb(el){return BBOX[el.type]||{w:100,h:60}}
 function ctr(el){const b=bb(el);return{x:el.x+b.w/2,y:el.y+b.h/2}}
 function snap(v){return Math.round(v/GR)*GR}
-function svgXY(e){const r=document.getElementById('cv').getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+/* convert screen coords → world coords (accounting for pan/zoom) */
+function screenToWorld(sx,sy){return{x:(sx-vx)/vz, y:(sy-vy)/vz}}
+function svgXY(e){
+  const r=document.getElementById('cv').getBoundingClientRect();
+  return screenToWorld(e.clientX-r.left, e.clientY-r.top);
+}
 function newId(pfx){return(pfx||'e')+(Date.now()+(IDC++))}
+
+/* apply viewport transform to the world group */
+function applyVP(){
+  const g=document.getElementById('world');
+  if(g)g.setAttribute('transform',`translate(${vx},${vy}) scale(${vz})`);
+  // scale grid pattern with zoom
+  const g1=document.getElementById('g1');
+  const g5=document.getElementById('g5');
+  if(g1){g1.setAttribute('width',20*vz);g1.setAttribute('height',20*vz);
+    g1.querySelector('path').setAttribute('d',`M${20*vz} 0L0 0 0 ${20*vz}`);}
+  if(g5){g5.setAttribute('width',100*vz);g5.setAttribute('height',100*vz);
+    g5.querySelector('rect').setAttribute('width',100*vz);g5.querySelector('rect').setAttribute('height',100*vz);
+    g5.querySelector('path').setAttribute('d',`M${100*vz} 0L0 0 0 ${100*vz}`);}
+  // zoom indicator
+  const zi=document.getElementById('zind');
+  if(zi)zi.textContent=Math.round(vz*100)+'%';
+}
+
+function zoomAt(sx,sy,delta){
+  const factor=delta>0?0.85:1/0.85;
+  const nz=Math.min(ZMAX,Math.max(ZMIN,vz*factor));
+  // zoom toward mouse position
+  vx=sx-(sx-vx)*(nz/vz);
+  vy=sy-(sy-vy)*(nz/vz);
+  vz=nz;
+  applyVP();
+}
+
+function fitView(){
+  if(!ELS.length&&!GROUPS.length){vx=40;vy=40;vz=1;applyVP();return}
+  const all=[...ELS.filter(e=>!e._hid).map(e=>{const b=bb(e);return{x1:e.x,y1:e.y,x2:e.x+b.w,y2:e.y+b.h}}),
+    ...GROUPS.map(g=>({x1:g.x,y1:g.y,x2:g.x+(g.collapsed?170:g.w),y2:g.y+(g.collapsed?78:g.h)}))];
+  const minX=Math.min(...all.map(r=>r.x1))-30,minY=Math.min(...all.map(r=>r.y1))-30;
+  const maxX=Math.max(...all.map(r=>r.x2))+30,maxY=Math.max(...all.map(r=>r.y2))+30;
+  const cvwrap=document.getElementById('cvwrap');
+  const cw=cvwrap.clientWidth,ch=cvwrap.clientHeight;
+  const nz=Math.min(ZMAX,Math.max(ZMIN,Math.min(cw/(maxX-minX),ch/(maxY-minY))));
+  vz=nz;vx=-minX*nz+(cw-(maxX-minX)*nz)/2;vy=-minY*nz+(ch-(maxY-minY)*nz)/2;
+  applyVP();
+}
 
 /* ══════════════════════════════════════
    ELEMENT DEFAULTS
@@ -616,7 +675,8 @@ function onDrop(e){
   e.preventDefault();
   const type=e.dataTransfer.getData('type');
   if(!DEFS[type])return;
-  const{x,y}=svgXY(e);
+  const r=document.getElementById('cv').getBoundingClientRect();
+  const{x,y}=screenToWorld(e.clientX-r.left,e.clientY-r.top);
   const el={id:newId('e'),type,x:snap(x),y:snap(y),...JSON.parse(JSON.stringify(DEFS[type]))};
   ELS.push(el);renderAll();selectEl(el.id);
 }
@@ -651,16 +711,24 @@ function gResizeMD(e,id){
   const{x,y}=svgXY(e);
   resizeOff={x:x-(g.x+g.w),y:y-(g.y+g.h)};
 }
-
 function cvMD(e){
   const t=e.target;
-  const onGrid=t===document.getElementById('cv')||t.id==='gridbg';
+  const onGrid=t===document.getElementById('cv')||t.id==='gridbg'||t.id==='world';
+  // Middle mouse button or Space+drag = pan
+  if(e.button===1||(e.button===0&&spaceDown)){
+    e.preventDefault();
+    panning=true;
+    panSt={x:e.clientX-vx,y:e.clientY-vy};
+    document.getElementById('cvwrap').style.cursor='grabbing';
+    return;
+  }
   if(tool==='group'&&onGrid){
     drawing=true;const{x,y}=svgXY(e);
     drawSt={x:snap(x),y:snap(y)};
     const dr=document.getElementById('dr');
     const cfg=GC[gkind]||GC.section;
     dr.setAttribute('stroke',cfg.stroke);
+    const wx=drawSt.x*vz+vx,wy=drawSt.y*vz+vy;
     dr.setAttribute('x',drawSt.x);dr.setAttribute('y',drawSt.y);
     dr.setAttribute('width',0);dr.setAttribute('height',0);
     dr.style.display='';
@@ -674,6 +742,10 @@ function cvMD(e){
 }
 
 function cvMM(e){
+  if(panning){
+    vx=e.clientX-panSt.x;vy=e.clientY-panSt.y;
+    applyVP();return;
+  }
   const{x,y}=svgXY(e);
   if(drawing){
     const bx=Math.min(x,drawSt.x),by=Math.min(y,drawSt.y);
@@ -706,6 +778,11 @@ function cvMM(e){
 }
 
 function cvMU(e){
+  if(panning){
+    panning=false;
+    document.getElementById('cvwrap').style.cursor=spaceDown?'grab':(tool==='connect'||tool==='group')?'crosshair':'';
+    return;
+  }
   if(drawing){
     drawing=false;document.getElementById('dr').style.display='none';
     const{x,y}=svgXY(e);
@@ -721,6 +798,20 @@ function cvMU(e){
   }
   drag=null;dragG=null;resizeG=null;
 }
+
+/* wheel zoom */
+let spaceDown=false;
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){spaceDown=true;document.getElementById('cvwrap').style.cursor='grab';e.preventDefault()}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;document.getElementById('cvwrap').style.cursor=''}});
+
+document.getElementById('cvwrap').addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=document.getElementById('cv').getBoundingClientRect();
+  zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY);
+},{passive:false});
+
+/* prevent middle-mouse autoscroll */
+document.getElementById('cvwrap').addEventListener('mousedown',e=>{if(e.button===1)e.preventDefault()});
 
 function selectEl(id){selId=id;selGid=null;renderAll();showProps()}
 
@@ -759,9 +850,13 @@ document.addEventListener('keydown',e=>{
   if(e.key==='v'||e.key==='V')setTool('select');
   if(e.key==='c'||e.key==='C')setTool('connect');
   if(e.key==='g'||e.key==='G')setTool('group');
+  if(e.key==='f'||e.key==='F')fitView();
   if(e.key==='Escape'){setTool('select');selGid=null;renderAll();showProps()}
   if(e.key==='Delete'||e.key==='Backspace')delSel();
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveMap()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();vx=40;vy=40;vz=1;applyVP()}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='='||e.key==='+')){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,-1)}
+  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,1)}
 });
 
 /* ══════════════════════════════════════
@@ -922,6 +1017,7 @@ function loadState(s){
   GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
   document.getElementById('mapName').value=s.name||'VSM';
   IDC=Math.max(ELS.length,GROUPS.length)+10;selId=null;selGid=null;renderAll();showProps();
+  setTimeout(fitView,50);
 }
 function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
 function saveMap(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
@@ -1007,7 +1103,7 @@ function loadDemo(){
     {id:'g3',kind:'workstation',label:'Роб. місце складання', x:340,y:265,w:180,h:125,collapsed:false,childIds:[]},
   ];
   document.getElementById('mapName').value='Виробнича лінія (Current State)';
-  IDC=50;selId=null;selGid=null;renderAll();showProps();toast('Приклад завантажено','ok');
+  IDC=50;selId=null;selGid=null;renderAll();showProps();setTimeout(fitView,50);toast('Приклад завантажено','ok');
 }
 
 /* ══════════════════════════════════════
@@ -1019,7 +1115,7 @@ function showSettings(){
     <div class="akr"><input class="aki" type="password" id="sk" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
     <button class="aks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('sk').value);toast('Збережено','ok')">✓</button></div>
     <p class="ah">Зберігається тільки у вашому браузері.</p></div>
-    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.2 · BPI Group<br>Символи: LEI/Toyota VSM Standard<br>G — намалювати групу · V — вибір · C — з'єднати</p></div>
+    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2);line-height:1.7">VSM Constructor v1.3 · BPI Group<br>Символи: LEI/Toyota VSM Standard<br><b>V</b> — вибір · <b>C</b> — з'єднати · <b>G</b> — група<br><b>F</b> — вписати в екран · <b>Ctrl+0</b> — 100%<br><b>Scroll</b> — масштаб · <b>Space+drag</b> — переміщення<br><b>ПКМ/колесо</b> — масштаб</p></div>
     <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
 }
 function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGid=null;renderAll();showProps()}
@@ -1027,7 +1123,6 @@ function omod(h){document.getElementById('mod').innerHTML=h;document.getElementB
 function cmod(){document.getElementById('movbg').style.display='none'}
 function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
-renderAll();showProps();
-</script>
+renderAll();showProps();vx=40;vy=40;applyVP();
 </body>
 </html>
