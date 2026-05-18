@@ -4,1111 +4,1074 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VSM Constructor — BPI Group</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ─── Reset & Base ─── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #f7f6f3;
-  --bg2: #ffffff;
-  --bg3: #efefeb;
-  --text: #1a1a18;
-  --text2: #5f5e5a;
-  --text3: #9b9a96;
-  --border: rgba(0,0,0,0.12);
-  --border2: rgba(0,0,0,0.22);
-  --accent: #185fa5;
-  --accent-bg: #e6f1fb;
-  --success: #0f6e56;
-  --success-bg: #e1f5ee;
-  --warn: #ba7517;
-  --warn-bg: #faeeda;
-  --danger: #a32d2d;
-  --danger-bg: #fcebeb;
-  --radius: 6px;
-  --radius-lg: 10px;
-  --font: 'Inter', system-ui, -apple-system, sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f3f0;--bg2:#ffffff;--bg3:#eeede9;--bg4:#e6e5e1;
+  --text:#181816;--text2:#5a5956;--text3:#9a9895;
+  --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.20);
+  --accent:#1a5fa8;--accent-bg:#e8f0fb;
+  --success:#0c6b4e;--success-bg:#e0f4ec;
+  --warn:#b87316;--warn-bg:#faeeda;
+  --danger:#a02d2d;--danger-bg:#fbebeb;
+  --radius:5px;--font:'Inter',system-ui,sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a1a18; --bg2: #242422; --bg3: #2e2e2b;
-    --text: #e8e6df; --text2: #9b9a96; --text3: #5f5e5a;
-    --accent-bg: #0c2d4a; --success-bg: #04201a;
-    --warn-bg: #2a1c05; --danger-bg: #2a0d0d;
-  }
-}
-html, body { height: 100%; overflow: hidden; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
-
-/* ─── Layout ─── */
-.app { display: flex; flex-direction: column; height: 100vh; }
-
-/* ─── Header ─── */
-.header {
-  height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
-  background: var(--bg2); border-bottom: 0.5px solid var(--border);
-  flex-shrink: 0; user-select: none;
-}
-.logo { font-weight: 600; font-size: 13px; letter-spacing: -0.02em; }
-.logo span { color: var(--accent); }
-.hdr-sep { width: 0.5px; height: 20px; background: var(--border); margin: 0 4px; }
-.hdr-btn {
-  display: flex; align-items: center; gap: 5px; padding: 4px 9px;
-  border: 0.5px solid var(--border); border-radius: var(--radius);
-  background: none; color: var(--text); cursor: pointer; font-size: 12px;
-  transition: background .12s, border-color .12s; white-space: nowrap;
-}
-.hdr-btn:hover { background: var(--bg3); border-color: var(--border2); }
-.hdr-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
-.hdr-btn i { font-size: 15px; }
-.hdr-spacer { flex: 1; }
-.map-name-input {
-  font-size: 13px; font-weight: 500; background: none; border: none; color: var(--text);
-  border-bottom: 1px dashed var(--border); padding: 2px 4px; width: 200px; text-align: center;
-}
-.map-name-input:focus { outline: none; border-bottom-color: var(--accent); }
-.map-name-input::placeholder { color: var(--text3); }
-
-/* ─── Main area ─── */
-.main { display: flex; flex: 1; overflow: hidden; }
-
-/* ─── Sidebar (palette) ─── */
-.sidebar {
-  width: 168px; flex-shrink: 0; background: var(--bg2);
-  border-right: 0.5px solid var(--border); display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.sidebar-section { padding: 10px 8px 4px; }
-.sidebar-title {
-  font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--text3); padding: 0 2px 6px;
-}
-.pal-item {
-  display: flex; align-items: center; gap: 7px; padding: 6px 8px;
-  border: 0.5px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 3px; cursor: grab; background: var(--bg2); font-size: 11px;
-  transition: border-color .12s, background .12s;
-}
-.pal-item:hover { border-color: var(--border2); background: var(--bg3); }
-.pal-item:active { cursor: grabbing; }
-.pal-icon { width: 30px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-/* ─── Canvas ─── */
-.canvas-wrap {
-  flex: 1; position: relative; overflow: hidden; background: var(--bg);
-  cursor: default;
-}
-#canvas { width: 100%; height: 100%; }
-
-/* ─── Right panel ─── */
-.rpanel {
-  width: 248px; flex-shrink: 0; background: var(--bg2);
-  border-left: 0.5px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
-}
-.rtabs { display: flex; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-.rtab {
-  flex: 1; padding: 9px 4px; font-size: 11px; font-weight: 500; text-align: center;
-  cursor: pointer; border: none; background: none; color: var(--text2);
-  border-bottom: 2px solid transparent; transition: color .12s;
-}
-.rtab.active { color: var(--text); border-bottom-color: var(--accent); }
-.rpanel-body { flex: 1; overflow-y: auto; padding: 12px; }
-
-/* Props */
-.prop-group { margin-bottom: 10px; }
-.prop-label { font-size: 10px; color: var(--text2); margin-bottom: 3px; font-weight: 500; }
-.prop-input {
-  width: 100%; font-size: 12px; padding: 5px 7px;
-  border: 0.5px solid var(--border2); border-radius: var(--radius);
-  background: var(--bg); color: var(--text); font-family: var(--font);
-}
-.prop-input:focus { outline: none; border-color: var(--accent); }
-.prop-row { display: flex; gap: 6px; }
-.prop-row .prop-group { flex: 1; }
-
-.section-head {
-  font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--text3); padding: 8px 0 5px; border-top: 0.5px solid var(--border); margin-top: 4px;
-}
-.no-sel { text-align: center; padding: 30px 0; color: var(--text3); font-size: 12px; }
-.no-sel i { font-size: 28px; display: block; margin-bottom: 8px; opacity: .35; }
-
-.del-btn {
-  width: 100%; padding: 5px; font-size: 11px; color: var(--danger); margin-top: 10px;
-  border: 0.5px solid var(--danger); border-radius: var(--radius);
-  background: none; cursor: pointer;
-}
-.del-btn:hover { background: var(--danger-bg); }
-
-/* Metrics */
-.metric-card {
-  border-radius: var(--radius); padding: 10px 11px; margin-bottom: 8px;
-  border: 0.5px solid var(--border);
-}
-.metric-lbl { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
-.metric-val { font-size: 22px; font-weight: 500; line-height: 1.2; margin-top: 2px; }
-.metric-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
-.proc-row { display: flex; align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; }
-.proc-row:hover { background: var(--bg3); }
-.proc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-/* AI */
-.ai-run-btn {
-  width: 100%; padding: 8px; font-size: 12px; font-weight: 500;
-  border: 0.5px solid var(--border2); border-radius: var(--radius);
-  background: var(--bg3); color: var(--text); cursor: pointer; margin-bottom: 10px;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: background .12s;
-}
-.ai-run-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
-.ai-run-btn:disabled { opacity: .5; cursor: not-allowed; }
-.ai-out {
-  font-size: 12px; line-height: 1.65; color: var(--text2);
-  background: var(--bg3); border-radius: var(--radius); padding: 10px 11px;
-  white-space: pre-wrap; word-break: break-word;
-}
-.ai-key-row { display: flex; gap: 5px; margin-bottom: 8px; }
-.ai-key-input { flex: 1; font-size: 11px; padding: 4px 7px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); }
-.ai-save-btn { font-size: 11px; padding: 4px 8px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg3); color: var(--text); cursor: pointer; }
-.ai-save-btn:hover { background: var(--success-bg); color: var(--success); }
-.ai-hint { font-size: 10px; color: var(--text3); line-height: 1.5; margin-bottom: 8px; }
-
-/* Maps list */
-.map-row {
-  display: flex; align-items: center; gap: 6px; padding: 5px 7px;
-  border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 4px;
-  cursor: pointer; transition: border-color .12s, background .12s;
-}
-.map-row:hover { border-color: var(--border2); background: var(--bg3); }
-.map-row-name { flex: 1; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.map-row-date { font-size: 10px; color: var(--text3); }
-.map-del-btn { font-size: 13px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 3px; }
-.map-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
-.empty-maps { font-size: 12px; color: var(--text3); text-align: center; padding: 20px 0; }
-
-/* Modal */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
-}
-.modal {
-  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-lg);
-  padding: 20px 22px; width: 340px; max-width: 95vw;
-}
-.modal-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
-.modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
-.modal-btn {
-  padding: 6px 14px; font-size: 12px; border-radius: var(--radius);
-  border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text); cursor: pointer;
-}
-.modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.modal-btn:hover { opacity: .85; }
-.modal-opts { display: flex; flex-direction: column; gap: 8px; }
-.modal-opt {
-  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-  border: 0.5px solid var(--border); border-radius: var(--radius); cursor: pointer;
-  transition: border-color .12s, background .12s;
-}
-.modal-opt:hover { border-color: var(--accent); background: var(--accent-bg); }
-.modal-opt i { font-size: 20px; color: var(--accent); }
-.modal-opt-title { font-size: 12px; font-weight: 500; }
-.modal-opt-sub { font-size: 11px; color: var(--text2); }
-
-/* Toasts */
-.toast-area { position: fixed; bottom: 16px; right: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 6px; }
-.toast {
-  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius);
-  padding: 8px 14px; font-size: 12px; min-width: 180px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.12); animation: toastIn .2s ease;
-}
-.toast.ok { border-left: 3px solid var(--success); }
-.toast.err { border-left: 3px solid var(--danger); }
-@keyframes toastIn { from { opacity:0; transform: translateY(8px); } }
-
-.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.canvas-wrap.connect-mode { cursor: crosshair; }
-
-/* Timeline bar */
-.timeline { 
-  height: 48px; background: var(--bg2); border-top: 0.5px solid var(--border);
-  display: flex; align-items: center; padding: 0 12px; gap: 8px;
-  flex-shrink: 0; overflow: hidden;
-}
-.tl-label { font-size: 10px; color: var(--text3); white-space: nowrap; }
-.tl-bar-wrap { flex: 1; height: 16px; border-radius: 3px; overflow: hidden; display: flex; }
-.tl-va { background: #1d9e75; height: 100%; display: flex; align-items: center; justify-content: center; }
-.tl-nva { background: #e24b4a; height: 100%; display: flex; align-items: center; justify-content: center; }
-.tl-bar-lbl { font-size: 9px; color: #fff; font-weight: 600; white-space: nowrap; padding: 0 4px; }
-.tl-stat { font-size: 11px; white-space: nowrap; }
-.tl-stat strong { font-weight: 600; }
-.tl-eff { font-size: 11px; font-weight: 600; white-space: nowrap; }
-
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px}
+.app{display:flex;flex-direction:column;height:100vh}
+.hdr{height:42px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none}
+.logo{font-weight:700;font-size:12px;letter-spacing:-.01em;white-space:nowrap}
+.logo em{color:var(--accent);font-style:normal}
+.hsep{width:.5px;height:18px;background:var(--border2);margin:0 3px}
+.hbtn{display:flex;align-items:center;gap:4px;padding:3px 8px;border:.5px solid var(--border);border-radius:var(--radius);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--font);transition:background .1s,border-color .1s,color .1s;white-space:nowrap}
+.hbtn:hover{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+.hbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.hsp{flex:1}
+.map-name{font-size:12px;font-weight:500;background:none;border:none;color:var(--text);border-bottom:1px dashed var(--border2);padding:2px 6px;width:220px;text-align:center;font-family:var(--font)}
+.map-name:focus{outline:none;border-bottom-color:var(--accent)}
+.main{display:flex;flex:1;overflow:hidden}
+.sbar{width:152px;flex-shrink:0;background:var(--bg2);border-right:.5px solid var(--border2);overflow-y:auto;overflow-x:hidden}
+.sbar-sec{padding:8px 7px 5px}
+.sbar-ttl{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:0 2px 6px}
+.pal{display:flex;flex-direction:column;align-items:center;padding:5px 4px 4px;border:.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;cursor:grab;background:var(--bg2);font-size:10px;color:var(--text2);text-align:center;transition:border-color .1s,background .1s;gap:3px}
+.pal:hover{border-color:var(--border2);background:var(--bg3);color:var(--text)}
+.pal:active{cursor:grabbing}
+.cvs-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#canvas{width:100%;height:100%;display:block}
+.cvs-wrap.conn-mode{cursor:crosshair}
+.rp{width:244px;flex-shrink:0;background:var(--bg2);border-left:.5px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+.rtabs{display:flex;border-bottom:.5px solid var(--border2);flex-shrink:0}
+.rtab{flex:1;padding:8px 2px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text3);letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid transparent;transition:color .1s;font-family:var(--font)}
+.rtab.on{color:var(--text);border-bottom-color:var(--accent)}
+.rpb{flex:1;overflow-y:auto;padding:11px}
+.pg{margin-bottom:9px}
+.pl{font-size:10px;color:var(--text2);margin-bottom:3px;font-weight:500}
+.pi{width:100%;font-size:12px;padding:4px 7px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font)}
+.pi:focus{outline:none;border-color:var(--accent)}
+.prow{display:flex;gap:5px}
+.prow .pg{flex:1}
+.sh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:8px 0 5px;border-top:.5px solid var(--border);margin-top:6px}
+.no-sel{text-align:center;padding:28px 8px;color:var(--text3);font-size:11px;line-height:1.6}
+.delbtn{width:100%;padding:5px;font-size:11px;color:var(--danger);margin-top:10px;border:.5px solid var(--danger);border-radius:var(--radius);background:none;cursor:pointer;font-family:var(--font)}
+.delbtn:hover{background:var(--danger-bg)}
+.mc{border-radius:var(--radius);padding:9px 10px;margin-bottom:7px;border:.5px solid var(--border)}
+.ml{font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.mv{font-size:20px;font-weight:600;line-height:1.2;margin-top:2px}
+.ms{font-size:11px;color:var(--text2);margin-top:1px}
+.prow2{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:3px}
+.prow2:hover{background:var(--bg3)}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;margin-left:3px}
+.bd{background:var(--danger-bg);color:var(--danger)}
+.ai-btn{width:100%;padding:8px;font-size:12px;font-weight:500;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .1s;font-family:var(--font)}
+.ai-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-out{font-size:11px;line-height:1.65;color:var(--text2);background:var(--bg3);border-radius:var(--radius);padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+.ai-key-row{display:flex;gap:5px;margin-bottom:6px}
+.ai-ki{flex:1;font-size:11px;padding:4px 6px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font)}
+.ai-ks{font-size:11px;padding:4px 8px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--font)}
+.ai-hint{font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px}
+.map-row{display:flex;align-items:center;gap:5px;padding:5px 6px;border:.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;cursor:pointer;transition:border-color .1s,background .1s}
+.map-row:hover{border-color:var(--border2);background:var(--bg3)}
+.mrn{flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrd{font-size:10px;color:var(--text3)}
+.mdb{font-size:12px;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:3px;color:var(--text3)}
+.mdb:hover{color:var(--danger);background:var(--danger-bg)}
+.empty-maps{font-size:11px;color:var(--text3);text-align:center;padding:20px 0}
+.tl{height:44px;background:var(--bg2);border-top:.5px solid var(--border2);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0}
+.tl-lbl{font-size:10px;color:var(--text3);white-space:nowrap;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tl-bar{flex:1;height:14px;border-radius:3px;overflow:hidden;display:flex}
+.tl-va{background:#1d9e75;height:100%;display:flex;align-items:center;justify-content:center;min-width:4px}
+.tl-nva{background:#e24b4a;height:100%;display:flex;align-items:center;justify-content:center;min-width:4px}
+.tl-bl{font-size:8px;color:#fff;font-weight:700;padding:0 3px;white-space:nowrap}
+.tl-st{font-size:11px;white-space:nowrap}
+.tl-ef{font-size:12px;font-weight:700;white-space:nowrap;min-width:38px;text-align:right}
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000}
+.mod{background:var(--bg2);border:.5px solid var(--border2);border-radius:8px;padding:18px 20px;width:320px;max-width:94vw}
+.mod-t{font-size:14px;font-weight:600;margin-bottom:12px}
+.mod-opts{display:flex;flex-direction:column;gap:6px}
+.mod-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .1s,background .1s}
+.mod-opt:hover{border-color:var(--accent);background:var(--accent-bg)}
+.mod-opt-t{font-size:12px;font-weight:500}
+.mod-opt-s{font-size:10px;color:var(--text2)}
+.mod-bts{display:flex;gap:7px;margin-top:12px;justify-content:flex-end}
+.mbtn{padding:5px 13px;font-size:11px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--font)}
+.tarea{position:fixed;bottom:14px;right:14px;z-index:2000;display:flex;flex-direction:column;gap:5px}
+.toast{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 13px;font-size:11px;min-width:170px;box-shadow:0 3px 12px rgba(0,0,0,.12);animation:tin .18s ease}
+.toast.ok{border-left:3px solid var(--success)}
+.toast.err{border-left:3px solid var(--danger)}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}}
+.spin{display:inline-block;width:12px;height:12px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 </style>
 </head>
 <body>
 <div class="app">
-
-  <div class="header">
-    <div class="logo">VSM <span>Constructor</span></div>
-    <div class="hdr-sep"></div>
-    <input class="map-name-input" id="mapName" type="text" value="Нова карта VSM" placeholder="Назва карти…">
-    <div class="hdr-spacer"></div>
-
-    <button class="hdr-btn active" id="btn-select" onclick="setTool('select')" title="Вибір (V)">
-      <i class="ti ti-pointer"></i> Вибір
-    </button>
-    <button class="hdr-btn" id="btn-connect" onclick="setTool('connect')" title="З'єднання (C)">
-      <i class="ti ti-arrow-right"></i> З'єднати
-    </button>
-
-    <div class="hdr-sep"></div>
-
-    <button class="hdr-btn" onclick="showSaveMapsModal()" title="Зберегти / Відкрити карти">
-      <i class="ti ti-folder"></i> Карти
-    </button>
-    <button class="hdr-btn" onclick="saveToLocal()" title="Швидке збереження">
-      <i class="ti ti-device-floppy"></i> Зберегти
-    </button>
-    <button class="hdr-btn" onclick="exportJSON()" title="Експорт JSON">
-      <i class="ti ti-file-export"></i> JSON
-    </button>
-    <button class="hdr-btn" id="importBtn" onclick="document.getElementById('importFile').click()" title="Імпорт JSON">
-      <i class="ti ti-file-import"></i>
-    </button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-
-    <div class="hdr-sep"></div>
-    <button class="hdr-btn" onclick="loadDemo()" title="Завантажити приклад">
-      <i class="ti ti-template"></i> Приклад
-    </button>
-    <button class="hdr-btn" onclick="clearCanvas()" title="Очистити полотно">
-      <i class="ti ti-trash"></i>
-    </button>
-    <button class="hdr-btn" onclick="showSettings()" title="Налаштування">
-      <i class="ti ti-settings"></i>
-    </button>
-  </div>
-
-  <div class="main">
-
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">Елементи</div>
-
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'zone')" style="border: 1px dashed var(--accent); background: var(--accent-bg);">
-          <div class="pal-icon">
-            <i class="ti ti-box-margin" style="font-size: 18px; color: var(--accent)"></i>
-          </div>
-          <strong>Дільниця / РМ</strong>
-        </div>
-
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'process')">
-          <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="26" height="18" rx="1"/></svg>
-          </div>
-          Процес (Операція)
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'inventory')">
-          <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="15,2 28,20 2,20" stroke-linejoin="round"/><text x="15" y="15" font-size="9" text-anchor="middle" font-family="Inter,sans-serif" font-weight="bold" fill="currentColor" stroke="none">I</text></svg>
-          </div>
-          Запаси / WIP
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'customer')">
-          <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 10 L2 22 L28 22 L28 10 L15 2 Z M8 22 L8 15 L14 15 L14 22 M20 10 L20 14 L24 14 L24 10" stroke-linejoin="round"/></svg>
-          </div>
-          Клієнт
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'supplier')">
-          <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 10 L2 22 L28 22 L28 10 L15 2 Z M8 22 L8 15 L14 15 L14 22 M20 10 L20 14 L24 14 L24 10" stroke-linejoin="round"/></svg>
-          </div>
-          Постачальник
-        </div>
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'kaizen')">
-          <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24"><path d="M15 2 L18 8 L25 7 L21 12 L27 16 L20 17 L19 23 L14 18 L8 22 L9 15 L3 13 L10 10 Z" fill="none" stroke="#e85d30" stroke-width="1.2" stroke-linejoin="round"/><text x="15" y="15" font-size="8" text-anchor="middle" fill="#e85d30" font-weight="700" font-family="Inter,sans-serif">K</text></svg>
-          </div>
-          Kaizen Burst
-        </div>
-      </div>
-    </div>
-
-    <div class="canvas-wrap" id="canvasWrap" ondragover="event.preventDefault()" ondrop="onDrop(event)">
-      <svg id="canvas" xmlns="http://www.w3.org/2000/svg" onmousedown="svgMouseDown(event)" onmousemove="svgMouseMove(event)" onmouseup="svgMouseUp(event)" oncontextmenu="return false">
-        <defs>
-          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M20 0L0 0 0 20" fill="none" stroke="var(--border)" stroke-width="0.5"/>
-          </pattern>
-        </defs>
-        <rect id="gridBg" width="100%" height="100%" fill="url(#grid)"/>
-        <g id="zoneLayer"></g>
-        <g id="connLayer"></g>
-        <g id="elLayer"></g>
-        <g id="tempArrow" style="display:none">
-          <line id="tempLine" stroke="#185fa5" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
-        </g>
-      </svg>
-    </div>
-
-    <div class="rpanel">
-      <div class="rtabs">
-        <button class="rtab active" id="rtab-props" onclick="switchRTab('props')">Параметри</button>
-        <button class="rtab" id="rtab-metrics" onclick="switchRTab('metrics')">Метрики</button>
-        <button class="rtab" id="rtab-maps" onclick="switchRTab('maps')">Карти</button>
-        <button class="rtab" id="rtab-ai" onclick="switchRTab('ai')">Gemini AI</button>
-      </div>
-      <div class="rpanel-body" id="rpb-props">
-        <div class="no-sel" id="noSelMsg"><i class="ti ti-hand-finger"></i>Виберіть елемент<br>для редагування</div>
-        <div id="propsForm" style="display:none"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-metrics" style="display:none">
-        <div id="metricsContent"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-maps" style="display:none">
-        <div id="mapsContent"></div>
-      </div>
-      <div class="rpanel-body" id="rpb-ai" style="display:none">
-        <div class="prop-label" style="margin-bottom:4px;">Google Gemini API ключ</div>
-        <div class="ai-key-row">
-          <input class="ai-key-input" type="password" id="aiKeyInput" placeholder="AIzaSy…">
-          <button class="ai-save-btn" onclick="saveApiKey()"><i class="ti ti-check"></i></button>
-        </div>
-        <p class="ai-hint">Ключ зберігається в браузері. Отримати безкоштовно: <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a></p>
-        <button class="ai-run-btn" id="aiRunBtn" onclick="runAi()">
-          <i class="ti ti-sparkles"></i> Проаналізувати потік (Gemini)
-        </button>
-        <div id="aiOut" style="display:none" class="ai-out"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="timeline" id="timeline">
-    <span class="tl-label">Lead Time</span>
-    <div class="tl-bar-wrap" id="tlBar">
-      <div class="tl-va" style="width:10%"><span class="tl-bar-lbl">VA</span></div>
-      <div class="tl-nva" style="width:90%"><span class="tl-bar-lbl">NVA</span></div>
-    </div>
-    <span class="tl-stat" id="tlLT">—</span>
-    <span class="tl-eff" id="tlEff" style="color:var(--text3)">—</span>
-  </div>
-
+<div class="hdr">
+  <div class="logo">VSM <em>Constructor</em></div>
+  <div class="hsep"></div>
+  <input class="map-name" id="mapName" type="text" value="Нова карта VSM">
+  <div class="hsp"></div>
+  <button class="hbtn on" id="bsel" onclick="setTool('select')">▷ Вибір</button>
+  <button class="hbtn" id="bcon" onclick="setTool('connect')">→ З'єднати</button>
+  <button class="hbtn" id="bgrp" onclick="setTool('group')" title="Намалювати групу (G)">⬜ Група</button>
+  <div class="hsep"></div>
+  <button class="hbtn" onclick="saveToLocal()">💾 Зберегти</button>
+  <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
+  <button class="hbtn" onclick="document.getElementById('importF').click()">↙ Імпорт</button>
+  <input type="file" id="importF" accept=".json" style="display:none" onchange="importJSON(event)">
+  <div class="hsep"></div>
+  <button class="hbtn" onclick="loadDemo()">▦ Приклад</button>
+  <button class="hbtn" onclick="clearAll()">✕ Очистити</button>
+  <button class="hbtn" onclick="showSettings()">⚙</button>
 </div>
 
-<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModal(event)"></div>
-<div id="modal" class="modal" style="display:none"></div>
-<div id="toastArea" class="toast-area"></div>
+<div class="main">
+<div class="sbar">
+  <div class="sbar-sec">
+    <div class="sbar-ttl">Учасники потоку</div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'supplier')">
+      <svg width="76" height="44" viewBox="0 0 76 44">
+        <rect x="1" y="1" width="74" height="42" fill="#fff" stroke="#111" stroke-width="2"/>
+        <rect x="1" y="1" width="74" height="14" fill="#111"/>
+        <text x="38" y="9" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="sans-serif" font-weight="700">FACTORY</text>
+        <text x="38" y="30" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="sans-serif">Постачальник</text>
+      </svg>
+      Постачальник
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'customer')">
+      <svg width="76" height="44" viewBox="0 0 76 44">
+        <rect x="1" y="1" width="74" height="42" fill="#fff" stroke="#111" stroke-width="2"/>
+        <rect x="1" y="1" width="74" height="14" fill="#111"/>
+        <text x="38" y="9" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="sans-serif" font-weight="700">FACTORY</text>
+        <text x="38" y="30" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="sans-serif">Клієнт</text>
+      </svg>
+      Клієнт
+    </div>
+
+    <div class="sbar-ttl" style="margin-top:8px;border-top:.5px solid var(--border);padding-top:8px">Виробничі процеси</div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'process')">
+      <svg width="76" height="50" viewBox="0 0 76 50">
+        <rect x="1" y="1" width="74" height="48" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="38" y="13" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="sans-serif" font-weight="700">Процес</text>
+        <line x1="1" y1="22" x2="75" y2="22" stroke="#111" stroke-width="1.5"/>
+        <text x="20" y="32" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">CT</text>
+        <text x="55" y="32" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">C/O</text>
+        <text x="20" y="42" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">Up%</text>
+        <text x="55" y="42" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">Op</text>
+      </svg>
+      Процес
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'inventory')">
+      <svg width="76" height="48" viewBox="0 0 76 48">
+        <polygon points="38,2 74,44 2,44" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="38" y="32" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="sans-serif" font-weight="700">WIP</text>
+      </svg>
+      Запаси / WIP
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'supermarket')">
+      <svg width="76" height="50" viewBox="0 0 76 50">
+        <rect x="1" y="6" width="74" height="32" fill="#fff" stroke="#111" stroke-width="2"/>
+        <line x1="1" y1="16" x2="75" y2="16" stroke="#111" stroke-width="1.5"/>
+        <line x1="1" y1="26" x2="75" y2="26" stroke="#111" stroke-width="1.5"/>
+        <line x1="20" y1="6" x2="20" y2="38" stroke="#111" stroke-width="1.2"/>
+        <line x1="40" y1="6" x2="40" y2="38" stroke="#111" stroke-width="1.2"/>
+        <line x1="60" y1="6" x2="60" y2="38" stroke="#111" stroke-width="1.2"/>
+        <line x1="12" y1="38" x2="12" y2="44" stroke="#111" stroke-width="2"/>
+        <line x1="64" y1="38" x2="64" y2="44" stroke="#111" stroke-width="2"/>
+        <line x1="6" y1="44" x2="70" y2="44" stroke="#111" stroke-width="2"/>
+      </svg>
+      Супермаркет
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'kaizen')">
+      <svg width="60" height="52" viewBox="0 0 60 52">
+        <polygon points="30,2 37,17 53,19 42,30 45,46 30,38 15,46 18,30 7,19 23,17" fill="#FF8C00" stroke="#B85C00" stroke-width="1.5"/>
+        <text x="30" y="25" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="sans-serif" font-weight="700">K</text>
+      </svg>
+      Kaizen Burst
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'operator')">
+      <svg width="50" height="52" viewBox="0 0 50 52">
+        <circle cx="25" cy="14" r="11" fill="#fff" stroke="#111" stroke-width="2"/>
+        <circle cx="25" cy="14" r="4" fill="#111"/>
+        <path d="M5 50 Q5 30 25 30 Q45 30 45 50" fill="#fff" stroke="#111" stroke-width="2"/>
+      </svg>
+      Оператор
+    </div>
+
+    <div class="pal" draggable="true" ondragstart="pdrag(event,'truck')">
+      <svg width="76" height="44" viewBox="0 0 76 44">
+        <rect x="1" y="6" width="50" height="28" rx="2" fill="#fff" stroke="#111" stroke-width="2"/>
+        <path d="M51 14 L51 34 L75 34 L75 26 L66 14 Z" fill="#fff" stroke="#111" stroke-width="2"/>
+        <circle cx="16" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <circle cx="40" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <circle cx="63" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <rect x="55" y="16" width="12" height="8" rx="1" fill="#cce6ff" stroke="#111" stroke-width="1"/>
+      </svg>
+      Вантажівка
+    </div>
+  </div>
+
+  <div class="sbar-sec" style="border-top:.5px solid var(--border);margin-top:4px;padding-top:8px">
+    <div class="sbar-ttl">Угруповання</div>
+    <div class="pal" draggable="false" style="cursor:default;opacity:.85" onclick="setTool('group')" title="Натисни і намалюй рамку на полотні">
+      <svg width="76" height="38" viewBox="0 0 76 38">
+        <rect x="1" y="1" width="74" height="36" rx="3" fill="rgba(79,140,213,.08)" stroke="#1a5fa8" stroke-width="2" stroke-dasharray="6 3"/>
+        <rect x="1" y="1" width="74" height="13" rx="3" fill="rgba(79,140,213,.18)"/>
+        <text x="38" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#1a5fa8" font-family="sans-serif" font-weight="700">ДІЛЬНИЦЯ</text>
+        <rect x="8" y="17" width="26" height="16" rx="1" fill="rgba(79,140,213,.12)" stroke="#1a5fa8" stroke-width="1"/>
+        <rect x="42" y="17" width="26" height="16" rx="1" fill="rgba(79,140,213,.12)" stroke="#1a5fa8" stroke-width="1"/>
+      </svg>
+      Дільниця
+    </div>
+    <div class="pal" draggable="false" style="cursor:default;opacity:.85" onclick="setToolGroup('workstation')" title="Натисни і намалюй рамку на полотні">
+      <svg width="76" height="38" viewBox="0 0 76 38">
+        <rect x="1" y="1" width="74" height="36" rx="3" fill="rgba(30,160,90,.08)" stroke="#1d9e75" stroke-width="2" stroke-dasharray="4 3"/>
+        <rect x="1" y="1" width="74" height="13" rx="3" fill="rgba(30,160,90,.18)"/>
+        <text x="38" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#0c6b4e" font-family="sans-serif" font-weight="700">РОБ. МІСЦЕ</text>
+        <rect x="14" y="17" width="48" height="16" rx="1" fill="rgba(30,160,90,.12)" stroke="#1d9e75" stroke-width="1"/>
+      </svg>
+      Робоче місце
+    </div>
+    <p style="font-size:9px;color:var(--text3);padding:3px 2px;line-height:1.5">Клацни елемент → намалюй рамку навколо операцій. Кнопка ▶ — згорнути.</p>
+  </div>
+      <svg width="76" height="44" viewBox="0 0 76 44">
+        <rect x="1" y="1" width="74" height="42" rx="2" fill="#fff" stroke="#111" stroke-width="2" stroke-dasharray="7 4"/>
+        <text x="38" y="16" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="sans-serif" font-weight="700">PRODUCTION</text>
+        <text x="38" y="28" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="sans-serif" font-weight="700">CONTROL</text>
+      </svg>
+      Упр. виробн.
+    </div>
+  </div>
+
+  <div class="sbar-sec" style="border-top:.5px solid var(--border);margin-top:4px;padding-top:8px">
+    <div class="sbar-ttl">Потоки (→ З'єднати)</div>
+    <div style="display:flex;flex-direction:column;gap:5px;padding:0 2px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
+        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#111" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="#111"/></svg>Push
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
+        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#1d9e75" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="30,2 38,6 30,10" fill="#1d9e75"/></svg>Pull
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
+        <svg width="38" height="12" viewBox="0 0 38 12"><path d="M0 6 Q19 1 38 6" fill="none" stroke="#1a5fa8" stroke-width="2"/><polygon points="30,2 38,6 30,10" fill="#1a5fa8"/></svg>Інфо (ручний)
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
+        <svg width="38" height="12" viewBox="0 0 38 12"><path d="M0 6 Q19 1 38 6" fill="none" stroke="#1a5fa8" stroke-width="2" stroke-dasharray="5 2"/><polygon points="30,2 38,6 30,10" fill="#1a5fa8"/></svg>Інфо (ел.)
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
+        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#b87316" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="#b87316"/></svg>Транспорт
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cvs-wrap" id="cvswrap" ondragover="event.preventDefault()" ondrop="onDrop(event)">
+  <svg id="canvas" xmlns="http://www.w3.org/2000/svg"
+    onmousedown="svgMD(event)" onmousemove="svgMM(event)" onmouseup="svgMU(event)">
+    <defs>
+      <marker id="m-push" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#111"/></marker>
+      <marker id="m-pull" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1d9e75"/></marker>
+      <marker id="m-info" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1a5fa8"/></marker>
+      <marker id="m-transport" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#b87316"/></marker>
+      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+        <path d="M20 0L0 0 0 20" fill="none" stroke="rgba(0,0,0,.06)" stroke-width=".5"/>
+      </pattern>
+      <pattern id="grid5" width="100" height="100" patternUnits="userSpaceOnUse">
+        <rect width="100" height="100" fill="url(#grid)"/>
+        <path d="M100 0L0 0 0 100" fill="none" stroke="rgba(0,0,0,.10)" stroke-width=".5"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid5)"/>
+    <g id="glayer"></g>
+    <g id="clayer"></g>
+    <g id="elayer"></g>
+    <g id="tarrow" style="display:none">
+      <line id="tline" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#m-info)"/>
+    </g>
+    <g id="drawrect" style="display:none">
+      <rect id="drawbox" fill="rgba(79,140,213,.08)" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
+    </g>
+  </svg>
+</div>
+
+<div class="rp">
+  <div class="rtabs">
+    <button class="rtab on" id="rt-props"   onclick="rtab('props')">Параметри</button>
+    <button class="rtab"    id="rt-metrics" onclick="rtab('metrics')">Метрики</button>
+    <button class="rtab"    id="rt-maps"    onclick="rtab('maps')">Карти</button>
+    <button class="rtab"    id="rt-ai"      onclick="rtab('ai')">AI</button>
+  </div>
+  <div class="rpb" id="rpb-props">
+    <div class="no-sel" id="nosel">Виберіть елемент<br>для редагування</div>
+    <div id="pform" style="display:none"></div>
+  </div>
+  <div class="rpb" id="rpb-metrics" style="display:none"><div id="mcont"></div></div>
+  <div class="rpb" id="rpb-maps" style="display:none"><div id="mapcont"></div></div>
+  <div class="rpb" id="rpb-ai" style="display:none">
+    <div class="pl">Claude API ключ</div>
+    <div class="ai-key-row">
+      <input class="ai-ki" type="password" id="aikey" placeholder="sk-ant-…">
+      <button class="ai-ks" onclick="saveKey()">✓ OK</button>
+    </div>
+    <p class="ai-hint">Ключ зберігається локально в браузері. <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p>
+    <button class="ai-btn" id="aibtn" onclick="runAi()">✦ Проаналізувати потік</button>
+    <div id="aiout" style="display:none" class="ai-out"></div>
+  </div>
+</div>
+</div>
+
+<div class="tl">
+  <span class="tl-lbl">Lead Time</span>
+  <div class="tl-bar" id="tlbar">
+    <div class="tl-va" style="width:5%"><span class="tl-bl"></span></div>
+    <div class="tl-nva" style="width:95%"><span class="tl-bl"></span></div>
+  </div>
+  <span class="tl-st" id="tllt" style="color:var(--text3)">—</span>
+  <span class="tl-ef" id="tlef" style="color:var(--text3)">—</span>
+</div>
+</div>
+
+<div id="mov" class="mov" style="display:none" onclick="if(event.target===this)closeMod()">
+  <div id="mod" class="mod"></div>
+</div>
+<div class="tarea" id="tarea"></div>
 
 <script>
-/* ══════════════════════════════════════════
-   STATE & DEFAULTS
-══════════════════════════════════════════ */
-let elements = [];
-let connections = [];
-let selectedId = null;
-let currentTool = 'select';
-let dragging = null;
-let dragOff = {x:0,y:0};
-let connectStart = null;
-let idCnt = 1;
-let activeTab = 'props';
-const GRID = 20;
+/* ═══════════ STATE ═══════════ */
+let ELS=[],CONNS=[],GROUPS=[],selId=null,selGrpId=null,tool='select',dragging=null,draggingGrp=null,doff={x:0,y:0},connStart=null,IDC=1,atab='props';
+let drawing=false,drawStart={x:0,y:0},drawKind='section',pendingGroupKind='section';
+const GRID=20;
 
-const EL_DEFAULTS = {
-  zone:      { label:'Дільниця / РМ', w:260, h:160, collapsed: false },
-  process:   { label:'Процес',        ct:60,  co:30,  uptime:85, operators:1, shifts:1, zoneId: null },
-  inventory: { label:'Запаси',        qty:500, days:2 },
-  customer:  { label:'Клієнт',        demand:500 },
-  supplier:  { label:'Постачальник',  lead:5 },
-  kaizen:    { label:'Kaizen',        note:'Покращення' },
+/* ═══════════ GROUP CONFIG ═══════════ */
+const GRP_CONF={
+  section:    {label:'Дільниця',    stroke:'#1a5fa8', fill:'rgba(79,140,213,.07)',  hfill:'rgba(79,140,213,.18)',  htext:'#1a5fa8'},
+  workstation:{label:'Роб. місце', stroke:'#1d9e75', fill:'rgba(30,160,90,.07)',   hfill:'rgba(30,160,90,.18)',   htext:'#0c6b4e'},
 };
 
-const EL_COLORS = {
-  zone:     { fill:'rgba(24, 95, 165, 0.03)', stroke:'#185fa5', text:'#185fa5' },
-  process:  { fill:'#e6f1fb', stroke:'#185fa5', text:'#0c447c' },
-  inventory:{ fill:'#faeeda', stroke:'#ba7517', text:'#633806' },
-  customer: { fill:'#eaf3de', stroke:'#3b6d11', text:'#27500a' },
-  supplier: { fill:'#eaf3de', stroke:'#3b6d11', text:'#27500a' },
-  kaizen:   { fill:'#faece7', stroke:'#993c1d', text:'#4a1b0c' },
+/* ═══════════ BBOX ═══════════ */
+const BBOX={
+  process:{w:150,h:88},supplier:{w:120,h:60},customer:{w:120,h:60},
+  inventory:{w:92,h:72},supermarket:{w:104,h:70},kaizen:{w:62,h:62},
+  operator:{w:50,h:68},truck:{w:92,h:44},production_control:{w:120,h:52},
+};
+function bbox(el){return BBOX[el.type]||{w:100,h:60}}
+function center(el){const b=bbox(el);return{x:el.x+b.w/2,y:el.y+b.h/2}}
+
+/* ═══════════ DEFAULTS ═══════════ */
+const DEFS={
+  supplier:{label:'Постачальник',lead:5},
+  customer:{label:'Клієнт',demand:500},
+  process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inventory_out:0},
+  inventory:{label:'',qty:500,days:2},
+  supermarket:{label:'Супермаркет',qty:200,days:1},
+  kaizen:{label:'Kaizen',note:''},
+  operator:{label:'Оператор'},
+  truck:{label:'Транспорт'},
+  production_control:{label:''},
 };
 
-const CONN_COLORS = { push:'#444441', pull:'#1d9e75', info:'#185fa5', transport:'#ba7517' };
-const CONN_NAMES  = { push:'Push',    pull:'Pull',    info:'Інфо',   transport:'Транспорт' };
-
-function elBBox(el) {
-  if (el.type === 'zone') return { x:el.x, y:el.y, w:el.w||260, h:el.collapsed?40:el.h||160 };
-  const sizes = { process:{w:120,h:72}, inventory:{w:90,h:65}, customer:{w:100,h:62}, supplier:{w:100,h:62}, kaizen:{w:60,h:60} };
-  const s = sizes[el.type] || {w:100,h:60};
-  return { x:el.x, y:el.y, w:s.w, h:s.h };
+/* ═══════════ SYMBOL LIBRARY (Standard LEI/Toyota VSM) ═══════════ */
+function selRing(el,pad=4){
+  const b=bbox(el);
+  return `<rect x="${el.x-pad}" y="${el.y-pad}" width="${b.w+pad*2}" height="${b.h+pad*2}" rx="6" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`;
 }
 
-function elCenter(el) {
-  // Якщо процес всередині згорнутої зони — лінія підключається до центру самої зони
-  if (el.zoneId) {
-    const parent = elements.find(z => z.id === el.zoneId);
-    if (parent && parent.collapsed) return elCenter(parent);
-  }
-  const b = elBBox(el); 
-  return { x:b.x + b.w/2, y:b.y + b.h/2 };
+const SYMS={
+  supplier(el,sel){
+    const {x,y}=el,w=120,h=60;
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#1a1a18"/>
+    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
+    <text x="${x+w/2}" y="${y+36}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
+    <text x="${x+w/2}" y="${y+50}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">Плечо: ${el.lead} дн</text>`;
+  },
+
+  customer(el,sel){
+    const {x,y}=el,w=120,h=60;
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#1a1a18"/>
+    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
+    <text x="${x+w/2}" y="${y+34}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
+    <text x="${x+w/2}" y="${y+48}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.demand} шт/зм</text>`;
+  },
+
+  process(el,sel){
+    const {x,y}=el,w=150,h=88;
+    const bn=isBN(el),tk=getTakt();
+    const sw=bn?2.5:2,sc=bn?'#a02d2d':'#1a1a18';
+    const taktWarn=tk&&el.ct>tk&&!bn?`<text x="${x+w-4}" y="${y+h-8}" text-anchor="end" font-size="8" fill="#b87316" font-family="Arial,sans-serif" font-weight="600">▲CT&gt;Takt</text>`:'';
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${sc}" stroke-width="${sw}"/>
+    ${bn?`<rect x="${x}" y="${y}" width="${w}" height="5" fill="#e24b4a"/>
+    <rect x="${x+w-50}" y="${y+h-16}" width="48" height="14" rx="2" fill="#e24b4a"/>
+    <text x="${x+w-26}" y="${y+h-9}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">BOTTLENECK</text>`:''}
+    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
+    <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#1a1a18" stroke-width="1.5"/>
+    <line x1="${x+w/2}" y1="${y+24}" x2="${x+w/2}" y2="${y+64}" stroke="#1a1a18" stroke-width="1"/>
+    <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan></text>
+    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">C/O: <tspan font-weight="700">${el.co}s</tspan></text>
+    <text x="${x+6}" y="${y+58}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Up: <tspan font-weight="700">${el.uptime}%</tspan></text>
+    <text x="${x+w/2+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${el.operators}</tspan></text>
+    <text x="${x+w/2+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Зм: <tspan font-weight="700">${el.shifts}</tspan></text>
+    <line x1="${x}" y1="${y+64}" x2="${x+w}" y2="${y+64}" stroke="#1a1a18" stroke-width="1"/>
+    <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inventory_out||0} шт</text>
+    ${taktWarn}`;
+  },
+
+  inventory(el,sel){
+    const {x,y}=el;
+    const b=bbox(el);
+    return`${sel?selRing(el):''
+    }<polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <text x="${x+46}" y="${y+38}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">${el.qty}</text>
+    <text x="${x+46}" y="${y+70}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="600">${el.days} дн</text>`;
+  },
+
+  supermarket(el,sel){
+    const {x,y}=el,w=104,sh=38;
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y+6}" width="${w}" height="${sh}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <line x1="${x}" y1="${y+18}" x2="${x+w}" y2="${y+18}" stroke="#1a1a18" stroke-width="1.5"/>
+    <line x1="${x}" y1="${y+29}" x2="${x+w}" y2="${y+29}" stroke="#1a1a18" stroke-width="1.5"/>
+    <line x1="${x+26}" y1="${y+6}" x2="${x+26}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
+    <line x1="${x+52}" y1="${y+6}" x2="${x+52}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
+    <line x1="${x+78}" y1="${y+6}" x2="${x+78}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
+    <line x1="${x+14}" y1="${y+44}" x2="${x+14}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
+    <line x1="${x+90}" y1="${y+44}" x2="${x+90}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
+    <line x1="${x+8}" y1="${y+52}" x2="${x+96}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
+    <text x="${x+w/2}" y="${y+61}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
+    <text x="${x+w/2}" y="${y+71}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.qty}шт · ${el.days}дн</text>`;
+  },
+
+  kaizen(el,sel){
+    const cx=el.x+31,cy=el.y+31,r=27;
+    function pt(i){const a=(i/12)*Math.PI*2-Math.PI/2,ri=i%2===0?r:r*.62;return`${cx+Math.cos(a)*ri},${cy+Math.sin(a)*ri}`}
+    const pts=Array.from({length:12},(_,i)=>pt(i)).join(' ');
+    return`${sel?`<rect x="${el.x-4}" y="${el.y-4}" width="70" height="70" rx="35" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''
+    }<polygon points="${pts}" fill="#FF8C00" stroke="#B85C00" stroke-width="1.5"/>
+    <text x="${cx}" y="${cy-7}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="Arial,sans-serif" font-weight="700">⚡</text>
+    <text x="${cx}" y="${cy+7}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="600">${(el.label||'').slice(0,9)}</text>`;
+  },
+
+  operator(el,sel){
+    const {x,y}=el;
+    return`${sel?selRing(el):''
+    }<circle cx="${x+25}" cy="${y+14}" r="12" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <circle cx="${x+25}" cy="${y+14}" r="5" fill="#1a1a18"/>
+    <path d="M${x+5} ${y+58} Q${x+5} ${y+36} ${x+25} ${y+36} Q${x+45} ${y+36} ${x+45} ${y+58}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <text x="${x+25}" y="${y+68}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif">${el.label}</text>`;
+  },
+
+  truck(el,sel){
+    const {x,y}=el;
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y+4}" width="52" height="28" rx="2" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <path d="M${x+52} ${y+12} L${x+52} ${y+32} L${x+90} ${y+32} L${x+90} ${y+24} L${x+80} ${y+12} Z" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <circle cx="${x+16}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <circle cx="${x+40}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <circle cx="${x+74}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
+    <rect x="${x+55}" y="${y+14}" width="13" height="9" rx="1" fill="#cce6ff" stroke="#1a1a18" stroke-width="1"/>
+    <text x="${x+46}" y="${y+46}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif">${el.label||'Транспорт'}</text>`;
+  },
+
+  production_control(el,sel){
+    const {x,y}=el,w=120,h=52;
+    return`${sel?selRing(el):''
+    }<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="#fff" stroke="#1a1a18" stroke-width="2" stroke-dasharray="8 4"/>
+    <text x="${x+w/2}" y="${y+18}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">PRODUCTION</text>
+    <text x="${x+w/2}" y="${y+30}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">CONTROL</text>
+    <text x="${x+w/2}" y="${y+43}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#555" font-family="Arial,sans-serif">${el.label||''}</text>`;
+  },
+};
+
+/* ═══════════ GROUP RENDERING ═══════════ */
+function grpChildIds(grp){
+  // which ELS centers are inside group bbox?
+  return ELS.filter(el=>{
+    if(el._hidden)return false;
+    const c=center(el);
+    return c.x>=grp.x&&c.x<=grp.x+grp.w&&c.y>=grp.y&&c.y<=grp.y+grp.h;
+  }).map(e=>e.id);
 }
 
-function newId() { return 'e'+Date.now()+(idCnt++); }
-
-/* ══════════════════════════════════════════
-   RENDER LOGIC
-══════════════════════════════════════════ */
-function renderAll() {
-  updateZoneAssignments(); // Перевіряємо, які процеси потрапили в яку дільницю
-  renderZones();
-  renderConnections();
-  renderElements();
-  updateTimeline();
-  if (activeTab === 'metrics') updateMetrics();
-  if (activeTab === 'maps') renderMapsList();
+function grpCollapsedBBox(grp){
+  // when collapsed, group shows as compact process-like box
+  return{x:grp.x,y:grp.y,w:160,h:72};
 }
 
-function svg(tag, attrs, inner) {
-  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k,v] of Object.entries(attrs||{})) el.setAttribute(k,v);
-  if (inner) el.innerHTML = inner;
-  return el;
-}
-function txt(x,y,content,attrs) {
-  return svg('text', {x,y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Inter,sans-serif',...(attrs||{})}, content);
-}
+function rGroups(){
+  const L=document.getElementById('glayer');L.innerHTML='';
+  // sort: sections first (larger), workstations on top
+  const sorted=[...GROUPS].sort((a,b)=>(a.kind==='section'?0:1)-(b.kind==='section'?0:1));
+  sorted.forEach(grp=>{
+    const G=document.createElementNS('http://www.w3.org/2000/svg','g');
+    G.setAttribute('id','grp_'+grp.id);
+    const cfg=GRP_CONF[grp.kind]||GRP_CONF.section;
+    const isSel=selGrpId===grp.id;
 
-// Автоматична прив'язка процесів до Зон за координатами
-function updateZoneAssignments() {
-  const zones = elements.filter(e => e.type === 'zone');
-  elements.forEach(el => {
-    if (el.type === 'process') {
-      el.zoneId = null;
-      // Шукаємо, в яку зону входить лівий верхній кут процесу
-      for (const z of zones) {
-        if (el.x >= z.x && el.x <= z.x + (z.w||260) && el.y >= z.y && el.y <= z.y + (z.h||160)) {
-          el.zoneId = z.id;
-          break;
-        }
-      }
-    }
-  });
-}
-
-function isBottleneck(el) {
-  if (el.type !== 'process') return false;
-  const procs = elements.filter(e=>e.type==='process');
-  if (procs.length < 2) return false;
-  return el.ct === Math.max(...procs.map(p=>p.ct));
-}
-function getTakt() {
-  const c = elements.find(e=>e.type==='customer');
-  return c && c.demand ? Math.round(28800/c.demand) : 0;
-}
-
-// Окремий рендер для Дільниць (Зон)
-function renderZones() {
-  const layer = document.getElementById('zoneLayer');
-  layer.innerHTML = '';
-  const zones = elements.filter(e => e.type === 'zone');
-  
-  zones.forEach(z => {
-    const G = svg('g', { id:'g_'+z.id, style:'cursor:move' });
-    G.addEventListener('mousedown', e => elMouseDown(e, z.id));
-    
-    const b = elBBox(z);
-    const c = EL_COLORS.zone;
-    
-    // Фоновий прямокутник дільниці
-    G.appendChild(svg('rect', {
-      x: b.x, y: b.y, width: b.w, height: b.h, rx: 6,
-      fill: c.fill, stroke: c.stroke, 'stroke-width': 1.5,
-      'stroke-dasharray': z.collapsed ? 'none' : '6 4'
-    }));
-
-    // Плашка заголовка дільниці
-    G.appendChild(svg('rect', {
-      x: b.x, y: b.y, width: b.w, height: 30, rx: 4,
-      fill: z.collapsed ? '#e6f1fb' : 'rgba(24, 95, 165, 0.1)'
-    }));
-
-    // Текст назви дільниці
-    const title = svg('text', { x: b.x + 12, y: b.y + 15, 'dominant-baseline':'central', 'font-size':'11', 'font-weight':'700', fill: c.text });
-    title.textContent = z.label + (z.collapsed ? ` (Згорнуто операції)` : '');
-    G.appendChild(title);
-
-    // Кнопка Згорнути / Розгорнути [+ / -]
-    const btnG = svg('g', { style: 'cursor: pointer;' });
-    btnG.appendChild(svg('circle', { cx: b.x + b.w - 20, cy: b.y + 15, r: 8, fill: '#fff', stroke: c.stroke, 'stroke-width': 1 }));
-    btnG.appendChild(txt(b.x + b.w - 20, b.y + 15, z.collapsed ? '+' : '-', { 'font-size': '12', 'font-weight': '700', fill: c.text }));
-    
-    btnG.addEventListener('mousedown', e => {
-      e.stopPropagation();
-      z.collapsed = !z.collapsed;
-      renderAll();
-    });
-    G.appendChild(btnG);
-
-    // Якщо згорнуто — виводимо агреговані метрики дільниці всередині рамки
-    if (z.collapsed) {
-      const childProcs = elements.filter(p => p.zoneId === z.id);
-      const totalCt = childProcs.reduce((sum, p) => sum + p.ct, 0);
-      const avgUptime = childProcs.length ? Math.round(childProcs.reduce((sum, p) => sum + p.uptime, 0) / childProcs.length) : 0;
-      
-      const statsTxt = svg('text', { x: b.x + 12, y: b.y + 40, 'font-size': '10', fill: '#5f5e5a' });
-      statsTxt.textContent = `Операцій: ${childProcs.length} | Спільний СТ: ${totalCt}с | Сер. Uptime: ${avgUptime}%`;
-      G.appendChild(statsTxt);
-    }
-
-    if (selectedId === z.id) {
-      G.appendChild(svg('rect', { x: b.x-3, y: b.y-3, width: b.w+6, height: b.h+6, rx: 8, fill: 'none', stroke: '#185fa5', 'stroke-width': '1.5', 'stroke-dasharray': '3 3' }));
-    }
-
-    layer.appendChild(G);
-  });
-}
-
-function renderElements() {
-  const layer = document.getElementById('elLayer');
-  layer.innerHTML = '';
-  
-  elements.forEach(el => {
-    if (el.type === 'zone') return; // Зони вже відрендерені на своєму шарі
-    
-    // Якщо процес знаходиться всередині згорнутої зони, ми його не малюємо
-    if (el.zoneId) {
-      const parentZone = elements.find(z => z.id === el.zoneId);
-      if (parentZone && parentZone.collapsed) return;
-    }
-
-    const G = svg('g', { id:'g_'+el.id, style:'cursor:'+(currentTool==='connect'?'crosshair':'move') });
-    G.addEventListener('mousedown', e=>elMouseDown(e,el.id));
-
-    const c = EL_COLORS[el.type] || EL_COLORS.process;
-    const bn = isBottleneck(el);
-    const tk = getTakt();
-
-    if (el.type === 'process') {
-      const strokeC = bn ? '#a32d2d' : c.stroke;
-      const strokeW = bn ? 2 : 1;
-      G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:72,rx:4,fill:c.fill,stroke:strokeC,'stroke-width':strokeW}));
-      if (bn) G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:5,rx:2,fill:'#e24b4a'}));
-      G.appendChild(txt(el.x+60, el.y+13, el.label, {'font-size':'11','font-weight':'600',fill:c.text}));
-      G.appendChild(svg('line',{x1:el.x+6,y1:el.y+22,x2:el.x+114,y2:el.y+22,stroke:c.stroke,'stroke-width':'0.5'}));
-      
-      const rows = [
-        `CT: ${el.ct}s    C/O: ${el.co}s`,
-        `Uptime: ${el.uptime}%    Op: ${el.operators}`,
-        `Зміни: ${el.shifts}${bn?' ◀ ВУЗЬКЕ':tk&&el.ct>tk?' ▲ > такту':''}`,
-      ];
-      rows.forEach((r,i)=>{
-        const t = svg('text',{x:el.x+7,y:el.y+31+i*13,'font-size':'9','font-family':'Inter,sans-serif',fill: i===2&&bn?'#a32d2d':c.text});
-        t.textContent=r; G.appendChild(t);
-      });
-    } else if (el.type === 'inventory') {
-      G.appendChild(svg('polygon',{points:`${el.x+45},${el.y} ${el.x+90},${el.y+50} ${el.x},${el.y+50}`,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
-      G.appendChild(txt(el.x+45,el.y+33,"I",{'font-size':'14','font-weight':'800',fill:c.text, opacity:'0.3'}));
-      G.appendChild(txt(el.x+45,el.y+24,el.qty.toString(),{'font-size':'11','font-weight':'700',fill:c.text}));
-      G.appendChild(txt(el.x+45,el.y+60,el.days+' дн',{'font-size':'10','font-weight':'600',fill:c.text}));
-    } else if (el.type === 'customer' || el.type === 'supplier') {
-      const dPath = `M${el.x} ${el.y+12} L${el.x+25} ${el.y+12} L${el.x+25} ${el.y} L${el.x+50} ${el.y+12} L${el.x+50} ${el.y} L${el.x+75} ${el.y+12} L${el.x+75} ${el.y} L${el.x+100} ${el.y+12} L${el.x+100} ${el.y+45} L${el.x} ${el.y+45} Z`;
-      G.appendChild(svg('path',{d:dPath,fill:c.fill,stroke:c.stroke,'stroke-width':'1.3','stroke-linejoin':'round'}));
-      G.appendChild(txt(el.x+50,el.y+28,el.label,{'font-size':'10','font-weight':'600',fill:c.text}));
-      if (el.type==='customer') {
-        G.appendChild(txt(el.x+50,el.y+55,el.demand+' шт/зм',{'font-size':'10','font-weight':'500',fill:c.text}));
-      } else {
-        G.appendChild(txt(el.x+50,el.y+55,'Плечо: '+el.lead+' дн',{'font-size':'10','font-weight':'500',fill:c.text}));
-      }
-    } else if (el.type === 'kaizen') {
-      const points = `${el.x+30},${el.y} ${el.x+38},${el.y+12} ${el.x+52},${el.y+6} ${el.x+44},${el.y+20} ${el.x+58},${el.y+30} ${el.x+43},${el.y+36} ${el.x+48},${el.y+52} ${el.x+34},${el.y+42} ${el.x+22},${el.y+56} ${el.x+20},${el.y+38} ${el.x+4},${el.y+36} ${el.x+17},${el.y+24} ${el.x+6},${el.y+12} ${el.x+20},${el.y+15} Z`;
-      G.appendChild(svg('polygon',{points,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
-      G.appendChild(txt(el.x+30,el.y+22,"⚡",{'font-size':'12'}));
-      G.appendChild(txt(el.x+30,el.y+35,el.label.slice(0,9),{'font-size':'9','font-weight':'700',fill:c.text}));
-    }
-
-    if (selectedId === el.id) {
-      const b = elBBox(el);
-      G.insertBefore(svg('rect',{x:b.x-4,y:b.y-4,width:b.w+8,height:b.h+8,rx:8,fill:'none',stroke:'#185fa5','stroke-width':'1.5','stroke-dasharray':'5 3'}), G.firstChild);
-    }
-    layer.appendChild(G);
-  });
-}
-
-function renderConnections() {
-  const layer = document.getElementById('connLayer');
-  layer.innerHTML = '';
-  connections.forEach(conn => {
-    const from = elements.find(e=>e.id===conn.from);
-    const to   = elements.find(e=>e.id===conn.to);
-    if (!from||!to) return;
-    
-    const fc = elCenter(from), tc = elCenter(to);
-    const color = CONN_COLORS[conn.type]||'#888';
-    const dash  = conn.type==='pull'?'7 4':conn.type==='transport'?'3 3':'none';
-    const G = svg('g');
-    
-    if (conn.type==='info') {
-      const mx=(fc.x+tc.x)/2, my=Math.min(fc.y,tc.y)-35;
-      G.appendChild(svg('path',{d:`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`,fill:'none',stroke:color,'stroke-width':'1.5','stroke-dasharray':'5 3','marker-end':'url(#arr)'}));
+    if(grp.collapsed){
+      // ── COLLAPSED: show aggregate process box ──
+      const {x,y,w,h}=grpCollapsedBBox(grp);
+      const children=GROUPS.length?ELS.filter(el=>grp.childIds&&grp.childIds.includes(el.id)):[];
+      const totalCT=children.filter(e=>e.type==='process').reduce((s,e)=>s+e.ct,0);
+      const totalOp=children.filter(e=>e.type==='process').reduce((s,e)=>s+(e.operators||0),0);
+      const procCount=children.filter(e=>e.type==='process').length;
+      G.innerHTML=`
+        ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''}
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${cfg.hfill}" stroke="${cfg.stroke}" stroke-width="2"/>
+        <rect x="${x}" y="${y}" width="${w}" height="18" rx="3" fill="${cfg.hfill}"/>
+        <rect x="${x}" y="${y+14}" width="${w}" height="4" fill="${cfg.hfill}"/>
+        <text x="${x+22}" y="${y+9}" dominant-baseline="central" font-size="10" fill="${cfg.htext}" font-family="Arial,sans-serif" font-weight="700">${grp.label}</text>
+        <text x="${x+w-5}" y="${y+9}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.htext}" font-family="Arial,sans-serif">${procCount} оп.</text>
+        <line x1="${x}" y1="${y+18}" x2="${x+w}" y2="${y+18}" stroke="${cfg.stroke}" stroke-width="1.5"/>
+        <line x1="${x+w/2}" y1="${y+18}" x2="${x+w/2}" y2="${y+58}" stroke="${cfg.stroke}" stroke-width="1" stroke-dasharray="3 2"/>
+        <text x="${x+6}" y="${y+30}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">ΣCT: <tspan font-weight="700">${totalCT}s</tspan></text>
+        <text x="${x+6}" y="${y+44}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${totalOp}</tspan></text>
+        <text x="${x+w/2+6}" y="${y+30}" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">${procCount} процес(ів)</text>
+        <line x1="${x}" y1="${y+58}" x2="${x+w}" y2="${y+58}" stroke="${cfg.stroke}" stroke-width="1"/>
+        <text x="${x+w/2}" y="${y+65}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#888" font-family="Arial,sans-serif">згорнуто · натисни ▶ для розгортання</text>
+        <!-- expand button -->
+        <g class="grp-btn" onclick="toggleGroup('${grp.id}')" style="cursor:pointer">
+          <rect x="${x+w-20}" y="${y+2}" width="16" height="14" rx="3" fill="${cfg.stroke}"/>
+          <text x="${x+w-12}" y="${y+9}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700">▶</text>
+        </g>
+        <!-- move handle -->
+        <rect x="${x}" y="${y}" width="${w-22}" height="18" fill="transparent" style="cursor:move"
+          onmousedown="grpMD(event,'${grp.id}')"/>`;
     } else {
-      G.appendChild(svg('line',{x1:fc.x,y1:fc.y,x2:tc.x,y2:tc.y,stroke:color,'stroke-width':'1.5','stroke-dasharray':dash,'marker-end':'url(#arr)'}));
+      // ── EXPANDED: show container ──
+      const {x,y,w,h}=grp;
+      const HAT=20; // header height
+      G.innerHTML=`
+        ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''}
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${cfg.fill}" stroke="${cfg.stroke}" stroke-width="1.5" stroke-dasharray="7 4"/>
+        <rect x="${x}" y="${y}" width="${w}" height="${HAT}" rx="4" fill="${cfg.hfill}"/>
+        <rect x="${x}" y="${y+HAT-4}" width="${w}" height="4" fill="${cfg.hfill}"/>
+        <text x="${x+26}" y="${y+10}" dominant-baseline="central" font-size="10" fill="${cfg.htext}" font-family="Arial,sans-serif" font-weight="700">${grp.label}</text>
+        <!-- resize handle -->
+        <rect x="${x+w-10}" y="${y+h-10}" width="10" height="10" fill="${cfg.stroke}" rx="2" style="cursor:se-resize" onmousedown="grpResize(event,'${grp.id}')"/>
+        <!-- collapse button -->
+        <g onclick="toggleGroup('${grp.id}')" style="cursor:pointer">
+          <rect x="${x+4}" y="${y+4}" width="18" height="13" rx="3" fill="${cfg.stroke}"/>
+          <text x="${x+13}" y="${y+10}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700">▼</text>
+        </g>
+        <!-- move handle (rest of header) -->
+        <rect x="${x+24}" y="${y}" width="${w-36}" height="${HAT}" fill="transparent" style="cursor:move"
+          onmousedown="grpMD(event,'${grp.id}')"/>
+        <!-- select click area -->
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent" onmousedown="grpClick(event,'${grp.id}')"/>`;
     }
-    const mx2=(fc.x+tc.x)/2, my2=(fc.y+tc.y)/2-9;
-    G.appendChild(txt(mx2, my2, CONN_NAMES[conn.type], { 'font-size':'9', fill:color }));
-    layer.appendChild(G);
+    G.addEventListener('mousedown',e=>e.stopPropagation());
+    L.appendChild(G);
   });
 }
 
-/* ══════════════════════════════════════════
-   DRAG AND DROP & MOUSE INTERACTIONS
-══════════════════════════════════════════ */
-function palDragStart(e, type) { e.dataTransfer.setData('type', type); }
-
-function onDrop(e) {
-  const type = e.dataTransfer.getData('type');
-  if (!EL_DEFAULTS[type]) return;
-  const canvasEl = document.getElementById('canvas');
-  const r = canvasEl.getBoundingClientRect();
-  const x = snap(e.clientX - r.left);
-  const y = snap(e.clientY - r.top);
-  
-  const el = { id: newId(), type, x, y, ...JSON.parse(JSON.stringify(EL_DEFAULTS[type])) };
-  elements.push(el);
-  renderAll();
-  selectEl(el.id);
+function grpClick(e,id){
+  e.stopPropagation();
+  if(e.target.classList.contains('grp-btn'))return;
+  selGrpId=id;selId=null;renderAll();showGrpProps();
 }
 
-function snap(v) { return Math.round(v/GRID)*GRID; }
-
-function elMouseDown(e, id) {
+function grpMD(e,id){
   e.stopPropagation();
-  if (currentTool === 'connect') {
-    if (!connectStart) {
-      connectStart = id;
-      document.getElementById('tempArrow').style.display='';
-    } else if (connectStart !== id) {
-      showConnectTypeModal(connectStart, id);
-      connectStart = null;
-      document.getElementById('tempArrow').style.display='none';
+  selGrpId=id;selId=null;draggingGrp=id;
+  const grp=GROUPS.find(g=>g.id===id);
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  doff={x:e.clientX-r.left-grp.x,y:e.clientY-r.top-grp.y};
+  renderAll();showGrpProps();
+}
+
+let resizingGrp=null,resizeOff={x:0,y:0};
+function grpResize(e,id){
+  e.stopPropagation();
+  resizingGrp=id;
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  const grp=GROUPS.find(g=>g.id===id);
+  resizeOff={x:e.clientX-r.left-(grp.x+grp.w),y:e.clientY-r.top-(grp.y+grp.h)};
+}
+
+function toggleGroup(id){
+  const grp=GROUPS.find(g=>g.id===id);if(!grp)return;
+  if(!grp.collapsed){
+    // save child ids before collapsing
+    grp.childIds=grpChildIds(grp);
+    grp.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hidden=true});
+    grp.collapsed=true;
+  } else {
+    // restore
+    (grp.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hidden});
+    grp.collapsed=false;
+  }
+  renderAll();
+}
+
+/* ═══════════ GROUP CONNECTIONS (reroute to collapsed group) ═══════════ */
+function resolveCenter(elId){
+  // if el is hidden inside a collapsed group, return group's collapsed bbox center
+  const el=ELS.find(e=>e.id===elId);
+  if(!el)return null;
+  if(el._hidden){
+    const grp=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(elId));
+    if(grp){const b=grpCollapsedBBox(grp);return{x:b.x+b.w/2,y:b.y+b.h/2}}
+  }
+  return center(el);
+}
+const CCONF={
+  push:     {color:'#1a1a18',dash:'0',   marker:'m-push',     label:'Push',       curved:false},
+  pull:     {color:'#1d9e75',dash:'8 4', marker:'m-pull',     label:'Pull',       curved:false},
+  info:     {color:'#1a5fa8',dash:'0',   marker:'m-info',     label:'Інфо',       curved:true},
+  'info-e': {color:'#1a5fa8',dash:'5 3', marker:'m-info',     label:'Інфо(ел.)',  curved:true},
+  transport:{color:'#b87316',dash:'0',   marker:'m-transport',label:'Транспорт',  curved:false},
+};
+
+/* ═══════════ RENDER ═══════════ */
+function renderAll(){rGroups();rConns();rEls();updTL();if(atab==='metrics')updMetrics();if(atab==='maps')rMaps()}
+
+function rEls(){
+  const L=document.getElementById('elayer');L.innerHTML='';
+  ELS.forEach(el=>{
+    if(el._hidden)return; // skip if inside collapsed group
+    const G=document.createElementNS('http://www.w3.org/2000/svg','g');
+    G.setAttribute('id','g_'+el.id);
+    G.style.cursor=tool==='connect'?'crosshair':'move';
+    const fn=SYMS[el.type];
+    if(fn)G.innerHTML=fn(el,selId===el.id);
+    G.addEventListener('mousedown',e=>elMD(e,el.id));
+    L.appendChild(G);
+  });
+}
+
+function rConns(){
+  const L=document.getElementById('clayer');L.innerHTML='';
+  CONNS.forEach(c=>{
+    const f=ELS.find(e=>e.id===c.from),t=ELS.find(e=>e.id===c.to);
+    if(!f||!t)return;
+    // skip connections hidden inside same collapsed group
+    const fg=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(c.from));
+    const tg=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(c.to));
+    if(fg&&tg&&fg.id===tg.id)return;
+    const fc=resolveCenter(c.from),tc=resolveCenter(c.to);
+    if(!fc||!tc)return;
+    const cfg=CCONF[c.type]||CCONF.push;
+    const G=document.createElementNS('http://www.w3.org/2000/svg','g');
+    if(cfg.curved){
+      const mx=(fc.x+tc.x)/2,my=Math.min(fc.y,tc.y)-45;
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d',`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`);
+      p.setAttribute('fill','none');p.setAttribute('stroke',cfg.color);p.setAttribute('stroke-width','2');
+      p.setAttribute('stroke-dasharray',cfg.dash);p.setAttribute('marker-end','url(#'+cfg.marker+')');
+      G.appendChild(p);
+      // info lightning bolt symbol mid-curve
+      const bmx=(fc.x+mx)/2+(mx+tc.x)/2,bmy=(fc.y+my)/2+(my+tc.y)/2;
+      const lx=(fc.x*0.25+mx*0.5+tc.x*0.25),ly=(fc.y*0.25+my*0.5+tc.y*0.25);
+      const bolt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      bolt.setAttribute('x',lx);bolt.setAttribute('y',ly);bolt.setAttribute('text-anchor','middle');
+      bolt.setAttribute('font-size','12');bolt.setAttribute('fill',cfg.color);bolt.textContent='✉';
+      G.appendChild(bolt);
+    } else {
+      const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',fc.x);l.setAttribute('y1',fc.y);l.setAttribute('x2',tc.x);l.setAttribute('y2',tc.y);
+      l.setAttribute('stroke',cfg.color);l.setAttribute('stroke-width','2.5');
+      l.setAttribute('stroke-dasharray',cfg.dash);l.setAttribute('marker-end','url(#'+cfg.marker+')');
+      G.appendChild(l);
+    }
+    const lx=(fc.x+tc.x)/2,ly=(fc.y+tc.y)/2-(cfg.curved?28:10);
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('font-size','8');lbl.setAttribute('font-family','Arial,sans-serif');
+    lbl.setAttribute('fill',cfg.color);lbl.setAttribute('font-weight','700');
+    lbl.textContent=cfg.label;G.appendChild(lbl);
+    L.appendChild(G);
+  });
+}
+
+/* ═══════════ INTERACTIONS ═══════════ */
+function pdrag(e,t){e.dataTransfer.setData('type',t)}
+function onDrop(e){
+  const type=e.dataTransfer.getData('type');if(!DEFS[type])return;
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  const x=snap(e.clientX-r.left),y=snap(e.clientY-r.top);
+  const el={id:'e'+(Date.now()+IDC++),type,x,y,...JSON.parse(JSON.stringify(DEFS[type]))};
+  ELS.push(el);renderAll();selEl(el.id);
+}
+function snap(v){return Math.round(v/GRID)*GRID}
+
+function elMD(e,id){
+  e.stopPropagation();
+  if(tool==='connect'){
+    if(!connStart){connStart=id;document.getElementById('tarrow').style.display=''}
+    else if(connStart!==id){showConnModal(connStart,id);connStart=null;document.getElementById('tarrow').style.display='none';rEls()}
+    return;
+  }
+  selEl(id);dragging=id;
+  const el=ELS.find(x=>x.id===id);
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  doff={x:e.clientX-r.left-el.x,y:e.clientY-r.top-el.y};
+}
+function svgMD(e){
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const onGrid=e.target===document.getElementById('canvas')||e.target.getAttribute&&e.target.getAttribute('fill')==='url(#grid5)';
+  if(tool==='group'&&onGrid){
+    drawing=true;drawStart={x:snap(mx),y:snap(my)};
+    document.getElementById('drawrect').style.display='';
+    const box=document.getElementById('drawbox');
+    box.setAttribute('x',drawStart.x);box.setAttribute('y',drawStart.y);
+    box.setAttribute('width',0);box.setAttribute('height',0);
+    const cfg=GRP_CONF[pendingGroupKind]||GRP_CONF.section;
+    box.setAttribute('stroke',cfg.stroke);
+    return;
+  }
+  if(onGrid){
+    selId=null;selGrpId=null;connStart=null;document.getElementById('tarrow').style.display='none';renderAll();showProps();
+  }
+}
+function svgMM(e){
+  const r=document.getElementById('canvas').getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(drawing){
+    const bx=Math.min(mx,drawStart.x),by=Math.min(my,drawStart.y);
+    const bw=Math.abs(mx-drawStart.x),bh=Math.abs(my-drawStart.y);
+    const box=document.getElementById('drawbox');
+    box.setAttribute('x',bx);box.setAttribute('y',by);box.setAttribute('width',bw);box.setAttribute('height',bh);
+    return;
+  }
+  if(connStart){const f=ELS.find(el=>el.id===connStart);if(f){const c=center(f);const tl=document.getElementById('tline');tl.setAttribute('x1',c.x);tl.setAttribute('y1',c.y);tl.setAttribute('x2',mx);tl.setAttribute('y2',my)}}
+  if(dragging){const el=ELS.find(x=>x.id===dragging);if(el){el.x=snap(mx-doff.x);el.y=snap(my-doff.y);renderAll()}}
+  if(draggingGrp){
+    const grp=GROUPS.find(g=>g.id===draggingGrp);
+    if(grp){
+      const nx=snap(mx-doff.x),ny=snap(my-doff.y);
+      const dx=nx-grp.x,dy=ny-grp.y;
+      // move children with group if collapsed
+      if(grp.collapsed&&grp.childIds){
+        grp.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el){el.x+=dx;el.y+=dy}});
+      }
+      grp.x=nx;grp.y=ny;
       renderAll();
+    }
+  }
+  if(resizingGrp){
+    const grp=GROUPS.find(g=>g.id===resizingGrp);
+    if(grp){grp.w=Math.max(120,snap(mx-resizeOff.x-grp.x));grp.h=Math.max(80,snap(my-resizeOff.y-grp.y));renderAll()}
+  }
+}
+function svgMU(e){
+  if(drawing){
+    drawing=false;
+    document.getElementById('drawrect').style.display='none';
+    const r=document.getElementById('canvas').getBoundingClientRect();
+    const mx=e.clientX-r.left,my=e.clientY-r.top;
+    const x=snap(Math.min(mx,drawStart.x)),y=snap(Math.min(my,drawStart.y));
+    const w=snap(Math.abs(mx-drawStart.x)),h=snap(Math.abs(my-drawStart.y));
+    if(w>60&&h>40){
+      const grp={id:'g'+(Date.now()+IDC++),kind:pendingGroupKind,label:GRP_CONF[pendingGroupKind].label,x,y,w,h,collapsed:false,childIds:[]};
+      GROUPS.push(grp);selGrpId=grp.id;selId=null;
+      renderAll();showGrpProps();toast('Групу створено. Перемісти елементи всередину.','ok');
     }
     return;
   }
-  selectEl(id);
-  dragging = id;
-  const el = elements.find(e=>e.id===id);
-  const svgR = document.getElementById('canvas').getBoundingClientRect();
-  dragOff = { x: e.clientX - svgR.left - el.x, y: e.clientY - svgR.top - el.y };
+  dragging=null;draggingGrp=null;resizingGrp=null;
 }
+function selEl(id){selId=id;renderAll();showProps()}
+function delSel(){if(!selId)return;ELS=ELS.filter(e=>e.id!==selId);CONNS=CONNS.filter(c=>c.from!==selId&&c.to!==selId);selId=null;renderAll();showProps()}
 
-function svgMouseDown(e) {
-  if (e.target.id==='gridBg' || e.target===document.getElementById('canvas')) {
-    selectedId = null;
-    connectStart = null;
-    document.getElementById('tempArrow').style.display='none';
-    renderAll();
-    showProps();
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+  if(e.key==='v'||e.key==='V')setTool('select');
+  if(e.key==='c'||e.key==='C')setTool('connect');
+  if(e.key==='g'||e.key==='G')setTool('group');
+  if(e.key==='Escape'){setTool('select');selGrpId=null;renderAll();showProps()}
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(selGrpId){delGroup(selGrpId);selGrpId=null;renderAll();showProps()}
+    else delSel();
   }
-}
-
-function svgMouseMove(e) {
-  const r = document.getElementById('canvas').getBoundingClientRect();
-  const mx = e.clientX-r.left, my = e.clientY-r.top;
-  
-  if (connectStart) {
-    const from = elements.find(el=>el.id===connectStart);
-    if (from) {
-      const fc = elCenter(from);
-      const tl = document.getElementById('tempLine');
-      tl.setAttribute('x1',fc.x); tl.setAttribute('y1',fc.y);
-      tl.setAttribute('x2',mx);   tl.setAttribute('y2',my);
-    }
-  }
-  
-  if (dragging) {
-    const el = elements.find(e=>e.id===dragging);
-    if (el) { 
-      const oldX = el.x;
-      const oldY = el.y;
-      el.x = snap(mx-dragOff.x); 
-      el.y = snap(my-dragOff.y); 
-
-      // Якщо перетягуємо дільницю (зону), переміщуємо процеси всередині неї синхронно
-      if (el.type === 'zone') {
-        const dx = el.x - oldX;
-        const dy = el.y - oldY;
-        elements.forEach(child => {
-          if (child.zoneId === el.id) { child.x += dx; child.y += dy; }
-        });
-      }
-      renderAll(); 
-    }
-  }
-}
-
-function svgMouseUp() { dragging=null; }
-
-function selectEl(id) { selectedId=id; renderAll(); showProps(); }
-
-function deleteSelected() {
-  if (!selectedId) return;
-  elements    = elements.filter(e=>e.id!==selectedId);
-  connections = connections.filter(c=>c.from!==selectedId&&c.to!==selectedId);
-  // Скидаємо зону для процесів, якщо зона була видалена
-  elements.forEach(el => { if(el.zoneId === selectedId) el.zoneId = null; });
-  selectedId  = null;
-  renderAll(); showProps();
-}
-
-document.addEventListener('keydown', e => {
-  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
-  if (e.key==='v'||e.key==='V') setTool('select');
-  if (e.key==='c'||e.key==='C') setTool('connect');
-  if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveToLocal()}
 });
 
-function setTool(t) {
-  currentTool = t; connectStart = null;
-  document.getElementById('tempArrow').style.display='none';
-  document.getElementById('btn-select').classList.toggle('active', t==='select');
-  document.getElementById('btn-connect').classList.toggle('active', t==='connect');
-  document.getElementById('canvasWrap').classList.toggle('connect-mode', t==='connect');
-  renderAll();
+function setTool(t){
+  tool=t;connStart=null;drawing=false;
+  document.getElementById('tarrow').style.display='none';
+  document.getElementById('drawrect').style.display='none';
+  document.getElementById('bsel').classList.toggle('on',t==='select');
+  document.getElementById('bcon').classList.toggle('on',t==='connect');
+  document.getElementById('bgrp').classList.toggle('on',t==='group');
+  document.getElementById('cvswrap').classList.toggle('conn-mode',t==='connect');
+  document.getElementById('cvswrap').style.cursor=t==='group'?'crosshair':'';
+  if(t==='group')pendingGroupKind='section';
+  rEls();
+}
+function setToolGroup(kind){
+  pendingGroupKind=kind;setTool('group');
 }
 
-/* ══════════════════════════════════════════
-   CONNECT TYPE MODAL
-══════════════════════════════════════════ */
-function showConnectTypeModal(fromId, toId) {
-  const types = [
-    { key:'push',      icon:'ti-arrow-right',    label:'Push потік',        sub:'Матеріальний потік (виштовхування)' },
-    { key:'pull',      icon:'ti-arrow-left',      label:'Pull потік',        sub:'Матеріальний потік (витягування)' },
-    { key:'info',      icon:'ti-message-circle',  label:'Інформаційний потік', sub:'Замовлення, плани, сигнали' },
-    { key:'transport', icon:'ti-truck',            label:'Зовнішній транспорт', sub:'Доставка від постачальника' },
+/* ═══════════ CONNECT MODAL ═══════════ */
+function showConnModal(from,to){
+  const opts=[
+    {k:'push',c:'#1a1a18',lbl:'Push потік',sub:'Матеріальний потік — виштовхування (суцільна стрілка)'},
+    {k:'pull',c:'#1d9e75',lbl:'Pull / Канбан',sub:'Матеріальний потік — витягування (пунктирна стрілка)'},
+    {k:'info',c:'#1a5fa8',lbl:'Інформаційний (ручний)',sub:'Замовлення, плани, наряди — крива стрілка'},
+    {k:'info-e',c:'#1a5fa8',lbl:'Інформаційний (електронний)',sub:'MRP/ERP/EDI — крива пунктирна стрілка'},
+    {k:'transport',c:'#b87316',lbl:'Зовнішній транспорт',sub:'Вантажівка, залізниця — суцільна коричнева'},
   ];
-  const body = `<div class="modal-title">Тип з'єднання</div>
-    <div class="modal-opts">
-      ${types.map(t=>`
-        <div class="modal-opt" onclick="addConn('${fromId}','${toId}','${t.key}');closeModal()">
-          <i class="ti ${t.icon}" style="font-size:20px;color:${CONN_COLORS[t.key]}"></i>
-          <div><div class="modal-opt-title">${t.label}</div><div class="modal-opt-sub">${t.sub}</div></div>
-        </div>`).join('')}
-    </div>
-    <div class="modal-btns"><button class="modal-btn" onclick="closeModal()">Скасувати</button></div>`;
-  openModal(body);
+  openMod(`<div class="mod-t">Тип з'єднання</div>
+    <div class="mod-opts">${opts.map(o=>`<div class="mod-opt" onclick="addConn('${from}','${to}','${o.k}');closeMod()">
+      <svg width="40" height="14" viewBox="0 0 40 14">
+        ${o.k==='push'?`<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
+          o.k==='pull'?`<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
+          o.k==='info'?`<path d="M0 7 Q20 1 40 7" fill="none" stroke="${o.c}" stroke-width="2"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
+          o.k==='info-e'?`<path d="M0 7 Q20 1 40 7" fill="none" stroke="${o.c}" stroke-width="2" stroke-dasharray="5 2"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
+          `<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`}
+      </svg>
+      <div><div class="mod-opt-t">${o.lbl}</div><div class="mod-opt-s">${o.sub}</div></div>
+    </div>`).join('')}
+    </div><div class="mod-bts"><button class="mbtn" onclick="closeMod()">Скасувати</button></div>`);
 }
+function addConn(f,t,type){CONNS.push({from:f,to:t,type});renderAll()}
 
-function addConn(from, to, type) { connections.push({from, to, type}); renderAll(); }
-
-/* ══════════════════════════════════════════
-   PROPERTIES PANEL (RIGHT)
-══════════════════════════════════════════ */
-function switchRTab(t) {
-  activeTab = t;
-  ['props','metrics','maps','ai'].forEach(tab => {
-    document.getElementById('rpb-'+tab).style.display = tab===t ? '' : 'none';
-    document.getElementById('rtab-'+tab).classList.toggle('active', tab===t);
-  });
-  if (t==='metrics') updateMetrics();
-  if (t==='maps')    renderMapsList();
+/* ═══════════ PROPS ═══════════ */
+function rtab(t){
+  atab=t;
+  ['props','metrics','maps','ai'].forEach(x=>{document.getElementById('rpb-'+x).style.display=x===t?'':'none';document.getElementById('rt-'+x).classList.toggle('on',x===t)});
+  if(t==='metrics')updMetrics();if(t==='maps')rMaps();
 }
-
-function showProps() {
-  const msg  = document.getElementById('noSelMsg');
-  const form = document.getElementById('propsForm');
-  if (!selectedId) { msg.style.display=''; form.style.display='none'; return; }
-  const el = elements.find(e=>e.id===selectedId);
-  if (!el) { msg.style.display=''; form.style.display='none'; return; }
-  msg.style.display='none'; form.style.display='';
-
-  const FIELDS = {
-    zone: [
-      {key:'label', lbl:'Назва дільниці / РМ',   type:'text'},
-      {key:'w',     lbl:'Ширина контейнера (px)',type:'number', row:true},
-      {key:'h',     lbl:'Висота контейнера (px)',type:'number', row:true},
-    ],
-    process: [
-      {key:'label', lbl:'Назва процесу',         type:'text'},
-      {key:'ct',    lbl:'Час циклу CT (сек)',     type:'number', row:true},
-      {key:'co',    lbl:'Переналадка C/O (сек)',  type:'number', row:true},
-      {key:'uptime',lbl:'Доступність (%)',         type:'number', row:true},
-      {key:'operators',lbl:'Операторів',           type:'number', row:true},
-      {key:'shifts',lbl:'Змін на добу',            type:'number'},
-    ],
-    inventory: [
-      {key:'label', lbl:'Назва',              type:'text'},
-      {key:'qty',   lbl:'Кількість (шт)',     type:'number', row:true},
-      {key:'days',  lbl:'Днів запасу',        type:'number', row:true},
-    ],
-    customer:  [
-      {key:'label',  lbl:'Назва',              type:'text'},
-      {key:'demand', lbl:'Попит (шт/зміна)',   type:'number'},
-    ],
-    supplier:  [
-      {key:'label', lbl:'Назва',              type:'text'},
-      {key:'lead',  lbl:'Плече поставки (дн)', type:'number'},
-    ],
-    kaizen:    [
-      {key:'label', lbl:'Назва',    type:'text'},
-      {key:'note',  lbl:'Примітка', type:'text'},
-    ],
-  };
-
-  const flds = FIELDS[el.type]||[];
-  let html = `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:10px;">${el.type} · ${el.id.slice(-6)}</div>`;
+const FLDS={
+  supplier:[{k:'label',l:'Назва',t:'text'},{k:'lead',l:'Плече поставки (дні)',t:'number'}],
+  customer:[{k:'label',l:'Назва',t:'text'},{k:'demand',l:'Попит (шт/зміна)',t:'number'}],
+  process:[{k:'label',l:'Назва процесу',t:'text'},{k:'ct',l:'CT (сек)',t:'number',r:1},{k:'co',l:'C/O (сек)',t:'number',r:1},{k:'uptime',l:'Uptime (%)',t:'number',r:1},{k:'operators',l:'Операторів',t:'number',r:1},{k:'shifts',l:'Змін',t:'number',r:1},{k:'inventory_out',l:'Запас на виході (шт)',t:'number',r:1}],
+  inventory:[{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
+  supermarket:[{k:'label',l:'Назва',t:'text'},{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
+  kaizen:[{k:'label',l:'Назва',t:'text'},{k:'note',l:'Примітка',t:'text'}],
+  operator:[{k:'label',l:'Ім\'я / роль',t:'text'}],
+  truck:[{k:'label',l:'Маршрут',t:'text'}],
+  production_control:[{k:'label',l:'Підпис',t:'text'}],
+};
+function showProps(){
+  const msg=document.getElementById('nosel'),fm=document.getElementById('pform');
+  if(!selId){msg.style.display='';fm.style.display='none';return}
+  const el=ELS.find(e=>e.id===selId);if(!el){msg.style.display='';fm.style.display='none';return}
+  msg.style.display='none';fm.style.display='';
+  const flds=FLDS[el.type]||[];
+  let h=`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">${el.type} · ${el.id.slice(-5)}</div>`;
   let i=0;
-  while (i<flds.length) {
-    const f=flds[i];
-    if (f.row && i+1<flds.length && flds[i+1].row) {
-      const f2=flds[i+1];
-      html+=`<div class="prop-row">
-        <div class="prop-group"><div class="prop-label">${f.lbl}</div>
-          <input class="prop-input" type="${f.type}" value="${el[f.key]}" oninput="setProp('${el.id}','${f.key}',this.value)"></div>
-        <div class="prop-group"><div class="prop-label">${f2.lbl}</div>
-          <input class="prop-input" type="${f2.type}" value="${el[f2.key]}" oninput="setProp('${el.id}','${f2.key}',this.value)"></div>
-      </div>`;
-      i+=2;
-    } else {
-      html+=`<div class="prop-group"><div class="prop-label">${f.lbl}</div>
-        <input class="prop-input" type="${f.type}" value="${el[f.key]}" oninput="setProp('${el.id}','${f.key}',this.value)"></div>`;
-      i++;
-    }
+  while(i<flds.length){const f=flds[i];
+    if(f.r&&i+1<flds.length&&flds[i+1].r){const f2=flds[i+1];
+      h+=`<div class="prow"><div class="pg"><div class="pl">${f.l}</div><input class="pi" type="${f.t}" value="${el[f.k]??''}" oninput="setProp('${el.id}','${f.k}',this.value)"></div><div class="pg"><div class="pl">${f2.l}</div><input class="pi" type="${f2.t}" value="${el[f2.k]??''}" oninput="setProp('${el.id}','${f2.k}',this.value)"></div></div>`;i+=2;
+    }else{h+=`<div class="pg"><div class="pl">${f.l}</div><input class="pi" type="${f.t}" value="${el[f.k]??''}" oninput="setProp('${el.id}','${f.k}',this.value)"></div>`;i++}
   }
-
-  // Якщо це зона, виведемо список вкладених операцій
-  if (el.type === 'zone') {
-    const children = elements.filter(p => p.zoneId === el.id);
-    html += `<div class="section-head">Включені операції (${children.length})</div>`;
-    if(!children.length) html += `<div style="font-size:11px;color:var(--text3);padding:4px 0;">Перетягніть операції всередину рамки дільниці</div>`;
-    children.forEach(c => {
-      html += `<div class="proc-row"><div class="proc-dot" style="background:var(--accent)"></div><span style="font-size:11px">${c.label} (${c.ct}с)</span></div>`;
-    });
-  }
-
-  const myConns = connections.filter(c=>c.from===el.id||c.to===el.id);
-  if (myConns.length) {
-    html += `<div class="section-head">З'єднання (${myConns.length})</div>`;
-    myConns.forEach(c=>{
-      const other = elements.find(e=>e.id===(c.from===el.id?c.to:c.from));
-      const dir   = c.from===el.id?'→':'←';
-      html += `<div class="proc-row">
-        <div class="proc-dot" style="background:${CONN_COLORS[c.type]}"></div>
-        <span style="flex:1;font-size:11px">${CONN_NAMES[c.type]} ${dir} ${other?other.label:'?'}</span>
-        <button onclick="delConn('${c.from}','${c.to}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 4px;">✕</button>
-      </div>`;
-    });
-  }
-
-  html += `<button class="del-btn" onclick="deleteSelected()"><i class="ti ti-trash"></i> Видалити елемент</button>`;
-  form.innerHTML = html;
+  const mc=CONNS.filter(c=>c.from===el.id||c.to===el.id);
+  if(mc.length){h+=`<div class="sh">З'єднання</div>`;mc.forEach(c=>{const ot=ELS.find(e=>e.id===(c.from===el.id?c.to:c.from));const cfg=CCONF[c.type]||CCONF.push;const dir=c.from===el.id?'→':'←';h+=`<div class="prow2"><div class="pdot" style="background:${cfg.color}"></div><span style="flex:1;font-size:10px">${cfg.label} ${dir} ${ot?ot.label:'?'}</span><button onclick="delConn('${c.from}','${c.to}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3);padding:1px 4px">✕</button></div>`})}
+  h+=`<button class="delbtn" onclick="delSel()">✕ Видалити елемент</button>`;
+  fm.innerHTML=h;
 }
+function setProp(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note','va','nva'].includes(k))?v:+v;renderAll()}
+function delConn(f,t){CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));renderAll();showProps()}
 
-function setProp(id, key, val) {
-  const el = elements.find(e=>e.id===id);
-  if (!el) return;
-  el[key] = (isNaN(+val)||val===''||key=='label'||key=='note') ? val : +val;
-  renderAll();
-}
-
-function delConn(from, to) { connections = connections.filter(c=>!(c.from===from&&c.to===to)); renderAll(); showProps(); }
-
-/* ══════════════════════════════════════════
-   METRICS CALCULATION
-══════════════════════════════════════════ */
-function getProcs()  { return elements.filter(e=>e.type==='process'); }
-function getInvs()   { return elements.filter(e=>e.type==='inventory'); }
-
-function updateMetrics() {
-  const procs   = getProcs();
-  const invs    = getInvs();
-  const takt    = getTakt();
-  const vaTime  = procs.reduce((s,p)=>s+p.ct,0);
-  const invDays = invs.reduce((s,i)=>s+i.days,0);
-  const nvaTime = invDays * 28800;
-  const lt      = vaTime + nvaTime;
-  const eff     = lt > 0 ? Math.round(vaTime/lt*100) : 0;
-  const bn      = procs.reduce((b,p)=>(!b||p.ct>b.ct)?p:b,null);
-
-  const effColor = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
-  const effBg    = eff<10?'var(--danger-bg)':eff<30?'var(--warn-bg)':'var(--success-bg)';
-
-  document.getElementById('metricsContent').innerHTML = `
-    <div class="metric-card">
-      <div class="metric-lbl">Час доданої цінності (VA)</div>
-      <div class="metric-val">${fmtT(vaTime)}</div>
-      <div class="metric-sub">${procs.length} процес(ів)</div>
+function showGrpProps(){
+  rtab('props');
+  const msg=document.getElementById('nosel'),fm=document.getElementById('pform');
+  if(!selGrpId){msg.style.display='';fm.style.display='none';return}
+  const grp=GROUPS.find(g=>g.id===selGrpId);
+  if(!grp){msg.style.display='';fm.style.display='none';return}
+  msg.style.display='none';fm.style.display='';
+  const cfg=GRP_CONF[grp.kind]||GRP_CONF.section;
+  const children=grp.collapsed?(grp.childIds||[]).map(id=>ELS.find(e=>e.id===id)).filter(Boolean):ELS.filter(el=>{const c=center(el);return c.x>=grp.x&&c.x<=grp.x+grp.w&&c.y>=grp.y&&c.y<=grp.y+grp.h});
+  const procs=children.filter(e=>e.type==='process');
+  const totalCT=procs.reduce((s,e)=>s+e.ct,0);
+  const totalOp=procs.reduce((s,e)=>s+(e.operators||0),0);
+  fm.innerHTML=`
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">${cfg.label} · ${grp.id.slice(-5)}</div>
+    <div class="pg"><div class="pl">Назва</div>
+      <input class="pi" type="text" value="${grp.label}" oninput="updateGrp('${grp.id}','label',this.value)">
     </div>
-    <div class="metric-card">
-      <div class="metric-lbl">Час такту</div>
-      <div class="metric-val" style="color:${takt?'var(--success)':'var(--text3)'}">${takt?takt+'s':'—'}</div>
-      <div class="metric-sub">Вимога: ${elements.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div>
+    <div class="prow">
+      <div class="pg"><div class="pl">Тип</div>
+        <select class="pi" onchange="updateGrp('${grp.id}','kind',this.value)">
+          <option value="section" ${grp.kind==='section'?'selected':''}>Дільниця</option>
+          <option value="workstation" ${grp.kind==='workstation'?'selected':''}>Роб. місце</option>
+        </select>
+      </div>
     </div>
-    <div class="metric-card">
-      <div class="metric-lbl">Запаси</div>
-      <div class="metric-val">${invDays} дн</div>
-      <div class="metric-sub">NVA: ${fmtT(nvaTime)}</div>
+    <div class="sh" style="border-top:none;padding-top:0">Зведення групи</div>
+    <div class="mc" style="margin-bottom:6px">
+      <div class="ml">Операцій</div><div class="mv" style="font-size:16px">${procs.length}</div>
     </div>
-    <div class="metric-card" style="background:${effBg};border-color:${effColor}">
-      <div class="metric-lbl" style="color:${effColor}">Ефективність потоку</div>
-      <div class="metric-val" style="color:${effColor}">${eff}%</div>
+    <div class="mc" style="margin-bottom:6px">
+      <div class="ml">Сумарний CT</div><div class="mv" style="font-size:16px">${totalCT}s</div>
     </div>
-  `;
+    <div class="mc" style="margin-bottom:6px">
+      <div class="ml">Операторів</div><div class="mv" style="font-size:16px">${totalOp}</div>
+    </div>
+    <div class="sh">Операції в групі</div>
+    ${procs.map(p=>`<div class="prow2">
+      <div class="pdot" style="background:${isBN(p)?'var(--danger)':'var(--success)'}"></div>
+      <span style="flex:1;font-size:10px">${p.label}</span>
+      <span style="font-size:10px;color:var(--text2)">CT:${p.ct}s Op:${p.operators}</span>
+    </div>`).join('')}
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="ai-btn" style="margin-bottom:0;flex:1" onclick="toggleGroup('${grp.id}');showGrpProps()">
+        ${grp.collapsed?'▶ Розгорнути':'▼ Згорнути'}
+      </button>
+    </div>
+    <button class="delbtn" onclick="delGroup('${grp.id}')">✕ Видалити групу</button>`;
 }
 
-function fmtT(s) {
-  if (!s) return '0s';
-  if (s<60) return s+'s';
-  if (s<3600) return Math.round(s/60)+'хв';
-  return (s/3600).toFixed(1)+'год';
+function updateGrp(id,key,val){
+  const grp=GROUPS.find(g=>g.id===id);if(!grp)return;
+  grp[key]=val;renderAll();showGrpProps();
 }
 
-function updateTimeline() {
-  const vaTime  = getProcs().reduce((s,p)=>s+p.ct,0);
-  const invDays = getInvs().reduce((s,i)=>s+i.days,0);
-  const nvaTime = invDays*28800;
-  const lt      = vaTime+nvaTime;
-  const eff     = lt>0?Math.round(vaTime/lt*100):0;
-  const vaPct   = lt>0?Math.max(2,Math.round(vaTime/lt*100)):5;
-  
-  document.getElementById('tlBar').innerHTML = `
-    <div class="tl-va" style="width:${vaPct}%"><span class="tl-bar-lbl">${eff>15?'VA':''}</span></div>
-    <div class="tl-nva" style="width:${100-vaPct}%"><span class="tl-bar-lbl">NVA</span></div>`;
-  document.getElementById('tlLT').innerHTML  = `LT: <strong>${fmtT(lt)}</strong>`;
-  document.getElementById('tlEff').style.color = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
-  document.getElementById('tlEff').textContent = eff+'%';
+function delGroup(id){
+  const grp=GROUPS.find(g=>g.id===id);
+  if(grp&&grp.collapsed){(grp.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hidden})}
+  GROUPS=GROUPS.filter(g=>g.id!==id);
+  selGrpId=null;renderAll();showProps();
 }
 
-/* ══════════════════════════════════════════
-   STORAGE & MAPS MANAGEMENT
-══════════════════════════════════════════ */
-function getState() { return { version:3, name:document.getElementById('mapName').value, ts:Date.now(), elements, connections }; }
+/* ═══════════ METRICS ═══════════ */
+function getProcs(){return ELS.filter(e=>e.type==='process')}
+function getInvs(){return ELS.filter(e=>e.type==='inventory'||e.type==='supermarket')}
+function getTakt(){const c=ELS.find(e=>e.type==='customer');if(!c||!c.demand)return 0;return Math.round(28800/c.demand)}
+function isBN(el){if(el.type!=='process')return false;const p=getProcs();if(p.length<2)return false;return el.ct===Math.max(...p.map(x=>x.ct))}
+function fmtT(s){if(!s)return'0s';if(s<60)return s+'s';if(s<3600)return Math.round(s/60)+'хв';return(s/3600).toFixed(1)+'год'}
 
-function loadState(state) {
-  elements    = state.elements    || [];
-  connections = state.connections || [];
-  document.getElementById('mapName').value = state.name || 'VSM карта';
-  idCnt       = elements.length + 1; selectedId  = null;
-  renderAll(); showProps();
+function updMetrics(){
+  const p=getProcs(),inv=getInvs(),tk=getTakt();
+  const vat=p.reduce((s,x)=>s+x.ct,0),invd=inv.reduce((s,x)=>s+x.days,0);
+  const nva=invd*28800,lt=vat+nva,eff=lt>0?Math.round(vat/lt*100):0;
+  const bn=p.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
+  const ec=eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
+  const ebg=eff<10?'var(--danger-bg)':eff<30?'var(--warn-bg)':'var(--success-bg)';
+  document.getElementById('mcont').innerHTML=
+    `<div class="mc"><div class="ml">VA Time</div><div class="mv">${fmtT(vat)}</div><div class="ms">${p.length} процес(ів)</div></div>
+    <div class="mc"><div class="ml">Час такту</div><div class="mv" style="color:${tk?'var(--success)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм · 8год зміна</div></div>
+    <div class="mc"><div class="ml">NVA (запаси)</div><div class="mv">${invd} дн</div><div class="ms">${fmtT(nva)} очікування</div></div>
+    <div class="mc" style="background:${ebg};border-color:${ec}"><div class="ml" style="color:${ec}">Ефективність потоку</div><div class="mv" style="color:${ec}">${eff}%</div><div class="ms" style="color:${ec}">${eff<10?'⚠ Критично низька':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div></div>
+    ${bn?`<div class="mc" style="background:var(--danger-bg);border-color:var(--danger)"><div class="ml" style="color:var(--danger)">Вузьке місце (Bottleneck)</div><div class="mv" style="font-size:14px;color:var(--danger)">${bn.label}</div><div class="ms" style="color:var(--danger)">CT=${bn.ct}s${tk?' '+(bn.ct>tk?'▲ > такту':'✓ ≤ такту'):''} · Uptime=${bn.uptime}%</div></div>`:''}
+    <div class="sh" style="border-top:none;padding-top:0">Всі процеси</div>
+    ${p.map(x=>{const ib=bn&&x.id===bn.id;const col=ib?'var(--danger)':tk&&x.ct>tk?'var(--warn)':'var(--success)';return`<div class="prow2"><div class="pdot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${ib?'<span class="badge bd">BN</span>':''}</div>`}).join('')}`;
 }
 
-function getAllMaps() { try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; } }
-function saveToLocal() {
-  const name = document.getElementById('mapName').value.trim() || 'VSM карта';
-  const maps = getAllMaps(); maps[name]  = getState();
-  localStorage.setItem('vsm_maps', JSON.stringify(maps));
-  toast('Збережено: '+name,'ok');
-}
-function loadFromLocal(name) { const maps = getAllMaps(); if (maps[name]) { loadState(maps[name]); toast('Відкрито: '+name,'ok'); } }
-function deleteMap(name) {
-  const maps = getAllMaps(); delete maps[name];
-  localStorage.setItem('vsm_maps', JSON.stringify(maps)); renderMapsList(); toast('Видалено: '+name);
+function updTL(){
+  const vat=getProcs().reduce((s,p)=>s+p.ct,0),invd=getInvs().reduce((s,i)=>s+i.days,0);
+  const lt=vat+invd*28800,eff=lt>0?Math.round(vat/lt*100):0;
+  const vp=lt>0?Math.max(3,Math.round(vat/lt*100)):4,np=100-vp;
+  document.getElementById('tlbar').innerHTML=`<div class="tl-va" style="width:${vp}%"><span class="tl-bl">${vp>12?'VA':''}</span></div><div class="tl-nva" style="width:${np}%"><span class="tl-bl">${np>12?'NVA':''}</span></div>`;
+  document.getElementById('tllt').innerHTML=`LT: <strong>${fmtT(lt)}</strong>`;
+  const ef=document.getElementById('tlef');ef.style.color=eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';ef.textContent=eff+'%';
 }
 
-function renderMapsList() {
-  const maps = getAllMaps(); const keys = Object.keys(maps);
-  const mc = document.getElementById('mapsContent');
-  if (!keys.length) { mc.innerHTML='<div class="empty-maps">Немає збережених карт.</div>'; return; }
-  mc.innerHTML = `<div class="prop-group"><button class="ai-run-btn" onclick="saveToLocal()"><i class="ti ti-device-floppy"></i> Зберегти поточну</button></div>` +
-    keys.map(name=>{
-      return `<div class="map-row" onclick="loadFromLocal('${name.replace(/'/g,"\\'")}')">
-        <i class="ti ti-file-text" style="font-size:16px;color:var(--accent)"></i>
-        <div style="flex:1;overflow:hidden"><div class="map-row-name">${name}</div></div>
-        <button class="map-del-btn" onclick="event.stopPropagation();if(confirm('Видалити?'))deleteMap('${name.replace(/'/g,"\\'")}')">✕</button>
-      </div>`;
-    }).join('');
+/* ═══════════ SAVE/LOAD ═══════════ */
+function getState(){return{v:3,name:document.getElementById('mapName').value,ts:Date.now(),ELS,CONNS,GROUPS}}
+function loadState(s){
+  ELS=s.ELS||[];CONNS=s.CONNS||[];GROUPS=s.GROUPS||[];
+  // restore hidden state for collapsed groups
+  GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hidden=true})});
+  document.getElementById('mapName').value=s.name||'VSM';IDC=ELS.length+GROUPS.length+1;selId=null;selGrpId=null;renderAll();showProps();
 }
-
-function exportJSON() {
-  const json = JSON.stringify(getState(), null, 2);
-  const a = document.createElement('a');
-  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-  a.download = 'vsm_map.json'; a.click();
+function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
+function saveToLocal(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
+function loadFromLocal(n){const m=allMaps();if(m[n]){loadState(m[n]);toast('Відкрито: '+n,'ok')}}
+function delMap(n){const m=allMaps();delete m[n];localStorage.setItem('vsm_maps',JSON.stringify(m));rMaps();toast('Видалено')}
+function rMaps(){
+  const m=allMaps(),ks=Object.keys(m),mc=document.getElementById('mapcont');
+  if(!ks.length){mc.innerHTML='<div class="empty-maps">Немає збережених карт.<br>Натисніть «Зберегти» у шапці.</div>';return}
+  mc.innerHTML=`<button class="ai-btn" style="margin-bottom:10px" onclick="saveToLocal()">+ Зберегти поточну</button><div class="sh" style="border-top:none;padding-top:0">Збережені (${ks.length})</div>`+
+    ks.map(n=>{const ts=m[n].ts?new Date(m[n].ts).toLocaleDateString('uk-UA'):'';return`<div class="map-row" onclick="loadFromLocal('${n.replace(/'/g,"\\'")}')"><span>🗺</span><div style="flex:1;overflow:hidden"><div class="mrn">${n}</div><div class="mrd">${ts} · ${(m[n].ELS||[]).length} ел.</div></div><button class="mdb" onclick="event.stopPropagation();if(confirm('Видалити?'))delMap('${n.replace(/'/g,"\\'")}')">✕</button></div>`}).join('');
 }
-function importJSON(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => { try { loadState(JSON.parse(ev.target.result)); toast('Імпортовано','ok'); } catch { toast('Помилка файлу','err'); } };
-  reader.readAsText(file);
-}
+function exportJSON(){const a=document.createElement('a');const n=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(getState(),null,2));a.download=n+'.vsm.json';a.click();toast('JSON збережено','ok')}
+function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{loadState(JSON.parse(ev.target.result));toast('Імпортовано','ok')}catch{toast('Помилка файлу','err')}};r.readAsText(f);e.target.value=''}
 
-/* ══════════════════════════════════════════
-   GEMINI AI INTEGRATION
-══════════════════════════════════════════ */
-function saveApiKey() {
-  const k = document.getElementById('aiKeyInput').value.trim();
-  localStorage.setItem('vsm_api_key', k); toast('Ключ збережено','ok');
-}
-
-async function runAi() {
-  const key = localStorage.getItem('vsm_api_key')||'';
-  if (!key) { toast('Введіть API ключ','err'); return; }
-  const btn = document.getElementById('aiRunBtn');
-  const out = document.getElementById('aiOut');
-  btn.disabled=true; out.style.display=''; out.textContent='Аналізую...';
-
-  const summary = `Карта: "${document.getElementById('mapName').value}"
-Процеси: ${getProcs().map(p=>`${p.label}(CT=${p.ct}s, Zone=${p.zoneId?'так':'ні'})`).join(', ')}`;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: `Зроби коротку бізнес-оцінку Lean для потоку: ${summary}. Відповідь українською.` }] }] })
-    });
-    const data = await resp.json();
-    out.textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Помилка відповіді';
-  } catch(err) { out.textContent = 'Помилка: ' + err.message; }
-  btn.disabled=false;
-}
-
-/* ══════════════════════════════════════════
-   MODALS, TOASTS & DEMO
-══════════════════════════════════════════ */
-function showSettings() { toast('Налаштування конструктора'); }
-function openModal(html) {
-  const ov = document.getElementById('modalOverlay'); const m = document.getElementById('modal');
-  m.innerHTML = html; ov.style.display=''; m.style.display='';
-}
-function closeModal() { document.getElementById('modalOverlay').style.display='none'; }
-function toast(msg, type='') {
-  const a = document.getElementById('toastArea'); const t = document.createElement('div');
-  t.className = 'toast '+(type||''); t.textContent = msg; a.appendChild(t); setTimeout(()=>t.remove(), 3000);
-}
-function showSaveMapsModal() { switchRTab('maps'); }
-
-function loadDemo() {
-  elements = [
-    {id:'d_zone1', type:'zone',      x:160, y:200, w:300, h:160, label:'Дільниця Механічної обробки', collapsed: false},
-    {id:'d_p1',    type:'process',   x:180, y:250, label:'Токарна оп.',  ct:45, co:120, uptime:90, operators:1, shifts:1, zoneId:'d_zone1'},
-    {id:'d_p2',    type:'process',   x:320, y:250, label:'Фрезерна оп.',ct:55, co:60,  uptime:85, operators:1, shifts:1, zoneId:'d_zone1'},
-    {id:'d_i1',    type:'inventory', x:490, y:220, label:'', qty:500, days:2},
-    {id:'d_p3',    type:'process',   x:600, y:250, label:'Контроль ОТК', ct:20, co:0,   uptime:98, operators:1, shifts:1, zoneId:null}
-  ];
-  connections = [
-    {from:'d_p1', to:'d_p2', type:'push'},
-    {from:'d_p2', to:'d_i1', type:'push'},
-    {from:'d_i1', to:'d_p3', type:'push'}
-  ];
-  document.getElementById('mapName').value = 'Демо: Об\'єднання в дільниці';
-  renderAll(); showProps();
-}
-
-// Стартова ініціалізація
-window.addEventListener('load', () => {
-  const key = localStorage.getItem('vsm_api_key')||'';
-  if (key) document.getElementById('aiKeyInput').value = key;
-  loadDemo();
+/* ═══════════ AI ═══════════ */
+window.addEventListener('load',()=>{
+  const k=localStorage.getItem('vsm_api_key')||'';if(k)document.getElementById('aikey').value=k;
+  const m=allMaps(),ks=Object.keys(m);if(ks.length)loadState(m[ks[ks.length-1]]);
 });
+function saveKey(){const k=document.getElementById('aikey').value.trim();localStorage.setItem('vsm_api_key',k);toast(k?'Ключ збережено':'Ключ очищено',k?'ok':'')}
+async function runAi(){
+  const key=localStorage.getItem('vsm_api_key')||'';if(!key){toast('Введіть API ключ','err');return}
+  const btn=document.getElementById('aibtn'),out=document.getElementById('aiout');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Аналізую…';out.style.display='';out.textContent='';
+  const p=getProcs(),inv=getInvs(),tk=getTakt();
+  const vat=p.reduce((s,x)=>s+x.ct,0),invd=inv.reduce((s,x)=>s+x.days,0);
+  const eff=vat>0?Math.round(vat/(vat+invd*28800)*100):0;
+  const bn=p.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
+  const sum=`VSM: "${document.getElementById('mapName').value}"\nПроцеси (${p.length}):\n${p.map(x=>`• ${x.label}: CT=${x.ct}s C/O=${x.co}s Uptime=${x.uptime}% Op=${x.operators} Зм=${x.shifts}`).join('\n')}\nЗапаси: ${inv.map(x=>`${x.label||'WIP'} ${x.days}дн`).join(', ')||'немає'} → NVA: ${invd}дн\nTakt=${tk}s | Eff=${eff}% | Bottleneck: ${bn?bn.label+' CT='+bn.ct+'s':'—'}\nПотоки: ${[...new Set(CONNS.map(c=>c.type))].join(', ')||'немає'}`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
+        system:'Ти старший Lean-консультант з VSM. Відповідай українською. Структура: 1) Загальна оцінка 2) Ключові проблеми (з цифрами) 3) Вузькі місця та дисбаланс 4) Виявлені втрати (7 видів муда) 5) Рекомендації Future State. Конкретно і практично.',
+        messages:[{role:'user',content:'Проаналізуй VSM карту:\n\n'+sum}]})});
+    const d=await resp.json();if(d.error)throw new Error(d.error.message);
+    out.textContent=d.content?.map(c=>c.text).join('')||'Порожньо';
+  }catch(err){out.textContent='Помилка: '+err.message;toast('AI помилка','err')}
+  btn.disabled=false;btn.innerHTML='✦ Проаналізувати знову';
+}
+
+/* ═══════════ DEMO ═══════════ */
+function loadDemo(){
+  ELS=[
+    {id:'d_sup',type:'supplier',x:20,y:80,label:'ТОВ Металопрокат',lead:5},
+    {id:'d_pc', type:'production_control',x:260,y:20,label:'MRP система'},
+    {id:'d_cus',type:'customer',x:580,y:80,label:'ОЕМ Замовник',demand:480},
+    {id:'d_i1', type:'inventory',x:188,y:240,label:'',qty:2400,days:5},
+    {id:'d_p1', type:'process',x:20,y:280,label:'Штампування',ct:45,co:240,uptime:72,operators:2,shifts:2,inventory_out:50},
+    {id:'d_i2', type:'inventory',x:328,y:240,label:'',qty:960,days:2},
+    {id:'d_p2', type:'process',x:180,y:280,label:'Зварювання',ct:92,co:60,uptime:65,operators:3,shifts:1,inventory_out:20},
+    {id:'d_i3', type:'inventory',x:468,y:240,label:'',qty:480,days:1},
+    {id:'d_p3', type:'process',x:340,y:280,label:'Складання',ct:55,co:30,uptime:90,operators:4,shifts:2,inventory_out:30},
+    {id:'d_i4', type:'inventory',x:600,y:240,label:'',qty:240,days:0.5},
+    {id:'d_p4', type:'process',x:500,y:280,label:'Контроль ВТК',ct:22,co:0,uptime:98,operators:1,shifts:2,inventory_out:0},
+    {id:'d_tr', type:'truck',x:500,y:80,label:'Щоденно'},
+    {id:'d_k1', type:'kaizen',x:230,y:400,label:'SMED',note:'C/O→30хв'},
+    {id:'d_k2', type:'kaizen',x:380,y:400,label:'TPM',note:'Up→85%'},
+    {id:'d_op1',type:'operator',x:60,y:395,label:'2 оп.'},
+    {id:'d_op2',type:'operator',x:230,y:390,label:'3 оп.'},
+  ];
+  CONNS=[
+    {from:'d_sup',to:'d_p1',type:'transport'},
+    {from:'d_p1',to:'d_p2',type:'push'},
+    {from:'d_p2',to:'d_p3',type:'push'},
+    {from:'d_p3',to:'d_p4',type:'push'},
+    {from:'d_p4',to:'d_cus',type:'push'},
+    {from:'d_tr',to:'d_cus',type:'transport'},
+    {from:'d_cus',to:'d_pc',type:'info'},
+    {from:'d_pc',to:'d_p1',type:'info-e'},
+    {from:'d_pc',to:'d_sup',type:'info-e'},
+  ];
+  document.getElementById('mapName').value='Виробнича лінія (Current State)';
+  GROUPS=[
+    {id:'g_press',  kind:'section',    label:'Дільниця пресування', x:10,  y:220, w:300, h:220, collapsed:false, childIds:[]},
+    {id:'g_weld',   kind:'section',    label:'Дільниця зварювання',  x:320, y:220, w:200, h:220, collapsed:false, childIds:[]},
+    {id:'g_asm',    kind:'workstation',label:'Роб. місце складання', x:330, y:260, w:170, h:120, collapsed:false, childIds:[]},
+  ];
+  IDC=50;selId=null;selGrpId=null;renderAll();showProps();toast('Приклад завантажено','ok');
+}
+
+/* ═══════════ UTIL ═══════════ */
+function showSettings(){openMod(`<div class="mod-t">⚙ Налаштування</div><div class="pg"><div class="pl">Claude API ключ</div><div class="ai-key-row"><input class="ai-ki" type="password" id="skey" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}"><button class="ai-ks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('skey').value);toast('Збережено','ok')">✓</button></div><p class="ai-hint">Зберігається тільки у вашому браузері.</p></div><div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.1 · BPI Group<br>Символи за стандартом LEI / Toyota Production System</p></div><div class="mod-bts"><button class="mbtn" onclick="closeMod()">Закрити</button></div>`)}
+function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGrpId=null;renderAll();showProps()}
+function openMod(h){document.getElementById('mod').innerHTML=h;document.getElementById('mov').style.display='flex'}
+function closeMod(){document.getElementById('mov').style.display='none'}
+function toast(msg,type=''){const a=document.getElementById('tarea'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+renderAll();showProps();
 </script>
 </body>
 </html>
