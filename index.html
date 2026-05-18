@@ -125,13 +125,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .prop-input:focus { outline: none; border-color: var(--accent); }
 .prop-row { display: flex; gap: 6px; }
 .prop-row .prop-group { flex: 1; }
-.prop-badge {
-  display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 5px;
-  border-radius: 3px; margin-left: 4px; text-transform: uppercase; letter-spacing: .04em;
-}
-.badge-danger { background: var(--danger-bg); color: var(--danger); }
-.badge-warn { background: var(--warn-bg); color: var(--warn); }
-.badge-ok { background: var(--success-bg); color: var(--success); }
 
 .section-head {
   font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
@@ -181,7 +174,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .ai-hint { font-size: 10px; color: var(--text3); line-height: 1.5; margin-bottom: 8px; }
 
 /* Maps list */
-.maps-list { }
 .map-row {
   display: flex; align-items: center; gap: 6px; padding: 5px 7px;
   border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 4px;
@@ -233,11 +225,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .toast.err { border-left: 3px solid var(--danger); }
 @keyframes toastIn { from { opacity:0; transform: translateY(8px); } }
 
-/* Spinner */
 .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Connect mode cursor */
 .canvas-wrap.connect-mode { cursor: crosshair; }
 
 /* Timeline bar */
@@ -255,7 +245,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .tl-stat strong { font-weight: 600; }
 .tl-eff { font-size: 11px; font-weight: 600; white-space: nowrap; }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
@@ -311,17 +300,18 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
       <div class="sidebar-section">
         <div class="sidebar-title">Елементи</div>
 
-        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'supplier')">
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'zone')" style="border: 1px dashed var(--accent); background: var(--accent-bg);">
           <div class="pal-icon">
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 10 L2 22 L28 22 L28 10 L15 2 Z M8 22 L8 15 L14 15 L14 22 M20 10 L20 14 L24 14 L24 10" stroke-linejoin="round"/></svg>
+            <i class="ti ti-box-margin" style="font-size: 18px; color: var(--accent)"></i>
           </div>
-          Постачальник
+          <strong>Дільниця / РМ</strong>
         </div>
+
         <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'process')">
           <div class="pal-icon">
             <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="26" height="18" rx="1"/></svg>
           </div>
-          Процес
+          Процес (Операція)
         </div>
         <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'inventory')">
           <div class="pal-icon">
@@ -335,6 +325,12 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
           </div>
           Клієнт
         </div>
+        <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'supplier')">
+          <div class="pal-icon">
+            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 10 L2 22 L28 22 L28 10 L15 2 Z M8 22 L8 15 L14 15 L14 22 M20 10 L20 14 L24 14 L24 10" stroke-linejoin="round"/></svg>
+          </div>
+          Постачальник
+        </div>
         <div class="pal-item" draggable="true" ondragstart="palDragStart(event,'kaizen')">
           <div class="pal-icon">
             <svg width="30" height="24" viewBox="0 0 30 24"><path d="M15 2 L18 8 L25 7 L21 12 L27 16 L20 17 L19 23 L14 18 L8 22 L9 15 L3 13 L10 10 Z" fill="none" stroke="#e85d30" stroke-width="1.2" stroke-linejoin="round"/><text x="15" y="15" font-size="8" text-anchor="middle" fill="#e85d30" font-weight="700" font-family="Inter,sans-serif">K</text></svg>
@@ -342,39 +338,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
           Kaizen Burst
         </div>
       </div>
-
-      <div class="sidebar-section" style="border-top: 0.5px solid var(--border); margin-top: 4px; padding-top: 10px;">
-        <div class="sidebar-title">З'єднання</div>
-        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
-          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#444" stroke-width="1.5"/><polygon points="24,3 30,7 24,11" fill="#444"/></svg>
-          Push потік
-        </div>
-        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
-          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#1d9e75" stroke-width="1.5" stroke-dasharray="5 3"/><polygon points="24,3 30,7 24,11" fill="#1d9e75"/></svg>
-          Pull потік
-        </div>
-        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
-          <svg width="30" height="14" viewBox="0 0 30 14"><path d="M2 7 Q15 1 28 7" fill="none" stroke="#185fa5" stroke-width="1.5"/><polygon points="24,3 30,7 24,11" fill="#185fa5"/></svg>
-          Інфо потік
-        </div>
-        <div class="pal-item" draggable="false" style="cursor:default; opacity:.7; font-size:10px; gap:4px; padding:4px 6px;">
-          <svg width="30" height="14" viewBox="0 0 30 14"><line x1="2" y1="7" x2="24" y2="7" stroke="#ba7517" stroke-width="1.5" stroke-dasharray="2 2"/><polygon points="24,3 30,7 24,11" fill="#ba7517"/></svg>
-          Зовн. транспорт
-        </div>
-        <p style="font-size:10px; color:var(--text3); padding:5px 2px; line-height:1.5;">
-          Використай інструмент «З'єднати», потім клацни два елементи по черзі.
-        </p>
-      </div>
     </div>
 
-    <div class="canvas-wrap" id="canvasWrap"
-      ondragover="event.preventDefault()"
-      ondrop="onDrop(event)">
-      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"
-        onmousedown="svgMouseDown(event)"
-        onmousemove="svgMouseMove(event)"
-        onmouseup="svgMouseUp(event)"
-        oncontextmenu="return false">
+    <div class="canvas-wrap" id="canvasWrap" ondragover="event.preventDefault()" ondrop="onDrop(event)">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg" onmousedown="svgMouseDown(event)" onmousemove="svgMouseMove(event)" onmouseup="svgMouseUp(event)" oncontextmenu="return false">
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -384,6 +351,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
           </pattern>
         </defs>
         <rect id="gridBg" width="100%" height="100%" fill="url(#grid)"/>
+        <g id="zoneLayer"></g>
         <g id="connLayer"></g>
         <g id="elLayer"></g>
         <g id="tempArrow" style="display:none">
@@ -415,7 +383,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
           <input class="ai-key-input" type="password" id="aiKeyInput" placeholder="AIzaSy…">
           <button class="ai-save-btn" onclick="saveApiKey()"><i class="ti ti-check"></i></button>
         </div>
-        <p class="ai-hint">Ключ зберігається тільки у вашому браузері. Отримати безкоштовно: <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a></p>
+        <p class="ai-hint">Ключ зберігається в браузері. Отримати безкоштовно: <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a></p>
         <button class="ai-run-btn" id="aiRunBtn" onclick="runAi()">
           <i class="ti ti-sparkles"></i> Проаналізувати потік (Gemini)
         </button>
@@ -439,12 +407,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 <div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModal(event)"></div>
 <div id="modal" class="modal" style="display:none"></div>
-
-<div class="toast-area" id="toastArea"></div>
+<div id="toastArea" class="toast-area"></div>
 
 <script>
 /* ══════════════════════════════════════════
-   STATE
+   STATE & DEFAULTS
 ══════════════════════════════════════════ */
 let elements = [];
 let connections = [];
@@ -457,11 +424,9 @@ let idCnt = 1;
 let activeTab = 'props';
 const GRID = 20;
 
-/* ══════════════════════════════════════════
-   ELEMENT DEFINITIONS
-══════════════════════════════════════════ */
 const EL_DEFAULTS = {
-  process:   { label:'Процес',        ct:60,  co:30,  uptime:85, operators:1, shifts:1 },
+  zone:      { label:'Дільниця / РМ', w:260, h:160, collapsed: false },
+  process:   { label:'Процес',        ct:60,  co:30,  uptime:85, operators:1, shifts:1, zoneId: null },
   inventory: { label:'Запаси',        qty:500, days:2 },
   customer:  { label:'Клієнт',        demand:500 },
   supplier:  { label:'Постачальник',  lead:5 },
@@ -469,6 +434,7 @@ const EL_DEFAULTS = {
 };
 
 const EL_COLORS = {
+  zone:     { fill:'rgba(24, 95, 165, 0.03)', stroke:'#185fa5', text:'#185fa5' },
   process:  { fill:'#e6f1fb', stroke:'#185fa5', text:'#0c447c' },
   inventory:{ fill:'#faeeda', stroke:'#ba7517', text:'#633806' },
   customer: { fill:'#eaf3de', stroke:'#3b6d11', text:'#27500a' },
@@ -480,21 +446,30 @@ const CONN_COLORS = { push:'#444441', pull:'#1d9e75', info:'#185fa5', transport:
 const CONN_NAMES  = { push:'Push',    pull:'Pull',    info:'Інфо',   transport:'Транспорт' };
 
 function elBBox(el) {
+  if (el.type === 'zone') return { x:el.x, y:el.y, w:el.w||260, h:el.collapsed?40:el.h||160 };
   const sizes = { process:{w:120,h:72}, inventory:{w:90,h:65}, customer:{w:100,h:62}, supplier:{w:100,h:62}, kaizen:{w:60,h:60} };
   const s = sizes[el.type] || {w:100,h:60};
   return { x:el.x, y:el.y, w:s.w, h:s.h };
 }
-function elCenter(el) { const b=elBBox(el); return {x:b.x+b.w/2, y:b.y+b.h/2}; }
 
-/* ══════════════════════════════════════════
-   ID
-══════════════════════════════════════════ */
+function elCenter(el) {
+  // Якщо процес всередині згорнутої зони — лінія підключається до центру самої зони
+  if (el.zoneId) {
+    const parent = elements.find(z => z.id === el.zoneId);
+    if (parent && parent.collapsed) return elCenter(parent);
+  }
+  const b = elBBox(el); 
+  return { x:b.x + b.w/2, y:b.y + b.h/2 };
+}
+
 function newId() { return 'e'+Date.now()+(idCnt++); }
 
 /* ══════════════════════════════════════════
-   RENDER
+   RENDER LOGIC
 ══════════════════════════════════════════ */
 function renderAll() {
+  updateZoneAssignments(); // Перевіряємо, які процеси потрапили в яку дільницю
+  renderZones();
   renderConnections();
   renderElements();
   updateTimeline();
@@ -509,9 +484,24 @@ function svg(tag, attrs, inner) {
   return el;
 }
 function txt(x,y,content,attrs) {
-  const t = svg('text', {x,y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Inter,system-ui,sans-serif',...(attrs||{})});
-  t.textContent = content;
-  return t;
+  return svg('text', {x,y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Inter,sans-serif',...(attrs||{})}, content);
+}
+
+// Автоматична прив'язка процесів до Зон за координатами
+function updateZoneAssignments() {
+  const zones = elements.filter(e => e.type === 'zone');
+  elements.forEach(el => {
+    if (el.type === 'process') {
+      el.zoneId = null;
+      // Шукаємо, в яку зону входить лівий верхній кут процесу
+      for (const z of zones) {
+        if (el.x >= z.x && el.x <= z.x + (z.w||260) && el.y >= z.y && el.y <= z.y + (z.h||160)) {
+          el.zoneId = z.id;
+          break;
+        }
+      }
+    }
+  });
 }
 
 function isBottleneck(el) {
@@ -522,67 +512,135 @@ function isBottleneck(el) {
 }
 function getTakt() {
   const c = elements.find(e=>e.type==='customer');
-  if (!c||!c.demand) return 0;
-  return Math.round(28800/c.demand);
+  return c && c.demand ? Math.round(28800/c.demand) : 0;
 }
 
-function renderElement(el) {
-  const G = svg('g', { id:'g_'+el.id, style:'cursor:'+(currentTool==='connect'?'crosshair':'move') });
-  G.addEventListener('mousedown', e=>elMouseDown(e,el.id));
+// Окремий рендер для Дільниць (Зон)
+function renderZones() {
+  const layer = document.getElementById('zoneLayer');
+  layer.innerHTML = '';
+  const zones = elements.filter(e => e.type === 'zone');
+  
+  zones.forEach(z => {
+    const G = svg('g', { id:'g_'+z.id, style:'cursor:move' });
+    G.addEventListener('mousedown', e => elMouseDown(e, z.id));
+    
+    const b = elBBox(z);
+    const c = EL_COLORS.zone;
+    
+    // Фоновий прямокутник дільниці
+    G.appendChild(svg('rect', {
+      x: b.x, y: b.y, width: b.w, height: b.h, rx: 6,
+      fill: c.fill, stroke: c.stroke, 'stroke-width': 1.5,
+      'stroke-dasharray': z.collapsed ? 'none' : '6 4'
+    }));
 
-  const c = EL_COLORS[el.type] || EL_COLORS.process;
-  const bn = isBottleneck(el);
-  const tk = getTakt();
+    // Плашка заголовка дільниці
+    G.appendChild(svg('rect', {
+      x: b.x, y: b.y, width: b.w, height: 30, rx: 4,
+      fill: z.collapsed ? '#e6f1fb' : 'rgba(24, 95, 165, 0.1)'
+    }));
 
-  if (el.type === 'process') {
-    const strokeC = bn ? '#a32d2d' : c.stroke;
-    const strokeW = bn ? 2 : 1;
-    G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:72,rx:4,fill:c.fill,stroke:strokeC,'stroke-width':strokeW}));
-    if (bn) G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:5,rx:2,fill:'#e24b4a'}));
-    G.appendChild(txt(el.x+60, el.y+13, el.label, {'font-size':'11','font-weight':'600',fill:c.text}));
-    G.appendChild(svg('line',{x1:el.x+6,y1:el.y+22,x2:el.x+114,y2:el.y+22,stroke:c.stroke,'stroke-width':'0.5'}));
-    const rows = [
-      `CT: ${el.ct}s    C/O: ${el.co}s`,
-      `Uptime: ${el.uptime}%    Op: ${el.operators}`,
-      `Зміни: ${el.shifts}${bn?' ◀ ВУЗЬКЕ':tk&&el.ct>tk?' ▲ > такту':''}`,
-    ];
-    rows.forEach((r,i)=>{
-      const t = svg('text',{x:el.x+7,y:el.y+31+i*13,'font-size':'9','font-family':'Inter,system-ui,sans-serif',fill: i===2&&bn?'#a32d2d':c.text});
-      t.textContent=r; G.appendChild(t);
+    // Текст назви дільниці
+    const title = svg('text', { x: b.x + 12, y: b.y + 15, 'dominant-baseline':'central', 'font-size':'11', 'font-weight':'700', fill: c.text });
+    title.textContent = z.label + (z.collapsed ? ` (Згорнуто операції)` : '');
+    G.appendChild(title);
+
+    // Кнопка Згорнути / Розгорнути [+ / -]
+    const btnG = svg('g', { style: 'cursor: pointer;' });
+    btnG.appendChild(svg('circle', { cx: b.x + b.w - 20, cy: b.y + 15, r: 8, fill: '#fff', stroke: c.stroke, 'stroke-width': 1 }));
+    btnG.appendChild(txt(b.x + b.w - 20, b.y + 15, z.collapsed ? '+' : '-', { 'font-size': '12', 'font-weight': '700', fill: c.text }));
+    
+    btnG.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      z.collapsed = !z.collapsed;
+      renderAll();
     });
-  } else if (el.type === 'inventory') {
-    G.appendChild(svg('polygon',{points:`${el.x+45},${el.y} ${el.x+90},${el.y+50} ${el.x},${el.y+50}`,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
-    G.appendChild(txt(el.x+45,el.y+33,"I",{'font-size':'14','font-weight':'800',fill:c.text, opacity:'0.3'}));
-    G.appendChild(txt(el.x+45,el.y+24,el.qty.toString(),{'font-size':'11','font-weight':'700',fill:c.text}));
-    G.appendChild(txt(el.x+45,el.y+60,el.days+' дн',{'font-size':'10','font-weight':'600',fill:c.text}));
-  } else if (el.type === 'customer' || el.type === 'supplier') {
-    const dPath = `M${el.x} ${el.y+12} L${el.x+25} ${el.y+12} L${el.x+25} ${el.y} L${el.x+50} ${el.y+12} L${el.x+50} ${el.y} L${el.x+75} ${el.y+12} L${el.x+75} ${el.y} L${el.x+100} ${el.y+12} L${el.x+100} ${el.y+45} L${el.x} ${el.y+45} Z`;
-    G.appendChild(svg('path',{d:dPath,fill:c.fill,stroke:c.stroke,'stroke-width':'1.3','stroke-linejoin':'round'}));
-    G.appendChild(txt(el.x+50,el.y+28,el.label,{'font-size':'10','font-weight':'600',fill:c.text}));
-    if (el.type==='customer') {
-      G.appendChild(txt(el.x+50,el.y+55,el.demand+' шт/зм',{'font-size':'10','font-weight':'500',fill:c.text}));
-    } else {
-      G.appendChild(txt(el.x+50,el.y+55,'Плечо: '+el.lead+' дн',{'font-size':'10','font-weight':'500',fill:c.text}));
-    }
-  } else if (el.type === 'kaizen') {
-    const points = `${el.x+30},${el.y} ${el.x+38},${el.y+12} ${el.x+52},${el.y+6} ${el.x+44},${el.y+20} ${el.x+58},${el.y+30} ${el.x+43},${el.y+36} ${el.x+48},${el.y+52} ${el.x+34},${el.y+42} ${el.x+22},${el.y+56} ${el.x+20},${el.y+38} ${el.x+4},${el.y+36} ${el.x+17},${el.y+24} ${el.x+6},${el.y+12} ${el.x+20},${el.y+15} Z`;
-    G.appendChild(svg('polygon',{points,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
-    G.appendChild(txt(el.x+30,el.y+22,"⚡",{'font-size':'12'}));
-    G.appendChild(txt(el.x+30,el.y+35,el.label.slice(0,9),{'font-size':'9','font-weight':'700',fill:c.text}));
-  }
+    G.appendChild(btnG);
 
-  if (selectedId === el.id) {
-    const b = elBBox(el);
-    const ring = svg('rect',{x:b.x-4,y:b.y-4,width:b.w+8,height:b.h+8,rx:8,fill:'none',stroke:'#185fa5','stroke-width':'1.5','stroke-dasharray':'5 3'});
-    G.insertBefore(ring, G.firstChild);
-  }
-  return G;
+    // Якщо згорнуто — виводимо агреговані метрики дільниці всередині рамки
+    if (z.collapsed) {
+      const childProcs = elements.filter(p => p.zoneId === z.id);
+      const totalCt = childProcs.reduce((sum, p) => sum + p.ct, 0);
+      const avgUptime = childProcs.length ? Math.round(childProcs.reduce((sum, p) => sum + p.uptime, 0) / childProcs.length) : 0;
+      
+      const statsTxt = svg('text', { x: b.x + 12, y: b.y + 40, 'font-size': '10', fill: '#5f5e5a' });
+      statsTxt.textContent = `Операцій: ${childProcs.length} | Спільний СТ: ${totalCt}с | Сер. Uptime: ${avgUptime}%`;
+      G.appendChild(statsTxt);
+    }
+
+    if (selectedId === z.id) {
+      G.appendChild(svg('rect', { x: b.x-3, y: b.y-3, width: b.w+6, height: b.h+6, rx: 8, fill: 'none', stroke: '#185fa5', 'stroke-width': '1.5', 'stroke-dasharray': '3 3' }));
+    }
+
+    layer.appendChild(G);
+  });
 }
 
 function renderElements() {
   const layer = document.getElementById('elLayer');
   layer.innerHTML = '';
-  elements.forEach(el => layer.appendChild(renderElement(el)));
+  
+  elements.forEach(el => {
+    if (el.type === 'zone') return; // Зони вже відрендерені на своєму шарі
+    
+    // Якщо процес знаходиться всередині згорнутої зони, ми його не малюємо
+    if (el.zoneId) {
+      const parentZone = elements.find(z => z.id === el.zoneId);
+      if (parentZone && parentZone.collapsed) return;
+    }
+
+    const G = svg('g', { id:'g_'+el.id, style:'cursor:'+(currentTool==='connect'?'crosshair':'move') });
+    G.addEventListener('mousedown', e=>elMouseDown(e,el.id));
+
+    const c = EL_COLORS[el.type] || EL_COLORS.process;
+    const bn = isBottleneck(el);
+    const tk = getTakt();
+
+    if (el.type === 'process') {
+      const strokeC = bn ? '#a32d2d' : c.stroke;
+      const strokeW = bn ? 2 : 1;
+      G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:72,rx:4,fill:c.fill,stroke:strokeC,'stroke-width':strokeW}));
+      if (bn) G.appendChild(svg('rect',{x:el.x,y:el.y,width:120,height:5,rx:2,fill:'#e24b4a'}));
+      G.appendChild(txt(el.x+60, el.y+13, el.label, {'font-size':'11','font-weight':'600',fill:c.text}));
+      G.appendChild(svg('line',{x1:el.x+6,y1:el.y+22,x2:el.x+114,y2:el.y+22,stroke:c.stroke,'stroke-width':'0.5'}));
+      
+      const rows = [
+        `CT: ${el.ct}s    C/O: ${el.co}s`,
+        `Uptime: ${el.uptime}%    Op: ${el.operators}`,
+        `Зміни: ${el.shifts}${bn?' ◀ ВУЗЬКЕ':tk&&el.ct>tk?' ▲ > такту':''}`,
+      ];
+      rows.forEach((r,i)=>{
+        const t = svg('text',{x:el.x+7,y:el.y+31+i*13,'font-size':'9','font-family':'Inter,sans-serif',fill: i===2&&bn?'#a32d2d':c.text});
+        t.textContent=r; G.appendChild(t);
+      });
+    } else if (el.type === 'inventory') {
+      G.appendChild(svg('polygon',{points:`${el.x+45},${el.y} ${el.x+90},${el.y+50} ${el.x},${el.y+50}`,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
+      G.appendChild(txt(el.x+45,el.y+33,"I",{'font-size':'14','font-weight':'800',fill:c.text, opacity:'0.3'}));
+      G.appendChild(txt(el.x+45,el.y+24,el.qty.toString(),{'font-size':'11','font-weight':'700',fill:c.text}));
+      G.appendChild(txt(el.x+45,el.y+60,el.days+' дн',{'font-size':'10','font-weight':'600',fill:c.text}));
+    } else if (el.type === 'customer' || el.type === 'supplier') {
+      const dPath = `M${el.x} ${el.y+12} L${el.x+25} ${el.y+12} L${el.x+25} ${el.y} L${el.x+50} ${el.y+12} L${el.x+50} ${el.y} L${el.x+75} ${el.y+12} L${el.x+75} ${el.y} L${el.x+100} ${el.y+12} L${el.x+100} ${el.y+45} L${el.x} ${el.y+45} Z`;
+      G.appendChild(svg('path',{d:dPath,fill:c.fill,stroke:c.stroke,'stroke-width':'1.3','stroke-linejoin':'round'}));
+      G.appendChild(txt(el.x+50,el.y+28,el.label,{'font-size':'10','font-weight':'600',fill:c.text}));
+      if (el.type==='customer') {
+        G.appendChild(txt(el.x+50,el.y+55,el.demand+' шт/зм',{'font-size':'10','font-weight':'500',fill:c.text}));
+      } else {
+        G.appendChild(txt(el.x+50,el.y+55,'Плечо: '+el.lead+' дн',{'font-size':'10','font-weight':'500',fill:c.text}));
+      }
+    } else if (el.type === 'kaizen') {
+      const points = `${el.x+30},${el.y} ${el.x+38},${el.y+12} ${el.x+52},${el.y+6} ${el.x+44},${el.y+20} ${el.x+58},${el.y+30} ${el.x+43},${el.y+36} ${el.x+48},${el.y+52} ${el.x+34},${el.y+42} ${el.x+22},${el.y+56} ${el.x+20},${el.y+38} ${el.x+4},${el.y+36} ${el.x+17},${el.y+24} ${el.x+6},${el.y+12} ${el.x+20},${el.y+15} Z`;
+      G.appendChild(svg('polygon',{points,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
+      G.appendChild(txt(el.x+30,el.y+22,"⚡",{'font-size':'12'}));
+      G.appendChild(txt(el.x+30,el.y+35,el.label.slice(0,9),{'font-size':'9','font-weight':'700',fill:c.text}));
+    }
+
+    if (selectedId === el.id) {
+      const b = elBBox(el);
+      G.insertBefore(svg('rect',{x:b.x-4,y:b.y-4,width:b.w+8,height:b.h+8,rx:8,fill:'none',stroke:'#185fa5','stroke-width':'1.5','stroke-dasharray':'5 3'}), G.firstChild);
+    }
+    layer.appendChild(G);
+  });
 }
 
 function renderConnections() {
@@ -592,10 +650,12 @@ function renderConnections() {
     const from = elements.find(e=>e.id===conn.from);
     const to   = elements.find(e=>e.id===conn.to);
     if (!from||!to) return;
+    
     const fc = elCenter(from), tc = elCenter(to);
     const color = CONN_COLORS[conn.type]||'#888';
     const dash  = conn.type==='pull'?'7 4':conn.type==='transport'?'3 3':'none';
     const G = svg('g');
+    
     if (conn.type==='info') {
       const mx=(fc.x+tc.x)/2, my=Math.min(fc.y,tc.y)-35;
       G.appendChild(svg('path',{d:`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`,fill:'none',stroke:color,'stroke-width':'1.5','stroke-dasharray':'5 3','marker-end':'url(#arr)'}));
@@ -603,25 +663,24 @@ function renderConnections() {
       G.appendChild(svg('line',{x1:fc.x,y1:fc.y,x2:tc.x,y2:tc.y,stroke:color,'stroke-width':'1.5','stroke-dasharray':dash,'marker-end':'url(#arr)'}));
     }
     const mx2=(fc.x+tc.x)/2, my2=(fc.y+tc.y)/2-9;
-    const lt = svg('text',{x:mx2,y:my2,'text-anchor':'middle','font-size':'9','font-family':'Inter,sans-serif',fill:color});
-    lt.textContent = CONN_NAMES[conn.type]||';';
-    G.appendChild(lt);
+    G.appendChild(txt(mx2, my2, CONN_NAMES[conn.type], { 'font-size':'9', fill:color }));
     layer.appendChild(G);
   });
 }
 
 /* ══════════════════════════════════════════
-   INTERACTIONS
+   DRAG AND DROP & MOUSE INTERACTIONS
 ══════════════════════════════════════════ */
 function palDragStart(e, type) { e.dataTransfer.setData('type', type); }
 
 function onDrop(e) {
   const type = e.dataTransfer.getData('type');
   if (!EL_DEFAULTS[type]) return;
-  const svg = document.getElementById('canvas');
-  const r = svg.getBoundingClientRect();
+  const canvasEl = document.getElementById('canvas');
+  const r = canvasEl.getBoundingClientRect();
   const x = snap(e.clientX - r.left);
   const y = snap(e.clientY - r.top);
+  
   const el = { id: newId(), type, x, y, ...JSON.parse(JSON.stringify(EL_DEFAULTS[type])) };
   elements.push(el);
   renderAll();
@@ -640,7 +699,7 @@ function elMouseDown(e, id) {
       showConnectTypeModal(connectStart, id);
       connectStart = null;
       document.getElementById('tempArrow').style.display='none';
-      renderElements();
+      renderAll();
     }
     return;
   }
@@ -664,6 +723,7 @@ function svgMouseDown(e) {
 function svgMouseMove(e) {
   const r = document.getElementById('canvas').getBoundingClientRect();
   const mx = e.clientX-r.left, my = e.clientY-r.top;
+  
   if (connectStart) {
     const from = elements.find(el=>el.id===connectStart);
     if (from) {
@@ -673,22 +733,38 @@ function svgMouseMove(e) {
       tl.setAttribute('x2',mx);   tl.setAttribute('y2',my);
     }
   }
+  
   if (dragging) {
     const el = elements.find(e=>e.id===dragging);
-    if (el) { el.x=snap(mx-dragOff.x); el.y=snap(my-dragOff.y); renderAll(); }
+    if (el) { 
+      const oldX = el.x;
+      const oldY = el.y;
+      el.x = snap(mx-dragOff.x); 
+      el.y = snap(my-dragOff.y); 
+
+      // Якщо перетягуємо дільницю (зону), переміщуємо процеси всередині неї синхронно
+      if (el.type === 'zone') {
+        const dx = el.x - oldX;
+        const dy = el.y - oldY;
+        elements.forEach(child => {
+          if (child.zoneId === el.id) { child.x += dx; child.y += dy; }
+        });
+      }
+      renderAll(); 
+    }
   }
 }
 
 function svgMouseUp() { dragging=null; }
 
-function selectEl(id) {
-  selectedId=id; renderAll(); showProps();
-}
+function selectEl(id) { selectedId=id; renderAll(); showProps(); }
 
 function deleteSelected() {
   if (!selectedId) return;
   elements    = elements.filter(e=>e.id!==selectedId);
   connections = connections.filter(c=>c.from!==selectedId&&c.to!==selectedId);
+  // Скидаємо зону для процесів, якщо зона була видалена
+  elements.forEach(el => { if(el.zoneId === selectedId) el.zoneId = null; });
   selectedId  = null;
   renderAll(); showProps();
 }
@@ -698,24 +774,19 @@ document.addEventListener('keydown', e => {
   if (e.key==='v'||e.key==='V') setTool('select');
   if (e.key==='c'||e.key==='C') setTool('connect');
   if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
-  if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); saveToLocal(); }
 });
 
-/* ══════════════════════════════════════════
-   TOOLS
-══════════════════════════════════════════ */
 function setTool(t) {
-  currentTool = t;
-  connectStart = null;
+  currentTool = t; connectStart = null;
   document.getElementById('tempArrow').style.display='none';
   document.getElementById('btn-select').classList.toggle('active', t==='select');
   document.getElementById('btn-connect').classList.toggle('active', t==='connect');
   document.getElementById('canvasWrap').classList.toggle('connect-mode', t==='connect');
-  renderElements();
+  renderAll();
 }
 
 /* ══════════════════════════════════════════
-   CONNECT MODAL
+   CONNECT TYPE MODAL
 ══════════════════════════════════════════ */
 function showConnectTypeModal(fromId, toId) {
   const types = [
@@ -736,13 +807,10 @@ function showConnectTypeModal(fromId, toId) {
   openModal(body);
 }
 
-function addConn(from, to, type) {
-  connections.push({from, to, type});
-  renderAll();
-}
+function addConn(from, to, type) { connections.push({from, to, type}); renderAll(); }
 
 /* ══════════════════════════════════════════
-   PROPS PANEL
+   PROPERTIES PANEL (RIGHT)
 ══════════════════════════════════════════ */
 function switchRTab(t) {
   activeTab = t;
@@ -763,6 +831,11 @@ function showProps() {
   msg.style.display='none'; form.style.display='';
 
   const FIELDS = {
+    zone: [
+      {key:'label', lbl:'Назва дільниці / РМ',   type:'text'},
+      {key:'w',     lbl:'Ширина контейнера (px)',type:'number', row:true},
+      {key:'h',     lbl:'Висота контейнера (px)',type:'number', row:true},
+    ],
     process: [
       {key:'label', lbl:'Назва процесу',         type:'text'},
       {key:'ct',    lbl:'Час циклу CT (сек)',     type:'number', row:true},
@@ -811,6 +884,16 @@ function showProps() {
     }
   }
 
+  // Якщо це зона, виведемо список вкладених операцій
+  if (el.type === 'zone') {
+    const children = elements.filter(p => p.zoneId === el.id);
+    html += `<div class="section-head">Включені операції (${children.length})</div>`;
+    if(!children.length) html += `<div style="font-size:11px;color:var(--text3);padding:4px 0;">Перетягніть операції всередину рамки дільниці</div>`;
+    children.forEach(c => {
+      html += `<div class="proc-row"><div class="proc-dot" style="background:var(--accent)"></div><span style="font-size:11px">${c.label} (${c.ct}с)</span></div>`;
+    });
+  }
+
   const myConns = connections.filter(c=>c.from===el.id||c.to===el.id);
   if (myConns.length) {
     html += `<div class="section-head">З'єднання (${myConns.length})</div>`;
@@ -832,17 +915,14 @@ function showProps() {
 function setProp(id, key, val) {
   const el = elements.find(e=>e.id===id);
   if (!el) return;
-  el[key] = (isNaN(+val)||val===''||key==='label'||key==='note') ? val : +val;
+  el[key] = (isNaN(+val)||val===''||key=='label'||key=='note') ? val : +val;
   renderAll();
 }
 
-function delConn(from, to) {
-  connections = connections.filter(c=>!(c.from===from&&c.to===to));
-  renderAll(); showProps();
-}
+function delConn(from, to) { connections = connections.filter(c=>!(c.from===from&&c.to===to)); renderAll(); showProps(); }
 
 /* ══════════════════════════════════════════
-   METRICS
+   METRICS CALCULATION
 ══════════════════════════════════════════ */
 function getProcs()  { return elements.filter(e=>e.type==='process'); }
 function getInvs()   { return elements.filter(e=>e.type==='inventory'); }
@@ -873,32 +953,14 @@ function updateMetrics() {
       <div class="metric-sub">Вимога: ${elements.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div>
     </div>
     <div class="metric-card">
-      <div class="metric-lbl">Запаси між процесами</div>
+      <div class="metric-lbl">Запаси</div>
       <div class="metric-val">${invDays} дн</div>
       <div class="metric-sub">NVA: ${fmtT(nvaTime)}</div>
     </div>
     <div class="metric-card" style="background:${effBg};border-color:${effColor}">
       <div class="metric-lbl" style="color:${effColor}">Ефективність потоку</div>
       <div class="metric-val" style="color:${effColor}">${eff}%</div>
-      <div class="metric-sub" style="color:${effColor}">${eff<10?'⚠ Критично низька':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div>
     </div>
-    ${bn?`<div class="metric-card" style="background:var(--danger-bg);border-color:var(--danger)">
-      <div class="metric-lbl" style="color:var(--danger)">Вузьке місце <span class="prop-badge badge-danger">bottleneck</span></div>
-      <div class="metric-val" style="font-size:15px;color:var(--danger)">${bn.label}</div>
-      <div class="metric-sub" style="color:var(--danger)">CT=${bn.ct}s${takt?(' '+(bn.ct>takt?'> такту ⚠':'≤ такту ✓')):''}  Uptime=${bn.uptime}%</div>
-    </div>`:''}
-
-    <div class="section-head">Всі процеси</div>
-    ${procs.map(p=>{
-      const isbn=bn&&p.id===bn.id;
-      const col=isbn?'var(--danger)':takt&&p.ct>takt?'var(--warn)':'var(--success)';
-      return `<div class="proc-row">
-        <div class="proc-dot" style="background:${col}"></div>
-        <span style="flex:1;font-size:11px">${p.label}</span>
-        <span style="font-size:11px;color:${col};font-weight:600">${p.ct}s</span>
-        ${isbn?'<span class="prop-badge badge-danger">BN</span>':''}
-      </div>`;
-    }).join('')}
   `;
 }
 
@@ -916,72 +978,51 @@ function updateTimeline() {
   const lt      = vaTime+nvaTime;
   const eff     = lt>0?Math.round(vaTime/lt*100):0;
   const vaPct   = lt>0?Math.max(2,Math.round(vaTime/lt*100)):5;
-  const nvaPct  = 100-vaPct;
+  
   document.getElementById('tlBar').innerHTML = `
     <div class="tl-va" style="width:${vaPct}%"><span class="tl-bar-lbl">${eff>15?'VA':''}</span></div>
-    <div class="tl-nva" style="width:${nvaPct}%"><span class="tl-bar-lbl">${nvaPct>15?'NVA':''}</span></div>`;
+    <div class="tl-nva" style="width:${100-vaPct}%"><span class="tl-bar-lbl">NVA</span></div>`;
   document.getElementById('tlLT').innerHTML  = `LT: <strong>${fmtT(lt)}</strong>`;
   document.getElementById('tlEff').style.color = eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
   document.getElementById('tlEff').textContent = eff+'%';
 }
 
 /* ══════════════════════════════════════════
-   SAVE / LOAD
+   STORAGE & MAPS MANAGEMENT
 ══════════════════════════════════════════ */
-function getState() {
-  return { version:2, name:document.getElementById('mapName').value, ts:Date.now(), elements, connections };
-}
+function getState() { return { version:3, name:document.getElementById('mapName').value, ts:Date.now(), elements, connections }; }
 
 function loadState(state) {
   elements    = state.elements    || [];
   connections = state.connections || [];
   document.getElementById('mapName').value = state.name || 'VSM карта';
-  idCnt       = elements.length + 1;
-  selectedId  = null;
+  idCnt       = elements.length + 1; selectedId  = null;
   renderAll(); showProps();
 }
 
-function getAllMaps() {
-  try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; }
-}
+function getAllMaps() { try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; } }
 function saveToLocal() {
   const name = document.getElementById('mapName').value.trim() || 'VSM карта';
-  const maps = getAllMaps();
-  maps[name]  = getState();
+  const maps = getAllMaps(); maps[name]  = getState();
   localStorage.setItem('vsm_maps', JSON.stringify(maps));
   toast('Збережено: '+name,'ok');
 }
-function loadFromLocal(name) {
-  const maps = getAllMaps();
-  if (maps[name]) { loadState(maps[name]); toast('Відкрито: '+name,'ok'); }
-}
+function loadFromLocal(name) { const maps = getAllMaps(); if (maps[name]) { loadState(maps[name]); toast('Відкрито: '+name,'ok'); } }
 function deleteMap(name) {
-  const maps = getAllMaps();
-  delete maps[name];
-  localStorage.setItem('vsm_maps', JSON.stringify(maps));
-  renderMapsList();
-  toast('Видалено: '+name);
+  const maps = getAllMaps(); delete maps[name];
+  localStorage.setItem('vsm_maps', JSON.stringify(maps)); renderMapsList(); toast('Видалено: '+name);
 }
 
 function renderMapsList() {
-  const maps = getAllMaps();
-  const keys = Object.keys(maps);
+  const maps = getAllMaps(); const keys = Object.keys(maps);
   const mc = document.getElementById('mapsContent');
-  if (!keys.length) { mc.innerHTML='<div class="empty-maps"><i class="ti ti-folder-open" style="font-size:28px;display:block;margin-bottom:8px;opacity:.35"></i>Немає збережених карт.<br>Натисніть «Зберегти» у шапці.</div>'; return; }
-  mc.innerHTML = `
-    <div class="prop-group">
-      <button class="ai-run-btn" onclick="saveToLocal()"><i class="ti ti-device-floppy"></i> Зберегти поточну</button>
-    </div>
-    <div class="section-head" style="border-top:none;padding-top:0">Збережені карти (${keys.length})</div>` +
+  if (!keys.length) { mc.innerHTML='<div class="empty-maps">Немає збережених карт.</div>'; return; }
+  mc.innerHTML = `<div class="prop-group"><button class="ai-run-btn" onclick="saveToLocal()"><i class="ti ti-device-floppy"></i> Зберегти поточну</button></div>` +
     keys.map(name=>{
-      const ts = maps[name].ts ? new Date(maps[name].ts).toLocaleDateString('uk-UA') : '';
       return `<div class="map-row" onclick="loadFromLocal('${name.replace(/'/g,"\\'")}')">
         <i class="ti ti-file-text" style="font-size:16px;color:var(--accent)"></i>
-        <div style="flex:1;overflow:hidden">
-          <div class="map-row-name">${name}</div>
-          <div class="map-row-date">${ts} · ${(maps[name].elements||[]).length} ел.</div>
-        </div>
-        <button class="map-del-btn" onclick="event.stopPropagation();if(confirm('Видалити «${name}»?'))deleteMap('${name.replace(/'/g,"\\'")}')">✕</button>
+        <div style="flex:1;overflow:hidden"><div class="map-row-name">${name}</div></div>
+        <button class="map-del-btn" onclick="event.stopPropagation();if(confirm('Видалити?'))deleteMap('${name.replace(/'/g,"\\'")}')">✕</button>
       </div>`;
     }).join('');
 }
@@ -989,215 +1030,85 @@ function renderMapsList() {
 function exportJSON() {
   const json = JSON.stringify(getState(), null, 2);
   const a = document.createElement('a');
-  const name = (document.getElementById('mapName').value.trim()||'vsm').replace(/[^а-яa-z0-9_\- ]/gi,'');
   a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-  a.download = name+'.vsm.json';
-  a.click();
-  toast('Файл збережено','ok');
+  a.download = 'vsm_map.json'; a.click();
 }
 function importJSON(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
-    try { loadState(JSON.parse(ev.target.result)); toast('Імпортовано: '+file.name,'ok'); }
-    catch { toast('Помилка: файл пошкоджений','err'); }
-  };
+  reader.onload = ev => { try { loadState(JSON.parse(ev.target.result)); toast('Імпортовано','ok'); } catch { toast('Помилка файлу','err'); } };
   reader.readAsText(file);
-  e.target.value='';
 }
 
 /* ══════════════════════════════════════════
-   AI (GOOGLE GEMINI API INTEGRATION)
+   GEMINI AI INTEGRATION
 ══════════════════════════════════════════ */
-window.addEventListener('load', ()=>{
-  const key = localStorage.getItem('vsm_api_key')||'';
-  if (key) document.getElementById('aiKeyInput').value = key;
-});
 function saveApiKey() {
   const k = document.getElementById('aiKeyInput').value.trim();
-  localStorage.setItem('vsm_api_key', k);
-  toast(k?'Gemini API ключ збережено':'Ключ очищено', k?'ok':'');
+  localStorage.setItem('vsm_api_key', k); toast('Ключ збережено','ok');
 }
 
 async function runAi() {
   const key = localStorage.getItem('vsm_api_key')||'';
-  if (!key) { toast('Спочатку введіть Gemini API ключ','err'); switchRTab('ai'); return; }
+  if (!key) { toast('Введіть API ключ','err'); return; }
   const btn = document.getElementById('aiRunBtn');
   const out = document.getElementById('aiOut');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Аналізую поточні дані…';
-  out.style.display=''; out.textContent='';
+  btn.disabled=true; out.style.display=''; out.textContent='Аналізую...';
 
-  const procs   = getProcs();
-  const invs    = getInvs();
-  const takt    = getTakt();
-  const vaTime  = procs.reduce((s,p)=>s+p.ct,0);
-  const invDays = invs.reduce((s,i)=>s+i.days,0);
-  const eff     = vaTime>0 ? Math.round(vaTime/(vaTime+invDays*28800)*100) : 0;
-  const bn      = procs.reduce((b,p)=>(!b||p.ct>b.ct)?p:b,null);
+  const summary = `Карта: "${document.getElementById('mapName').value}"
+Процеси: ${getProcs().map(p=>`${p.label}(CT=${p.ct}s, Zone=${p.zoneId?'так':'ні'})`).join(', ')}`;
 
-  const summary = `Карта VSM: "${document.getElementById('mapName').value}"
-Процеси (${procs.length}):
-${procs.map(p=>`  • ${p.label}: CT=${p.ct}s, C/O=${p.co}s, Uptime=${p.uptime}%, Оп=${p.operators}, Зміни=${p.shifts}`).join('\n')}
-Запаси між процесами: ${invs.map(i=>`${i.days}дн`).join(', ')||'немає'} → NVA: ${invDays} дн
-Час такту: ${takt}s | Ефективність потоку: ${eff}%
-Вузьке місце: ${bn?bn.label+' CT='+bn.ct+'s':'не визначено'}
-Типи потоків: ${[...new Set(connections.map(c=>CONN_NAMES[c.type]))].join(', ')||'немає'}`;
-
-  // Using Google Gemini Developer API structure (gemini-2.5-flash)
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-
-  const promptText = `Ти старший Lean-консультант з 15 роками досвіду побудови карт потоку створення цінності VSM (Value Stream Mapping). 
-Аналізуй надіслані числові показники процесів та надавай конкретні, точні, практичні інженерні рекомендації. 
-Відповідай виключно українською мовою. Структуруй свій звіт чітко за такими розділами:
-
-1. Загальна оцінка потоку (1-2 речення)
-2. Ключові проблеми (3-5 пунктів з реальними цифровими даними з наданої карти)
-3. Аналіз вузьких місць (Bottlenecks) та дисбалансу навантаження лінії відносно часу такту
-4. Виявлені втрати (Класичні види Muda, що помітні на карті)
-5. Практичні кроки для проектування Майбутнього стану (Future State) — мінімум 3 конкретні Lean-дії з цифрами та термінологією (наприклад: FIFO, Kanban, SMED, TPM, Супермаркет).
-
-Будь дуже конкретним — обов'язково посилайся на реальні назви процесів та числові показники, надані нижче.
-
-Дані поточної карти VSM:
-${summary}`;
-
   try {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: `Зроби коротку бізнес-оцінку Lean для потоку: ${summary}. Відповідь українською.` }] }] })
     });
-    
     const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
-    
-    // Extracting content from Gemini API response layout
-    const txtOut = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!txtOut) throw new Error('Не вдалося отримати текст відповіді від Gemini API.');
-    
-    out.textContent = txtOut;
-  } catch(err) {
-    out.textContent = 'Помилка аналізу: ' + err.message + '\n\nПеревірте правильність вашого Gemini API ключа (має починатися на AIzaSy).';
-    toast('Помилка Gemini API','err');
-  }
-  btn.disabled=false; btn.innerHTML='<i class="ti ti-sparkles"></i> Проаналізувати знову';
+    out.textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Помилка відповіді';
+  } catch(err) { out.textContent = 'Помилка: ' + err.message; }
+  btn.disabled=false;
 }
 
 /* ══════════════════════════════════════════
-   SETTINGS
+   MODALS, TOASTS & DEMO
 ══════════════════════════════════════════ */
-function showSettings() {
-  openModal(`<div class="modal-title"><i class="ti ti-settings"></i> Налаштування</div>
-    <div class="prop-group">
-      <div class="prop-label">Google Gemini API ключ</div>
-      <div class="ai-key-row">
-        <input class="ai-key-input" type="password" id="settApiKey" placeholder="AIzaSy…" value="${localStorage.getItem('vsm_api_key')||''}">
-        <button class="ai-save-btn" onclick="localStorage.setItem('vsm_api_key',document.getElementById('settApiKey').value);toast('Збережено','ok');">Зберегти</button>
-      </div>
-      <p class="ai-hint">Ключ зберігається виключно локально у вашому браузері.</p>
-    </div>
-    <div class="prop-group">
-      <div class="prop-label">Версія</div>
-      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.2 · BPI Group (Gemini Powered)</p>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-btn" onclick="closeModal()">Закрити</button>
-    </div>`);
+function showSettings() { toast('Налаштування конструктора'); }
+function openModal(html) {
+  const ov = document.getElementById('modalOverlay'); const m = document.getElementById('modal');
+  m.innerHTML = html; ov.style.display=''; m.style.display='';
 }
+function closeModal() { document.getElementById('modalOverlay').style.display='none'; }
+function toast(msg, type='') {
+  const a = document.getElementById('toastArea'); const t = document.createElement('div');
+  t.className = 'toast '+(type||''); t.textContent = msg; a.appendChild(t); setTimeout(()=>t.remove(), 3000);
+}
+function showSaveMapsModal() { switchRTab('maps'); }
 
-/* ══════════════════════════════════════════
-   DEMO
-══════════════════════════════════════════ */
 function loadDemo() {
   elements = [
-    {id:'d_sup',  type:'supplier',  x:40,  y:80,  label:'ТОВ Метал-Сервіс', lead:5},
-    {id:'d_cus',  type:'customer',  x:540, y:80,  label:'Замовник',          demand:480},
-    {id:'d_i1',   type:'inventory', x:190, y:220, label:'',  qty:2400, days:5},
-    {id:'d_p1',   type:'process',   x:40,  y:260, label:'Штампування', ct:45, co:240, uptime:75, operators:2, shifts:2},
-    {id:'d_i2',   type:'inventory', x:320, y:220, label:'',  qty:900,  days:2},
-    {id:'d_p2',   type:'process',   x:180, y:260, label:'Зварювання',   ct:95, co:60,  uptime:65, operators:3, shifts:1},
-    {id:'d_i3',   type:'inventory', x:450, y:220, label:'',  qty:600,  days:1},
-    {id:'d_p3',   type:'process',   x:320, y:260, label:'Складання',    ct:50, co:30,  uptime:90, operators:4, shifts:2},
-    {id:'d_i4',   type:'inventory', x:580, y:220, label:'',  qty:240,  days:0.5},
-    {id:'d_p4',   type:'process',   x:460, y:260, label:'Контроль ВТК', ct:22, co:0,   uptime:98, operators:1, shifts:2},
-    {id:'d_k1',   type:'kaizen',    x:220, y:360, label:'SMED', note:'C/O 240→30хв'},
-    {id:'d_k2',   type:'kaizen',    x:350, y:360, label:'TPM',  note:'Uptime 65→85%'},
+    {id:'d_zone1', type:'zone',      x:160, y:200, w:300, h:160, label:'Дільниця Механічної обробки', collapsed: false},
+    {id:'d_p1',    type:'process',   x:180, y:250, label:'Токарна оп.',  ct:45, co:120, uptime:90, operators:1, shifts:1, zoneId:'d_zone1'},
+    {id:'d_p2',    type:'process',   x:320, y:250, label:'Фрезерна оп.',ct:55, co:60,  uptime:85, operators:1, shifts:1, zoneId:'d_zone1'},
+    {id:'d_i1',    type:'inventory', x:490, y:220, label:'', qty:500, days:2},
+    {id:'d_p3',    type:'process',   x:600, y:250, label:'Контроль ОТК', ct:20, co:0,   uptime:98, operators:1, shifts:1, zoneId:null}
   ];
   connections = [
-    {from:'d_sup', to:'d_p1',  type:'transport'},
-    {from:'d_p1',  to:'d_p2',  type:'push'},
-    {from:'d_p2',  to:'d_p3',  type:'push'},
-    {from:'d_p3',  to:'d_p4',  type:'push'},
-    {from:'d_p4',  to:'d_cus', type:'push'},
-    {from:'d_cus', to:'d_p1',  type:'info'},
-    {from:'d_cus', to:'d_sup', type:'info'},
+    {from:'d_p1', to:'d_p2', type:'push'},
+    {from:'d_p2', to:'d_i1', type:'push'},
+    {from:'d_i1', to:'d_p3', type:'push'}
   ];
-  document.getElementById('mapName').value = 'Виробнича лінія — поточний стан';
-  idCnt = 50; selectedId = null;
-  renderAll(); showProps();
-  toast('Приклад завантажено','ok');
-}
-
-/* ══════════════════════════════════════════
-   MODAL
-══════════════════════════════════════════ */
-function openModal(html) {
-  const ov = document.getElementById('modalOverlay');
-  const m  = document.getElementById('modal');
-  m.innerHTML = html;
-  ov.style.display=''; m.style.display='';
-}
-function closeModal(e) {
-  if (!e || e.target===document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').style.display='none';
-    document.getElementById('modal').style.display='none';
-  }
-}
-document.getElementById('modalOverlay').appendChild(document.getElementById('modal'));
-
-/* ══════════════════════════════════════════
-   CLEAR
-══════════════════════════════════════════ */
-function clearCanvas() {
-  if (elements.length>0 && !confirm('Очистити всю карту?')) return;
-  elements=[]; connections=[]; selectedId=null;
+  document.getElementById('mapName').value = 'Демо: Об\'єднання в дільниці';
   renderAll(); showProps();
 }
 
-/* ══════════════════════════════════════════
-   SHOWS SAVE MAPS MODAL
-══════════════════════════════════════════ */
-function showSaveMapsModal() {
-  switchRTab('maps');
-}
-
-/* ══════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════ */
-function toast(msg, type='') {
-  const a = document.getElementById('toastArea');
-  const t = document.createElement('div');
-  t.className = 'toast '+(type||'');
-  t.textContent = msg;
-  a.appendChild(t);
-  setTimeout(()=>t.remove(), 3000);
-}
-
-/* ══════════════════════════════════════════
-   INIT
-══════════════════════════════════════════ */
-renderAll();
-showProps();
-
-const _maps = getAllMaps();
-const _keys = Object.keys(_maps);
-if (_keys.length) {
-  const last = _keys[_keys.length-1];
-  loadState(_maps[last]);
-}
+// Стартова ініціалізація
+window.addEventListener('load', () => {
+  const key = localStorage.getItem('vsm_api_key')||'';
+  if (key) document.getElementById('aiKeyInput').value = key;
+  loadDemo();
+});
 </script>
 </body>
 </html>
