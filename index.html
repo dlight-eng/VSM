@@ -137,9 +137,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   .app{height:auto}
   @page{margin:10mm;size:A3 landscape}
 }
+
+/* Sticky edit textarea overlay */
+#sticky-edit{
+  position:fixed;display:none;z-index:500;
+  background:#fef9c3;border:1.5px solid #ca8a04;border-radius:4px;
+  padding:6px 8px;font-size:12px;font-family:var(--f);
+  resize:none;width:160px;height:80px;
+  box-shadow:2px 3px 8px rgba(0,0,0,.18);
+  line-height:1.5;color:#422006;
+}
+#sticky-edit:focus{outline:none}
 </style>
 </head>
 <body>
+<textarea id="sticky-edit" onblur="finishStickyEdit()" onkeydown="if(event.key==='Escape')finishStickyEdit()"></textarea>
+
 <div class="app">
 
 <!-- HEADER -->
@@ -151,9 +164,12 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <button class="hbtn on" id="bsel" onclick="setTool('select')">▷ Вибір</button>
   <button class="hbtn"    id="bcon" onclick="setTool('connect')">→ З'єднати</button>
   <button class="hbtn"    id="bgrp" onclick="setTool('group')" title="G — намалювати групу">⬜ Група</button>
+  <button class="hbtn"    id="bstk" onclick="setTool('sticky')" title="N — додати стікер">📝 Стікер</button>
   <div class="hsep"></div>
-  <button class="hbtn" id="bfs" onclick="toggleFS()" title="Future State режим">◈ Future State</button>
-  <button class="hbtn" id="btl" onclick="toggleTimeline()" title="Показати Timeline на карті">⏱ Timeline</button>
+  <button class="hbtn" id="bfs"  onclick="toggleFS()"       title="Future State режим">◈ Future State</button>
+  <button class="hbtn" id="btl"  onclick="toggleTimeline()" title="Timeline на карті">⏱ Timeline</button>
+  <button class="hbtn" id="bkbn" onclick="toggleKanban()"   title="Kanban-розрахунок">🎴 Kanban</button>
+  <button class="hbtn" id="bops" onclick="toggleOpsCalc()"  title="Розрахунок операторів">👷 Оператори</button>
   <div class="hsep"></div>
   <button class="hbtn" id="bundo" onclick="undo()" title="Ctrl+Z" style="opacity:.35">↩ Undo</button>
   <button class="hbtn" id="bredo" onclick="redo()" title="Ctrl+Y" style="opacity:.35">↪ Redo</button>
@@ -355,9 +371,16 @@ let CLIPBOARD=null;
 let snapLines=[];
 
 /* Future State & Timeline */
-let fsMode=false;       // Future State overlay active
-let showTL=false;       // Timeline on canvas active
-let FS_ELS=[], FS_CONNS=[];  // Future State elements/connections
+let fsMode=false;
+let showTL=false;
+let FS_ELS=[], FS_CONNS=[];
+
+/* Kanban & Operators */
+let showKanban=false;   // show kanban card counts on pull arrows
+let showOpsCalc=false;  // show operator need delta on process boxes
+
+/* Sticky editing */
+let editingStickyId=null;
 
 /* ══════════════════════════════════════
    GEOMETRY
@@ -366,6 +389,7 @@ const BBOX={
   process:{w:150,h:88}, supplier:{w:120,h:60}, customer:{w:120,h:60},
   inventory:{w:92,h:72}, supermarket:{w:104,h:72}, kaizen:{w:62,h:62},
   operator:{w:50,h:68}, truck:{w:92,h:44}, production_control:{w:120,h:52},
+  sticky:{w:140,h:90},
 };
 function bb(el){return BBOX[el.type]||{w:100,h:60}}
 function ctr(el){const b=bb(el);return{x:el.x+b.w/2,y:el.y+b.h/2}}
@@ -579,6 +603,7 @@ const DEFS={
   operator:{label:'Оператор'},
   truck:{label:'Транспорт'},
   production_control:{label:''},
+  sticky:{text:'Нотатка…',color:'#fef9c3',w:140,h:90},
 };
 
 /* ══════════════════════════════════════
@@ -613,6 +638,13 @@ const SYM={
     const{x,y}=el,w=150,h=88;
     const bn=isBN(el),tk=getTakt();
     const sc=bn?'#a02d2d':'#111',sw=bn?2.5:2;
+    // Operator need calculation
+    const opsNeeded=tk>0?Math.ceil(el.ct/tk):null;
+    const opsDelta=opsNeeded!==null?opsNeeded-el.operators:null;
+    const opsBadge=showOpsCalc&&opsNeeded!==null?
+      `<rect x="${x+w+3}" y="${y+28}" width="32" height="18" rx="3" fill="${opsDelta>0?'#fbebeb':opsDelta<0?'#e0f4ec':'#f0f0ee'}" stroke="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#999'}" stroke-width="1"/>
+       <text x="${x+w+19}" y="${y+37}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#666'}" font-family="Arial,sans-serif" font-weight="700">${opsDelta>0?'+':''}${opsDelta}</text>
+       <text x="${x+w+19}" y="${y+27}" text-anchor="middle" dominant-baseline="central" font-size="6.5" fill="#888" font-family="Arial,sans-serif">потр:${opsNeeded}</text>`:'';
     return`${s?sRing(el):''}
     <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${sc}" stroke-width="${sw}"/>
     ${bn?`<rect x="${x}" y="${y}" width="${w}" height="5" fill="#e24b4a"/>
@@ -628,7 +660,8 @@ const SYM={
     <text x="${x+w/2+5}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Зм: <tspan font-weight="700">${el.shifts}</tspan></text>
     <line x1="${x}" y1="${y+64}" x2="${x+w}" y2="${y+64}" stroke="#111" stroke-width="1"/>
     <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inv_out||0} шт</text>
-    ${tk&&el.ct>tk&&!bn?`<text x="${x+w-3}" y="${y+h-5}" text-anchor="end" font-size="7" fill="#b87316" font-family="Arial,sans-serif" font-weight="700">▲CT&gt;Takt</text>`:''}`},
+    ${tk&&el.ct>tk&&!bn?`<text x="${x+w-3}" y="${y+h-5}" text-anchor="end" font-size="7" fill="#b87316" font-family="Arial,sans-serif" font-weight="700">▲CT&gt;Takt</text>`:''}
+    ${opsBadge}`},
 
   inventory(el,s){const{x,y}=el;return`${s?sRing(el):''}
     <polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#111" stroke-width="2"/>
@@ -676,6 +709,37 @@ const SYM={
     <text x="${x+w/2}" y="${y+18}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif" font-weight="700">PRODUCTION</text>
     <text x="${x+w/2}" y="${y+30}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif" font-weight="700">CONTROL</text>
     <text x="${x+w/2}" y="${y+43}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#555" font-family="Arial,sans-serif">${el.label||''}</text>`},
+
+  sticky(el,s){
+    const{x,y}=el;
+    const w=el.w||140,h=el.h||90;
+    const col=el.color||'#fef9c3';
+    const fold=12; // folded corner size
+    const lines=(el.text||'').split('\n');
+    // word-wrap approximation
+    const wrapped=[];
+    lines.forEach(line=>{
+      const words=line.split(' ');let cur='';
+      words.forEach(w2=>{
+        if((cur+' '+w2).trim().length>22){if(cur)wrapped.push(cur);cur=w2}
+        else cur=(cur+' '+w2).trim();
+      });
+      if(cur)wrapped.push(cur);
+      if(!line.trim())wrapped.push('');
+    });
+    const selRectHTML=s?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:'';
+    const textRows=wrapped.slice(0,6).map((ln,i)=>`<text x="${x+8}" y="${y+22+i*13}" font-size="10" fill="#422006" font-family="Arial,sans-serif">${ln.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</text>`).join('');
+    return`${selRectHTML}
+    <filter id="shadow-${el.id}"><feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.18"/></filter>
+    <polygon points="${x},${y} ${x+w-fold},${y} ${x+w},${y+fold} ${x+w},${y+h} ${x},${y+h}"
+      fill="${col}" stroke="#ca8a04" stroke-width="1" filter="url(#shadow-${el.id})"/>
+    <polygon points="${x+w-fold},${y} ${x+w},${y+fold} ${x+w-fold},${y+fold}"
+      fill="#fde68a" stroke="#ca8a04" stroke-width="1"/>
+    <line x1="${x}" y1="${y+14}" x2="${x+w-fold}" y2="${y+14}" stroke="#fde68a" stroke-width="1"/>
+    ${textRows}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent" style="cursor:text"
+      ondblclick="startStickyEdit(event,'${el.id}')"/>`;
+  },
 };
 
 /* ══════════════════════════════════════
@@ -718,6 +782,83 @@ function toggleTimeline(){
   showTL=!showTL;
   document.getElementById('btl').classList.toggle('on',showTL);
   renderAll();
+}
+
+function toggleKanban(){
+  showKanban=!showKanban;
+  document.getElementById('bkbn').classList.toggle('on',showKanban);
+  if(showKanban&&!ELS.find(e=>e.type==='customer'))
+    toast('Додайте елемент «Клієнт» для розрахунку Kanban','');
+  renderAll();
+}
+
+function toggleOpsCalc(){
+  showOpsCalc=!showOpsCalc;
+  document.getElementById('bops').classList.toggle('on',showOpsCalc);
+  if(showOpsCalc&&!getTakt())
+    toast('Додайте «Клієнт» з попитом для розрахунку такту','');
+  renderAll();
+}
+
+/* ══════════════════════════════════════
+   STICKY NOTES
+══════════════════════════════════════ */
+function startStickyEdit(e,id){
+  e.stopPropagation();
+  const el=ELS.find(x=>x.id===id);if(!el)return;
+  editingStickyId=id;
+  const svgR=document.getElementById('cv').getBoundingClientRect();
+  // Convert world coords to screen
+  const sx=el.x*vz+vx+svgR.left;
+  const sy=el.y*vz+vy+svgR.top;
+  const w=(el.w||140)*vz;
+  const h=(el.h||90)*vz;
+  const ta=document.getElementById('sticky-edit');
+  ta.style.left=sx+'px';ta.style.top=sy+'px';
+  ta.style.width=w+'px';ta.style.height=h+'px';
+  ta.style.fontSize=Math.max(9,12*vz)+'px';
+  ta.value=el.text||'';
+  ta.style.display='block';
+  ta.focus();ta.select();
+}
+
+function finishStickyEdit(){
+  if(!editingStickyId)return;
+  const ta=document.getElementById('sticky-edit');
+  const el=ELS.find(x=>x.id===editingStickyId);
+  if(el){el.text=ta.value;snapDebounced();renderAll()}
+  ta.style.display='none';
+  editingStickyId=null;
+}
+
+function showStickyProps(el){
+  const colors=[
+    {c:'#fef9c3',lbl:'Жовтий'},
+    {c:'#dbeafe',lbl:'Блакитний'},
+    {c:'#dcfce7',lbl:'Зелений'},
+    {c:'#fce7f3',lbl:'Рожевий'},
+    {c:'#ffe4e6',lbl:'Червоний'},
+    {c:'#f3e8ff',lbl:'Фіолетовий'},
+  ];
+  const ns=document.getElementById('nosel'),f=document.getElementById('pf');
+  ns.style.display='none';f.style.display='';
+  f.innerHTML=`
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">СТІКЕР · ${el.id.slice(-5)}</div>
+    <div class="pg"><div class="pl">Текст</div>
+      <textarea class="pi" rows="4" style="resize:vertical" oninput="setP('${el.id}','text',this.value)">${el.text||''}</textarea>
+    </div>
+    <div class="pg"><div class="pl">Колір</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${colors.map(c=>`<div onclick="setP('${el.id}','color','${c.c}')" title="${c.lbl}"
+          style="width:24px;height:24px;border-radius:4px;background:${c.c};border:2px solid ${el.color===c.c?'#1a5fa8':'#ccc'};cursor:pointer"></div>`).join('')}
+      </div>
+    </div>
+    <div class="prow">
+      <div class="pg"><div class="pl">Ширина</div><input class="pi" type="number" value="${el.w||140}" oninput="setP('${el.id}','w',+this.value);renderAll()"></div>
+      <div class="pg"><div class="pl">Висота</div><input class="pi" type="number" value="${el.h||90}"  oninput="setP('${el.id}','h',+this.value);renderAll()"></div>
+    </div>
+    <button class="abtn" style="margin-bottom:0" onclick="startStickyEdit(event,'${el.id}')">✏️ Редагувати текст</button>
+    <button class="delbtn" onclick="delSel()">✕ Видалити</button>`;
 }
 
 function renderTimelineLayer(){
@@ -1510,6 +1651,35 @@ function renderConns(){
     lt.setAttribute('font-size','8');lt.setAttribute('fill',cfg.c);lt.setAttribute('font-weight','700');
     lt.setAttribute('font-family','Arial,sans-serif');lt.textContent=cfg.lbl;
     G.appendChild(lt);
+
+    // Kanban card count on pull connections
+    if(showKanban && c.type==='pull'){
+      const fromEl=ELS.find(e=>e.id===c.from), toEl=ELS.find(e=>e.id===c.to);
+      if(fromEl&&fromEl.type==='process'&&toEl&&toEl.type==='process'){
+        const tk2=getTakt();
+        if(tk2>0){
+          // Kanban formula: K = (CT_from * demand_daily + safety) / container
+          const dem=ELS.find(e=>e.type==='customer')?.demand||0;
+          const safetyFactor=1.1; // 10% safety stock
+          const container=Math.max(1,c.kanban_container||10);
+          const replenishTime=(fromEl.ct+fromEl.co/100)/3600; // hours
+          const k=Math.ceil((dem/8*replenishTime*safetyFactor)/container);
+          const kbx=lx-18,kby=ly+8;
+          const kbg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+          kbg.setAttribute('x',kbx);kbg.setAttribute('y',kby);
+          kbg.setAttribute('width',36);kbg.setAttribute('height',16);
+          kbg.setAttribute('rx','3');kbg.setAttribute('fill','#1d9e75');
+          G.appendChild(kbg);
+          const kt=document.createElementNS('http://www.w3.org/2000/svg','text');
+          kt.setAttribute('x',lx);kt.setAttribute('y',kby+8);
+          kt.setAttribute('text-anchor','middle');kt.setAttribute('dominant-baseline','central');
+          kt.setAttribute('font-size','8');kt.setAttribute('fill','#fff');
+          kt.setAttribute('font-weight','700');kt.setAttribute('font-family','Arial,sans-serif');
+          kt.textContent=`🎴 ×${k>0?k:'?'}`;
+          G.appendChild(kt);
+        }
+      }
+    }
     // note/frequency label — pill badge
     if(c.note){
       const noteW=Math.min(70, c.note.length*6+10);
@@ -1640,6 +1810,17 @@ function cvMD(e){
     return;
   }
   if(onGrid){
+    // Sticky tool: place note on click
+    if(tool==='sticky'){
+      const{x,y}=svgXY(e);
+      const el={id:newId('e'),type:'sticky',x:snap(x),y:snap(y),...JSON.parse(JSON.stringify(DEFS.sticky))};
+      snapshot();
+      ELS.push(el);renderAll();selectEl(el.id);
+      setTool('select');
+      // immediately open edit
+      setTimeout(()=>startStickyEdit({stopPropagation:()=>{}},el.id),100);
+      return;
+    }
     selId=null;selGid=null;connFrom=null;
     document.getElementById('tl').style.display='none';
     renderAll();showProps();
@@ -1753,12 +1934,15 @@ function setTool(t){
   tool=t;connFrom=null;drawing=false;
   document.getElementById('tl').style.display='none';
   document.getElementById('dr').style.display='none';
-  ['sel','con','grp'].forEach(k=>document.getElementById('b'+k).classList.remove('on'));
+  ['sel','con','grp','stk'].forEach(k=>{
+    const b=document.getElementById('b'+k);if(b)b.classList.remove('on');
+  });
   if(t==='select')document.getElementById('bsel').classList.add('on');
   if(t==='connect')document.getElementById('bcon').classList.add('on');
   if(t==='group')document.getElementById('bgrp').classList.add('on');
+  if(t==='sticky')document.getElementById('bstk').classList.add('on');
   const cw=document.getElementById('cvwrap');
-  cw.style.cursor=(t==='connect'||t==='group')?'crosshair':'';
+  cw.style.cursor=(t==='connect'||t==='group')?'crosshair':t==='sticky'?'cell':'';
   renderEls();
 }
 function setToolKind(kind){gkind=kind;setTool('group')}
@@ -1768,6 +1952,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='v'||e.key==='V'){if(!e.ctrlKey&&!e.metaKey)setTool('select')}
   if(e.key==='c'||e.key==='C'){if(!e.ctrlKey&&!e.metaKey)setTool('connect')}
   if(e.key==='g'||e.key==='G'){if(!e.ctrlKey&&!e.metaKey)setTool('group')}
+  if(e.key==='n'||e.key==='N'){if(!e.ctrlKey&&!e.metaKey)setTool('sticky')}
   if(e.key==='f'||e.key==='F'){if(!e.ctrlKey&&!e.metaKey)fitView()}
   if(e.key==='Escape'){setTool('select');selGid=null;renderAll();showProps()}
   if(e.key==='Delete'||e.key==='Backspace')delSel();
@@ -1871,6 +2056,8 @@ function showProps(){
   const el=ELS.find(e=>e.id===selId);
   if(!el){ns.style.display='';f.style.display='none';return}
   ns.style.display='none';f.style.display='';
+  // Sticky has its own props UI
+  if(el.type==='sticky'){showStickyProps(el);return;}
   const flds=FLDS[el.type]||[];
   let h=`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">${el.type} · ${el.id.slice(-5)}</div>`;
   let i=0;
