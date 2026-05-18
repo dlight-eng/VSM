@@ -33,7 +33,6 @@
   :root {
     --bg: #1a1a18; --bg2: #242422; --bg3: #2e2e2b;
     --text: #e8e6df; --text2: #9b9a96; --text3: #5f5e5a;
-    --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
     --accent-bg: #0c2d4a; --success-bg: #04201a;
     --warn-bg: #2a1c05; --danger-bg: #2a0d0d;
   }
@@ -398,7 +397,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
         <button class="rtab active" id="rtab-props" onclick="switchRTab('props')">Параметри</button>
         <button class="rtab" id="rtab-metrics" onclick="switchRTab('metrics')">Метрики</button>
         <button class="rtab" id="rtab-maps" onclick="switchRTab('maps')">Карти</button>
-        <button class="rtab" id="rtab-ai" onclick="switchRTab('ai')">AI</button>
+        <button class="rtab" id="rtab-ai" onclick="switchRTab('ai')">Gemini AI</button>
       </div>
       <div class="rpanel-body" id="rpb-props">
         <div class="no-sel" id="noSelMsg"><i class="ti ti-hand-finger"></i>Виберіть елемент<br>для редагування</div>
@@ -411,14 +410,14 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
         <div id="mapsContent"></div>
       </div>
       <div class="rpanel-body" id="rpb-ai" style="display:none">
-        <div class="prop-label" style="margin-bottom:4px;">Claude API ключ</div>
+        <div class="prop-label" style="margin-bottom:4px;">Google Gemini API ключ</div>
         <div class="ai-key-row">
-          <input class="ai-key-input" type="password" id="aiKeyInput" placeholder="sk-ant-…">
+          <input class="ai-key-input" type="password" id="aiKeyInput" placeholder="AIzaSy…">
           <button class="ai-save-btn" onclick="saveApiKey()"><i class="ti ti-check"></i></button>
         </div>
-        <p class="ai-hint">Ключ зберігається тільки в браузері (localStorage). Отримати: <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p>
+        <p class="ai-hint">Ключ зберігається тільки у вашому браузері. Отримати безкоштовно: <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a></p>
         <button class="ai-run-btn" id="aiRunBtn" onclick="runAi()">
-          <i class="ti ti-sparkles"></i> Проаналізувати потік
+          <i class="ti ti-sparkles"></i> Проаналізувати потік (Gemini)
         </button>
         <div id="aiOut" style="display:none" class="ai-out"></div>
       </div>
@@ -552,13 +551,11 @@ function renderElement(el) {
       t.textContent=r; G.appendChild(t);
     });
   } else if (el.type === 'inventory') {
-    // Lean Triangle with 'I' inside
     G.appendChild(svg('polygon',{points:`${el.x+45},${el.y} ${el.x+90},${el.y+50} ${el.x},${el.y+50}`,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
     G.appendChild(txt(el.x+45,el.y+33,"I",{'font-size':'14','font-weight':'800',fill:c.text, opacity:'0.3'}));
     G.appendChild(txt(el.x+45,el.y+24,el.qty.toString(),{'font-size':'11','font-weight':'700',fill:c.text}));
     G.appendChild(txt(el.x+45,el.y+60,el.days+' дн',{'font-size':'10','font-weight':'600',fill:c.text}));
   } else if (el.type === 'customer' || el.type === 'supplier') {
-    // Traditional Factory/Whale icon shape for VSM (sawtooth roof)
     const dPath = `M${el.x} ${el.y+12} L${el.x+25} ${el.y+12} L${el.x+25} ${el.y} L${el.x+50} ${el.y+12} L${el.x+50} ${el.y} L${el.x+75} ${el.y+12} L${el.x+75} ${el.y} L${el.x+100} ${el.y+12} L${el.x+100} ${el.y+45} L${el.x} ${el.y+45} Z`;
     G.appendChild(svg('path',{d:dPath,fill:c.fill,stroke:c.stroke,'stroke-width':'1.3','stroke-linejoin':'round'}));
     G.appendChild(txt(el.x+50,el.y+28,el.label,{'font-size':'10','font-weight':'600',fill:c.text}));
@@ -568,14 +565,12 @@ function renderElement(el) {
       G.appendChild(txt(el.x+50,el.y+55,'Плечо: '+el.lead+' дн',{'font-size':'10','font-weight':'500',fill:c.text}));
     }
   } else if (el.type === 'kaizen') {
-    // True spiky Kaizen Burst shape
     const points = `${el.x+30},${el.y} ${el.x+38},${el.y+12} ${el.x+52},${el.y+6} ${el.x+44},${el.y+20} ${el.x+58},${el.y+30} ${el.x+43},${el.y+36} ${el.x+48},${el.y+52} ${el.x+34},${el.y+42} ${el.x+22},${el.y+56} ${el.x+20},${el.y+38} ${el.x+4},${el.y+36} ${el.x+17},${el.y+24} ${el.x+6},${el.y+12} ${el.x+20},${el.y+15} Z`;
     G.appendChild(svg('polygon',{points,fill:c.fill,stroke:c.stroke,'stroke-width':'1.2','stroke-linejoin':'round'}));
     G.appendChild(txt(el.x+30,el.y+22,"⚡",{'font-size':'12'}));
     G.appendChild(txt(el.x+30,el.y+35,el.label.slice(0,9),{'font-size':'9','font-weight':'700',fill:c.text}));
   }
 
-  // selection ring
   if (selectedId === el.id) {
     const b = elBBox(el);
     const ring = svg('rect',{x:b.x-4,y:b.y-4,width:b.w+8,height:b.h+8,rx:8,fill:'none',stroke:'#185fa5','stroke-width':'1.5','stroke-dasharray':'5 3'});
@@ -607,10 +602,9 @@ function renderConnections() {
     } else {
       G.appendChild(svg('line',{x1:fc.x,y1:fc.y,x2:tc.x,y2:tc.y,stroke:color,'stroke-width':'1.5','stroke-dasharray':dash,'marker-end':'url(#arr)'}));
     }
-    // label
     const mx2=(fc.x+tc.x)/2, my2=(fc.y+tc.y)/2-9;
     const lt = svg('text',{x:mx2,y:my2,'text-anchor':'middle','font-size':'9','font-family':'Inter,sans-serif',fill:color});
-    lt.textContent = CONN_NAMES[conn.type]||'';
+    lt.textContent = CONN_NAMES[conn.type]||';';
     G.appendChild(lt);
     layer.appendChild(G);
   });
@@ -817,7 +811,6 @@ function showProps() {
     }
   }
 
-  // connection list
   const myConns = connections.filter(c=>c.from===el.id||c.to===el.id);
   if (myConns.length) {
     html += `<div class="section-head">З'єднання (${myConns.length})</div>`;
@@ -948,7 +941,6 @@ function loadState(state) {
   renderAll(); showProps();
 }
 
-// LocalStorage — named maps list
 function getAllMaps() {
   try { return JSON.parse(localStorage.getItem('vsm_maps')||'{}'); } catch { return {}; }
 }
@@ -994,7 +986,6 @@ function renderMapsList() {
     }).join('');
 }
 
-// JSON export/import
 function exportJSON() {
   const json = JSON.stringify(getState(), null, 2);
   const a = document.createElement('a');
@@ -1017,7 +1008,7 @@ function importJSON(e) {
 }
 
 /* ══════════════════════════════════════════
-   AI
+   AI (GOOGLE GEMINI API INTEGRATION)
 ══════════════════════════════════════════ */
 window.addEventListener('load', ()=>{
   const key = localStorage.getItem('vsm_api_key')||'';
@@ -1026,15 +1017,15 @@ window.addEventListener('load', ()=>{
 function saveApiKey() {
   const k = document.getElementById('aiKeyInput').value.trim();
   localStorage.setItem('vsm_api_key', k);
-  toast(k?'API ключ збережено':'Ключ очищено', k?'ok':'');
+  toast(k?'Gemini API ключ збережено':'Ключ очищено', k?'ok':'');
 }
 
 async function runAi() {
   const key = localStorage.getItem('vsm_api_key')||'';
-  if (!key) { toast('Спочатку введіть API ключ','err'); switchRTab('ai'); return; }
+  if (!key) { toast('Спочатку введіть Gemini API ключ','err'); switchRTab('ai'); return; }
   const btn = document.getElementById('aiRunBtn');
   const out = document.getElementById('aiOut');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Αναлізую…';
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Аналізую поточні дані…';
   out.style.display=''; out.textContent='';
 
   const procs   = getProcs();
@@ -1053,28 +1044,44 @@ ${procs.map(p=>`  • ${p.label}: CT=${p.ct}s, C/O=${p.co}s, Uptime=${p.uptime}%
 Вузьке місце: ${bn?bn.label+' CT='+bn.ct+'s':'не визначено'}
 Типи потоків: ${[...new Set(connections.map(c=>CONN_NAMES[c.type]))].join(', ')||'немає'}`;
 
+  // Using Google Gemini Developer API structure (gemini-2.5-flash)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+
+  const promptText = `Ти старший Lean-консультант з 15 роками досвіду побудови карт потоку створення цінності VSM (Value Stream Mapping). 
+Аналізуй надіслані числові показники процесів та надавай конкретні, точні, практичні інженерні рекомендації. 
+Відповідай виключно українською мовою. Структуруй свій звіт чітко за такими розділами:
+
+1. Загальна оцінка потоку (1-2 речення)
+2. Ключові проблеми (3-5 пунктів з реальними цифровими даними з наданої карти)
+3. Аналіз вузьких місць (Bottlenecks) та дисбалансу навантаження лінії відносно часу такту
+4. Виявлені втрати (Класичні види Muda, що помітні на карті)
+5. Практичні кроки для проектування Майбутнього стану (Future State) — мінімум 3 конкретні Lean-дії з цифрами та термінологією (наприклад: FIFO, Kanban, SMED, TPM, Супермаркет).
+
+Будь дуже конкретним — обов'язково посилайся на реальні назви процесів та числові показники, надані нижче.
+
+Дані поточної карти VSM:
+${summary}`;
+
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1200,
-        system:`Ти старший Lean-консультант з 15 роками досвіду VSM (Value Stream Mapping). Аналізуй карти потоку та надавай конкретні, практичні рекомендації. Відповідай виключно українською. Структуруй відповідь чітко:
-1. Загальна оцінка (1-2 речення)
-2. Ключові проблеми (3-5 пунктів з конкретними даними)
-3. Вузькі місця та дисбаланс навантаження
-4. Типи виявлених втрат (7 видів муда)
-5. Рекомендації для Future State (3-5 конкретних дій)
-Будь конкретним — посилайся на назви процесів та числові показники.`,
-        messages:[{role:'user',content:`Проаналізуй цю VSM карту:\n\n${summary}`}]
+        contents: [{ parts: [{ text: promptText }] }]
       })
     });
+    
     const data = await resp.json();
     if (data.error) throw new Error(data.error.message);
-    out.textContent = data.content?.map(c=>c.text).join('')||'Порожня відповідь';
+    
+    // Extracting content from Gemini API response layout
+    const txtOut = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!txtOut) throw new Error('Не вдалося отримати текст відповіді від Gemini API.');
+    
+    out.textContent = txtOut;
   } catch(err) {
-    out.textContent = 'Помилка: '+err.message;
-    toast('AI помилка: '+err.message,'err');
+    out.textContent = 'Помилка аналізу: ' + err.message + '\n\nПеревірте правильність вашого Gemini API ключа (має починатися на AIzaSy).';
+    toast('Помилка Gemini API','err');
   }
   btn.disabled=false; btn.innerHTML='<i class="ti ti-sparkles"></i> Проаналізувати знову';
 }
@@ -1085,16 +1092,16 @@ ${procs.map(p=>`  • ${p.label}: CT=${p.ct}s, C/O=${p.co}s, Uptime=${p.uptime}%
 function showSettings() {
   openModal(`<div class="modal-title"><i class="ti ti-settings"></i> Налаштування</div>
     <div class="prop-group">
-      <div class="prop-label">Claude API ключ</div>
+      <div class="prop-label">Google Gemini API ключ</div>
       <div class="ai-key-row">
-        <input class="ai-key-input" type="password" id="settApiKey" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
+        <input class="ai-key-input" type="password" id="settApiKey" placeholder="AIzaSy…" value="${localStorage.getItem('vsm_api_key')||''}">
         <button class="ai-save-btn" onclick="localStorage.setItem('vsm_api_key',document.getElementById('settApiKey').value);toast('Збережено','ok');">Зберегти</button>
       </div>
-      <p class="ai-hint">Ключ зберігається в localStorage браузера. Не передається нікуди, крім api.anthropic.com.</p>
+      <p class="ai-hint">Ключ зберігається виключно локально у вашому браузері.</p>
     </div>
     <div class="prop-group">
       <div class="prop-label">Версія</div>
-      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.0 · BPI Group · GitHub Pages</p>
+      <p style="font-size:12px;color:var(--text2)">VSM Constructor v1.2 · BPI Group (Gemini Powered)</p>
     </div>
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeModal()">Закрити</button>
@@ -1184,7 +1191,7 @@ function toast(msg, type='') {
 ══════════════════════════════════════════ */
 renderAll();
 showProps();
-// Load last saved if exists
+
 const _maps = getAllMaps();
 const _keys = Object.keys(_maps);
 if (_keys.length) {
