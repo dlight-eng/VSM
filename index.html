@@ -4,377 +4,315 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VSM Constructor — BPI Group</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f4f3f0;--bg2:#ffffff;--bg3:#eeede9;--bg4:#e6e5e1;
+  --bg:#f4f3f0;--bg2:#fff;--bg3:#eeedea;
   --text:#181816;--text2:#5a5956;--text3:#9a9895;
   --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.20);
   --accent:#1a5fa8;--accent-bg:#e8f0fb;
-  --success:#0c6b4e;--success-bg:#e0f4ec;
+  --ok:#0c6b4e;--ok-bg:#e0f4ec;
   --warn:#b87316;--warn-bg:#faeeda;
-  --danger:#a02d2d;--danger-bg:#fbebeb;
-  --radius:5px;--font:'Inter',system-ui,sans-serif;
+  --err:#a02d2d;--err-bg:#fbebeb;
+  --r:5px;--f:'Inter',system-ui,sans-serif;
 }
 html,body{height:100%;overflow:hidden}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px}
+body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .app{display:flex;flex-direction:column;height:100vh}
-.hdr{height:42px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none}
-.logo{font-weight:700;font-size:12px;letter-spacing:-.01em;white-space:nowrap}
-.logo em{color:var(--accent);font-style:normal}
-.hsep{width:.5px;height:18px;background:var(--border2);margin:0 3px}
-.hbtn{display:flex;align-items:center;gap:4px;padding:3px 8px;border:.5px solid var(--border);border-radius:var(--radius);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--font);transition:background .1s,border-color .1s,color .1s;white-space:nowrap}
-.hbtn:hover{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+/* header */
+.hdr{height:42px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none}
+.logo{font-weight:700;font-size:12px;white-space:nowrap}.logo em{color:var(--accent);font-style:normal}
+.hsep{width:.5px;height:18px;background:var(--border2);margin:0 2px}
+.hbtn{display:flex;align-items:center;gap:4px;padding:3px 8px;border:.5px solid var(--border);border-radius:var(--r);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--f);transition:background .1s,color .1s;white-space:nowrap}
+.hbtn:hover{background:var(--bg3);color:var(--text)}
 .hbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
 .hsp{flex:1}
-.map-name{font-size:12px;font-weight:500;background:none;border:none;color:var(--text);border-bottom:1px dashed var(--border2);padding:2px 6px;width:220px;text-align:center;font-family:var(--font)}
-.map-name:focus{outline:none;border-bottom-color:var(--accent)}
+.mname{font-size:12px;font-weight:500;background:none;border:none;color:var(--text);border-bottom:1px dashed var(--border2);padding:2px 6px;width:200px;text-align:center;font-family:var(--f)}
+.mname:focus{outline:none;border-bottom-color:var(--accent)}
+/* main */
 .main{display:flex;flex:1;overflow:hidden}
-.sbar{width:152px;flex-shrink:0;background:var(--bg2);border-right:.5px solid var(--border2);overflow-y:auto;overflow-x:hidden}
-.sbar-sec{padding:8px 7px 5px}
-.sbar-ttl{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:0 2px 6px}
-.pal{display:flex;flex-direction:column;align-items:center;padding:5px 4px 4px;border:.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;cursor:grab;background:var(--bg2);font-size:10px;color:var(--text2);text-align:center;transition:border-color .1s,background .1s;gap:3px}
+/* sidebar */
+.sb{width:148px;flex-shrink:0;background:var(--bg2);border-right:.5px solid var(--border2);overflow-y:auto;overflow-x:hidden}
+.sb-s{padding:7px 6px 4px}
+.sb-t{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:0 2px 5px}
+.pal{display:flex;flex-direction:column;align-items:center;padding:4px 3px 3px;border:.5px solid var(--border);border-radius:var(--r);margin-bottom:3px;cursor:grab;background:var(--bg2);font-size:10px;color:var(--text2);text-align:center;transition:border-color .1s,background .1s;gap:2px}
 .pal:hover{border-color:var(--border2);background:var(--bg3);color:var(--text)}
 .pal:active{cursor:grabbing}
-.cvs-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
-#canvas{width:100%;height:100%;display:block}
-.cvs-wrap.conn-mode{cursor:crosshair}
-.rp{width:244px;flex-shrink:0;background:var(--bg2);border-left:.5px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+/* canvas */
+.cv{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#cv{width:100%;height:100%;display:block}
+.cv.cm{cursor:crosshair}
+.cv.gm{cursor:crosshair}
+/* right panel */
+.rp{width:240px;flex-shrink:0;background:var(--bg2);border-left:.5px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
 .rtabs{display:flex;border-bottom:.5px solid var(--border2);flex-shrink:0}
-.rtab{flex:1;padding:8px 2px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text3);letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid transparent;transition:color .1s;font-family:var(--font)}
+.rtab{flex:1;padding:8px 2px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text3);letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid transparent;font-family:var(--f)}
 .rtab.on{color:var(--text);border-bottom-color:var(--accent)}
-.rpb{flex:1;overflow-y:auto;padding:11px}
-.pg{margin-bottom:9px}
-.pl{font-size:10px;color:var(--text2);margin-bottom:3px;font-weight:500}
-.pi{width:100%;font-size:12px;padding:4px 7px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font)}
+.rpb{flex:1;overflow-y:auto;padding:10px}
+.pg{margin-bottom:8px}
+.pl{font-size:10px;color:var(--text2);margin-bottom:2px;font-weight:500}
+.pi{width:100%;font-size:12px;padding:4px 6px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:var(--f)}
 .pi:focus{outline:none;border-color:var(--accent)}
-.prow{display:flex;gap:5px}
-.prow .pg{flex:1}
-.sh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:8px 0 5px;border-top:.5px solid var(--border);margin-top:6px}
-.no-sel{text-align:center;padding:28px 8px;color:var(--text3);font-size:11px;line-height:1.6}
-.delbtn{width:100%;padding:5px;font-size:11px;color:var(--danger);margin-top:10px;border:.5px solid var(--danger);border-radius:var(--radius);background:none;cursor:pointer;font-family:var(--font)}
-.delbtn:hover{background:var(--danger-bg)}
-.mc{border-radius:var(--radius);padding:9px 10px;margin-bottom:7px;border:.5px solid var(--border)}
+.pr{display:flex;gap:4px}.pr .pg{flex:1}
+.sh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:7px 0 4px;border-top:.5px solid var(--border);margin-top:5px}
+.nosel{text-align:center;padding:24px 8px;color:var(--text3);font-size:11px;line-height:1.7}
+.delbtn{width:100%;padding:5px;font-size:11px;color:var(--err);margin-top:8px;border:.5px solid var(--err);border-radius:var(--r);background:none;cursor:pointer;font-family:var(--f)}
+.delbtn:hover{background:var(--err-bg)}
+/* metrics */
+.mc{border-radius:var(--r);padding:8px 10px;margin-bottom:6px;border:.5px solid var(--border)}
 .ml{font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
-.mv{font-size:20px;font-weight:600;line-height:1.2;margin-top:2px}
+.mv{font-size:19px;font-weight:600;line-height:1.2;margin-top:2px}
 .ms{font-size:11px;color:var(--text2);margin-top:1px}
-.prow2{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:3px}
-.prow2:hover{background:var(--bg3)}
-.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;margin-left:3px}
-.bd{background:var(--danger-bg);color:var(--danger)}
-.ai-btn{width:100%;padding:8px;font-size:12px;font-weight:500;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .1s;font-family:var(--font)}
-.ai-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
-.ai-btn:disabled{opacity:.5;cursor:not-allowed}
-.ai-out{font-size:11px;line-height:1.65;color:var(--text2);background:var(--bg3);border-radius:var(--radius);padding:9px 10px;white-space:pre-wrap;word-break:break-word}
-.ai-key-row{display:flex;gap:5px;margin-bottom:6px}
-.ai-ki{flex:1;font-size:11px;padding:4px 6px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font)}
-.ai-ks{font-size:11px;padding:4px 8px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--font)}
-.ai-hint{font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px}
-.map-row{display:flex;align-items:center;gap:5px;padding:5px 6px;border:.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;cursor:pointer;transition:border-color .1s,background .1s}
-.map-row:hover{border-color:var(--border2);background:var(--bg3)}
+.pr2{display:flex;align-items:center;gap:5px;padding:3px 3px;border-radius:3px}
+.pr2:hover{background:var(--bg3)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.bdg{display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;text-transform:uppercase;margin-left:3px}
+.bd{background:var(--err-bg);color:var(--err)}
+/* AI */
+.abtn{width:100%;padding:7px;font-size:12px;font-weight:500;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:5px;font-family:var(--f)}
+.abtn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.abtn:disabled{opacity:.5;cursor:not-allowed}
+.aout{font-size:11px;line-height:1.65;color:var(--text2);background:var(--bg3);border-radius:var(--r);padding:8px 10px;white-space:pre-wrap;word-break:break-word}
+.akr{display:flex;gap:4px;margin-bottom:5px}
+.aki{flex:1;font-size:11px;padding:4px 6px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:var(--f)}
+.aks{font-size:11px;padding:4px 8px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--f)}
+.ah{font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:7px}
+/* maps */
+.mrow{display:flex;align-items:center;gap:5px;padding:5px 5px;border:.5px solid var(--border);border-radius:var(--r);margin-bottom:3px;cursor:pointer;transition:border-color .1s,background .1s}
+.mrow:hover{border-color:var(--border2);background:var(--bg3)}
 .mrn{flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrd{font-size:10px;color:var(--text3)}
-.mdb{font-size:12px;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:3px;color:var(--text3)}
-.mdb:hover{color:var(--danger);background:var(--danger-bg)}
-.empty-maps{font-size:11px;color:var(--text3);text-align:center;padding:20px 0}
-.tl{height:44px;background:var(--bg2);border-top:.5px solid var(--border2);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0}
-.tl-lbl{font-size:10px;color:var(--text3);white-space:nowrap;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.tl-bar{flex:1;height:14px;border-radius:3px;overflow:hidden;display:flex}
+.mdb{font-size:12px;background:none;border:none;cursor:pointer;padding:2px 3px;border-radius:3px;color:var(--text3)}
+.mdb:hover{color:var(--err);background:var(--err-bg)}
+.emaps{font-size:11px;color:var(--text3);text-align:center;padding:18px 0}
+/* timeline */
+.tl{height:42px;background:var(--bg2);border-top:.5px solid var(--border2);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0}
+.tl-l{font-size:10px;color:var(--text3);white-space:nowrap;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tl-b{flex:1;height:14px;border-radius:3px;overflow:hidden;display:flex}
 .tl-va{background:#1d9e75;height:100%;display:flex;align-items:center;justify-content:center;min-width:4px}
-.tl-nva{background:#e24b4a;height:100%;display:flex;align-items:center;justify-content:center;min-width:4px}
+.tl-nv{background:#e24b4a;height:100%;display:flex;align-items:center;justify-content:center;min-width:4px}
 .tl-bl{font-size:8px;color:#fff;font-weight:700;padding:0 3px;white-space:nowrap}
-.tl-st{font-size:11px;white-space:nowrap}
-.tl-ef{font-size:12px;font-weight:700;white-space:nowrap;min-width:38px;text-align:right}
+.tl-e{font-size:12px;font-weight:700;white-space:nowrap;min-width:36px;text-align:right}
+/* modal */
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000}
-.mod{background:var(--bg2);border:.5px solid var(--border2);border-radius:8px;padding:18px 20px;width:320px;max-width:94vw}
-.mod-t{font-size:14px;font-weight:600;margin-bottom:12px}
-.mod-opts{display:flex;flex-direction:column;gap:6px}
-.mod-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .1s,background .1s}
-.mod-opt:hover{border-color:var(--accent);background:var(--accent-bg)}
-.mod-opt-t{font-size:12px;font-weight:500}
-.mod-opt-s{font-size:10px;color:var(--text2)}
-.mod-bts{display:flex;gap:7px;margin-top:12px;justify-content:flex-end}
-.mbtn{padding:5px 13px;font-size:11px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--font)}
-.tarea{position:fixed;bottom:14px;right:14px;z-index:2000;display:flex;flex-direction:column;gap:5px}
-.toast{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 13px;font-size:11px;min-width:170px;box-shadow:0 3px 12px rgba(0,0,0,.12);animation:tin .18s ease}
-.toast.ok{border-left:3px solid var(--success)}
-.toast.err{border-left:3px solid var(--danger)}
-@keyframes tin{from{opacity:0;transform:translateY(6px)}}
-.spin{display:inline-block;width:12px;height:12px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+.mod{background:var(--bg2);border:.5px solid var(--border2);border-radius:8px;padding:16px 18px;width:310px;max-width:94vw}
+.modt{font-size:14px;font-weight:600;margin-bottom:11px}
+.modo{display:flex;flex-direction:column;gap:5px}
+.modoo{display:flex;align-items:center;gap:9px;padding:7px 9px;border:.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:border-color .1s,background .1s}
+.modoo:hover{border-color:var(--accent);background:var(--accent-bg)}
+.modot{font-size:12px;font-weight:500}
+.modos{font-size:10px;color:var(--text2)}
+.modbts{display:flex;gap:6px;margin-top:11px;justify-content:flex-end}
+.mbtn{padding:5px 12px;font-size:11px;border-radius:var(--r);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-family:var(--f)}
+/* toast */
+.ta{position:fixed;bottom:12px;right:12px;z-index:2000;display:flex;flex-direction:column;gap:4px}
+.toast{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);padding:6px 12px;font-size:11px;min-width:160px;box-shadow:0 3px 12px rgba(0,0,0,.12);animation:tin .15s ease}
+.toast.ok{border-left:3px solid var(--ok)}
+.toast.err{border-left:3px solid var(--err)}
+@keyframes tin{from{opacity:0;transform:translateY(5px)}}
+.spin{display:inline-block;width:11px;height:11px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 </style>
 </head>
 <body>
 <div class="app">
+
+<!-- HEADER -->
 <div class="hdr">
   <div class="logo">VSM <em>Constructor</em></div>
   <div class="hsep"></div>
-  <input class="map-name" id="mapName" type="text" value="Нова карта VSM">
+  <input class="mname" id="mapName" type="text" value="Нова карта VSM">
   <div class="hsp"></div>
   <button class="hbtn on" id="bsel" onclick="setTool('select')">▷ Вибір</button>
-  <button class="hbtn" id="bcon" onclick="setTool('connect')">→ З'єднати</button>
-  <button class="hbtn" id="bgrp" onclick="setTool('group')" title="Намалювати групу (G)">⬜ Група</button>
+  <button class="hbtn"    id="bcon" onclick="setTool('connect')">→ З'єднати</button>
+  <button class="hbtn"    id="bgrp" onclick="setTool('group')" title="G — намалювати групу">⬜ Група</button>
   <div class="hsep"></div>
-  <button class="hbtn" onclick="saveToLocal()">💾 Зберегти</button>
+  <button class="hbtn" onclick="saveMap()">💾 Зберегти</button>
   <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
-  <button class="hbtn" onclick="document.getElementById('importF').click()">↙ Імпорт</button>
-  <input type="file" id="importF" accept=".json" style="display:none" onchange="importJSON(event)">
+  <button class="hbtn" onclick="document.getElementById('impF').click()">↙ Імпорт</button>
+  <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="hsep"></div>
   <button class="hbtn" onclick="loadDemo()">▦ Приклад</button>
   <button class="hbtn" onclick="clearAll()">✕ Очистити</button>
   <button class="hbtn" onclick="showSettings()">⚙</button>
 </div>
 
+<!-- MAIN -->
 <div class="main">
-<div class="sbar">
-  <div class="sbar-sec">
-    <div class="sbar-ttl">Учасники потоку</div>
 
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'supplier')">
-      <svg width="76" height="44" viewBox="0 0 76 44">
-        <rect x="1" y="1" width="74" height="42" fill="#fff" stroke="#111" stroke-width="2"/>
-        <rect x="1" y="1" width="74" height="14" fill="#111"/>
-        <text x="38" y="9" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="sans-serif" font-weight="700">FACTORY</text>
-        <text x="38" y="30" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="sans-serif">Постачальник</text>
-      </svg>
+<!-- SIDEBAR -->
+<div class="sb" id="sb">
+  <div class="sb-s">
+    <div class="sb-t">Учасники потоку</div>
+    <div class="pal" draggable="true" ondragstart="pd(event,'supplier')">
+      <svg width="72" height="40" viewBox="0 0 72 40"><rect x="1" y="1" width="70" height="38" fill="#fff" stroke="#111" stroke-width="2"/><rect x="1" y="1" width="70" height="13" fill="#111"/><text x="36" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text><text x="36" y="28" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif">Постачальник</text></svg>
       Постачальник
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'customer')">
-      <svg width="76" height="44" viewBox="0 0 76 44">
-        <rect x="1" y="1" width="74" height="42" fill="#fff" stroke="#111" stroke-width="2"/>
-        <rect x="1" y="1" width="74" height="14" fill="#111"/>
-        <text x="38" y="9" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="sans-serif" font-weight="700">FACTORY</text>
-        <text x="38" y="30" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="sans-serif">Клієнт</text>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'customer')">
+      <svg width="72" height="40" viewBox="0 0 72 40"><rect x="1" y="1" width="70" height="38" fill="#fff" stroke="#111" stroke-width="2"/><rect x="1" y="1" width="70" height="13" fill="#111"/><text x="36" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text><text x="36" y="28" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif">Клієнт</text></svg>
       Клієнт
     </div>
-
-    <div class="sbar-ttl" style="margin-top:8px;border-top:.5px solid var(--border);padding-top:8px">Виробничі процеси</div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'process')">
-      <svg width="76" height="50" viewBox="0 0 76 50">
-        <rect x="1" y="1" width="74" height="48" fill="#fff" stroke="#111" stroke-width="2"/>
-        <text x="38" y="13" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="sans-serif" font-weight="700">Процес</text>
-        <line x1="1" y1="22" x2="75" y2="22" stroke="#111" stroke-width="1.5"/>
-        <text x="20" y="32" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">CT</text>
-        <text x="55" y="32" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">C/O</text>
-        <text x="20" y="42" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">Up%</text>
-        <text x="55" y="42" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#444" font-family="sans-serif">Op</text>
-      </svg>
+  </div>
+  <div class="sb-s" style="border-top:.5px solid var(--border);margin-top:2px;padding-top:7px">
+    <div class="sb-t">Виробничі процеси</div>
+    <div class="pal" draggable="true" ondragstart="pd(event,'process')">
+      <svg width="72" height="46" viewBox="0 0 72 46"><rect x="1" y="1" width="70" height="44" fill="#fff" stroke="#111" stroke-width="2"/><text x="36" y="12" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif" font-weight="700">Процес</text><line x1="1" y1="20" x2="71" y2="20" stroke="#111" stroke-width="1.5"/><text x="18" y="30" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#555" font-family="Arial,sans-serif">CT</text><text x="53" y="30" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#555" font-family="Arial,sans-serif">C/O</text><text x="18" y="40" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#555" font-family="Arial,sans-serif">Up%</text><text x="53" y="40" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#555" font-family="Arial,sans-serif">Op</text></svg>
       Процес
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'inventory')">
-      <svg width="76" height="48" viewBox="0 0 76 48">
-        <polygon points="38,2 74,44 2,44" fill="#fff" stroke="#111" stroke-width="2"/>
-        <text x="38" y="32" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="sans-serif" font-weight="700">WIP</text>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'inventory')">
+      <svg width="72" height="44" viewBox="0 0 72 44"><polygon points="36,2 70,42 2,42" fill="#fff" stroke="#111" stroke-width="2"/><text x="36" y="30" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif" font-weight="700">WIP</text></svg>
       Запаси / WIP
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'supermarket')">
-      <svg width="76" height="50" viewBox="0 0 76 50">
-        <rect x="1" y="6" width="74" height="32" fill="#fff" stroke="#111" stroke-width="2"/>
-        <line x1="1" y1="16" x2="75" y2="16" stroke="#111" stroke-width="1.5"/>
-        <line x1="1" y1="26" x2="75" y2="26" stroke="#111" stroke-width="1.5"/>
-        <line x1="20" y1="6" x2="20" y2="38" stroke="#111" stroke-width="1.2"/>
-        <line x1="40" y1="6" x2="40" y2="38" stroke="#111" stroke-width="1.2"/>
-        <line x1="60" y1="6" x2="60" y2="38" stroke="#111" stroke-width="1.2"/>
-        <line x1="12" y1="38" x2="12" y2="44" stroke="#111" stroke-width="2"/>
-        <line x1="64" y1="38" x2="64" y2="44" stroke="#111" stroke-width="2"/>
-        <line x1="6" y1="44" x2="70" y2="44" stroke="#111" stroke-width="2"/>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'supermarket')">
+      <svg width="72" height="46" viewBox="0 0 72 46"><rect x="1" y="5" width="70" height="30" fill="#fff" stroke="#111" stroke-width="2"/><line x1="1" y1="15" x2="71" y2="15" stroke="#111" stroke-width="1.4"/><line x1="1" y1="25" x2="71" y2="25" stroke="#111" stroke-width="1.4"/><line x1="19" y1="5" x2="19" y2="35" stroke="#111" stroke-width="1.1"/><line x1="37" y1="5" x2="37" y2="35" stroke="#111" stroke-width="1.1"/><line x1="55" y1="5" x2="55" y2="35" stroke="#111" stroke-width="1.1"/><line x1="12" y1="35" x2="12" y2="41" stroke="#111" stroke-width="2"/><line x1="60" y1="35" x2="60" y2="41" stroke="#111" stroke-width="2"/><line x1="6" y1="41" x2="66" y2="41" stroke="#111" stroke-width="2"/></svg>
       Супермаркет
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'kaizen')">
-      <svg width="60" height="52" viewBox="0 0 60 52">
-        <polygon points="30,2 37,17 53,19 42,30 45,46 30,38 15,46 18,30 7,19 23,17" fill="#FF8C00" stroke="#B85C00" stroke-width="1.5"/>
-        <text x="30" y="25" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="sans-serif" font-weight="700">K</text>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'kaizen')">
+      <svg width="56" height="48" viewBox="0 0 56 48"><polygon points="28,2 35,16 51,18 40,29 43,45 28,37 13,45 16,29 5,18 21,16" fill="#FF8C00" stroke="#B85C00" stroke-width="1.5"/><text x="28" y="24" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="Arial,sans-serif" font-weight="700">K</text></svg>
       Kaizen Burst
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'operator')">
-      <svg width="50" height="52" viewBox="0 0 50 52">
-        <circle cx="25" cy="14" r="11" fill="#fff" stroke="#111" stroke-width="2"/>
-        <circle cx="25" cy="14" r="4" fill="#111"/>
-        <path d="M5 50 Q5 30 25 30 Q45 30 45 50" fill="#fff" stroke="#111" stroke-width="2"/>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'operator')">
+      <svg width="46" height="48" viewBox="0 0 46 48"><circle cx="23" cy="13" r="11" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="23" cy="13" r="4" fill="#111"/><path d="M3 46 Q3 28 23 28 Q43 28 43 46" fill="#fff" stroke="#111" stroke-width="2"/></svg>
       Оператор
     </div>
-
-    <div class="pal" draggable="true" ondragstart="pdrag(event,'truck')">
-      <svg width="76" height="44" viewBox="0 0 76 44">
-        <rect x="1" y="6" width="50" height="28" rx="2" fill="#fff" stroke="#111" stroke-width="2"/>
-        <path d="M51 14 L51 34 L75 34 L75 26 L66 14 Z" fill="#fff" stroke="#111" stroke-width="2"/>
-        <circle cx="16" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
-        <circle cx="40" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
-        <circle cx="63" cy="37" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
-        <rect x="55" y="16" width="12" height="8" rx="1" fill="#cce6ff" stroke="#111" stroke-width="1"/>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'truck')">
+      <svg width="72" height="40" viewBox="0 0 72 40"><rect x="1" y="5" width="47" height="25" rx="2" fill="#fff" stroke="#111" stroke-width="2"/><path d="M48 12 L48 30 L71 30 L71 22 L63 12 Z" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="14" cy="33" r="5" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="37" cy="33" r="5" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="60" cy="33" r="5" fill="#fff" stroke="#111" stroke-width="2"/><rect x="52" y="14" width="11" height="7" rx="1" fill="#cce6ff" stroke="#111" stroke-width="1"/></svg>
       Вантажівка
     </div>
-  </div>
-
-  <div class="sbar-sec" style="border-top:.5px solid var(--border);margin-top:4px;padding-top:8px">
-    <div class="sbar-ttl">Угруповання</div>
-    <div class="pal" draggable="false" style="cursor:default;opacity:.85" onclick="setTool('group')" title="Натисни і намалюй рамку на полотні">
-      <svg width="76" height="38" viewBox="0 0 76 38">
-        <rect x="1" y="1" width="74" height="36" rx="3" fill="rgba(79,140,213,.08)" stroke="#1a5fa8" stroke-width="2" stroke-dasharray="6 3"/>
-        <rect x="1" y="1" width="74" height="13" rx="3" fill="rgba(79,140,213,.18)"/>
-        <text x="38" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#1a5fa8" font-family="sans-serif" font-weight="700">ДІЛЬНИЦЯ</text>
-        <rect x="8" y="17" width="26" height="16" rx="1" fill="rgba(79,140,213,.12)" stroke="#1a5fa8" stroke-width="1"/>
-        <rect x="42" y="17" width="26" height="16" rx="1" fill="rgba(79,140,213,.12)" stroke="#1a5fa8" stroke-width="1"/>
-      </svg>
-      Дільниця
-    </div>
-    <div class="pal" draggable="false" style="cursor:default;opacity:.85" onclick="setToolGroup('workstation')" title="Натисни і намалюй рамку на полотні">
-      <svg width="76" height="38" viewBox="0 0 76 38">
-        <rect x="1" y="1" width="74" height="36" rx="3" fill="rgba(30,160,90,.08)" stroke="#1d9e75" stroke-width="2" stroke-dasharray="4 3"/>
-        <rect x="1" y="1" width="74" height="13" rx="3" fill="rgba(30,160,90,.18)"/>
-        <text x="38" y="8" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#0c6b4e" font-family="sans-serif" font-weight="700">РОБ. МІСЦЕ</text>
-        <rect x="14" y="17" width="48" height="16" rx="1" fill="rgba(30,160,90,.12)" stroke="#1d9e75" stroke-width="1"/>
-      </svg>
-      Робоче місце
-    </div>
-    <p style="font-size:9px;color:var(--text3);padding:3px 2px;line-height:1.5">Клацни елемент → намалюй рамку навколо операцій. Кнопка ▶ — згорнути.</p>
-  </div>
-      <svg width="76" height="44" viewBox="0 0 76 44">
-        <rect x="1" y="1" width="74" height="42" rx="2" fill="#fff" stroke="#111" stroke-width="2" stroke-dasharray="7 4"/>
-        <text x="38" y="16" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="sans-serif" font-weight="700">PRODUCTION</text>
-        <text x="38" y="28" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="sans-serif" font-weight="700">CONTROL</text>
-      </svg>
+    <div class="pal" draggable="true" ondragstart="pd(event,'production_control')">
+      <svg width="72" height="38" viewBox="0 0 72 38"><rect x="1" y="1" width="70" height="36" rx="2" fill="#fff" stroke="#111" stroke-width="2" stroke-dasharray="7 4"/><text x="36" y="14" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="Arial,sans-serif" font-weight="700">PRODUCTION</text><text x="36" y="25" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#111" font-family="Arial,sans-serif" font-weight="700">CONTROL</text></svg>
       Упр. виробн.
     </div>
   </div>
-
-  <div class="sbar-sec" style="border-top:.5px solid var(--border);margin-top:4px;padding-top:8px">
-    <div class="sbar-ttl">Потоки (→ З'єднати)</div>
-    <div style="display:flex;flex-direction:column;gap:5px;padding:0 2px">
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
-        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#111" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="#111"/></svg>Push
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
-        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#1d9e75" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="30,2 38,6 30,10" fill="#1d9e75"/></svg>Pull
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
-        <svg width="38" height="12" viewBox="0 0 38 12"><path d="M0 6 Q19 1 38 6" fill="none" stroke="#1a5fa8" stroke-width="2"/><polygon points="30,2 38,6 30,10" fill="#1a5fa8"/></svg>Інфо (ручний)
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
-        <svg width="38" height="12" viewBox="0 0 38 12"><path d="M0 6 Q19 1 38 6" fill="none" stroke="#1a5fa8" stroke-width="2" stroke-dasharray="5 2"/><polygon points="30,2 38,6 30,10" fill="#1a5fa8"/></svg>Інфо (ел.)
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)">
-        <svg width="38" height="12" viewBox="0 0 38 12"><line x1="0" y1="6" x2="30" y2="6" stroke="#b87316" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="#b87316"/></svg>Транспорт
-      </div>
+  <div class="sb-s" style="border-top:.5px solid var(--border);margin-top:2px;padding-top:7px">
+    <div class="sb-t">Угруповання</div>
+    <div class="pal" style="cursor:pointer" onclick="setToolKind('section')" title="Клацни → намалюй рамку">
+      <svg width="72" height="34" viewBox="0 0 72 34"><rect x="1" y="1" width="70" height="32" rx="3" fill="rgba(26,95,168,.07)" stroke="#1a5fa8" stroke-width="1.8" stroke-dasharray="6 3"/><rect x="1" y="1" width="70" height="12" rx="3" fill="rgba(26,95,168,.18)"/><text x="36" y="7" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#1a5fa8" font-family="Arial,sans-serif" font-weight="700">ДІЛЬНИЦЯ</text><rect x="7" y="15" width="24" height="14" rx="1" fill="rgba(26,95,168,.1)" stroke="#1a5fa8" stroke-width="1"/><rect x="40" y="15" width="24" height="14" rx="1" fill="rgba(26,95,168,.1)" stroke="#1a5fa8" stroke-width="1"/></svg>
+      Дільниця
+    </div>
+    <div class="pal" style="cursor:pointer" onclick="setToolKind('workstation')" title="Клацни → намалюй рамку">
+      <svg width="72" height="34" viewBox="0 0 72 34"><rect x="1" y="1" width="70" height="32" rx="3" fill="rgba(29,158,117,.07)" stroke="#1d9e75" stroke-width="1.8" stroke-dasharray="4 3"/><rect x="1" y="1" width="70" height="12" rx="3" fill="rgba(29,158,117,.18)"/><text x="36" y="7" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#0c6b4e" font-family="Arial,sans-serif" font-weight="700">РОБ. МІСЦЕ</text><rect x="13" y="15" width="46" height="14" rx="1" fill="rgba(29,158,117,.1)" stroke="#1d9e75" stroke-width="1"/></svg>
+      Робоче місце
+    </div>
+    <p style="font-size:9px;color:var(--text3);padding:3px 2px;line-height:1.5">Клацни тип → намалюй рамку навколо операцій. ▼ — згорнути, ▶ — розгорнути.</p>
+  </div>
+  <div class="sb-s" style="border-top:.5px solid var(--border);margin-top:2px;padding-top:7px">
+    <div class="sb-t">Потоки (→ З'єднати)</div>
+    <div style="display:flex;flex-direction:column;gap:4px;padding:0 1px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><svg width="36" height="12" viewBox="0 0 36 12"><line x1="0" y1="6" x2="28" y2="6" stroke="#111" stroke-width="2.5"/><polygon points="28,2 36,6 28,10" fill="#111"/></svg>Push</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><svg width="36" height="12" viewBox="0 0 36 12"><line x1="0" y1="6" x2="28" y2="6" stroke="#1d9e75" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="28,2 36,6 28,10" fill="#1d9e75"/></svg>Pull</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><svg width="36" height="12" viewBox="0 0 36 12"><path d="M0 6 Q18 1 36 6" fill="none" stroke="#1a5fa8" stroke-width="2"/><polygon points="28,2 36,6 28,10" fill="#1a5fa8"/></svg>Інфо</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><svg width="36" height="12" viewBox="0 0 36 12"><path d="M0 6 Q18 1 36 6" fill="none" stroke="#1a5fa8" stroke-width="2" stroke-dasharray="5 2"/><polygon points="28,2 36,6 28,10" fill="#1a5fa8"/></svg>Інфо (ел.)</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)"><svg width="36" height="12" viewBox="0 0 36 12"><line x1="0" y1="6" x2="28" y2="6" stroke="#b87316" stroke-width="2.5"/><polygon points="28,2 36,6 28,10" fill="#b87316"/></svg>Транспорт</div>
     </div>
   </div>
 </div>
 
-<div class="cvs-wrap" id="cvswrap" ondragover="event.preventDefault()" ondrop="onDrop(event)">
-  <svg id="canvas" xmlns="http://www.w3.org/2000/svg"
-    onmousedown="svgMD(event)" onmousemove="svgMM(event)" onmouseup="svgMU(event)">
+<!-- CANVAS -->
+<div class="cv" id="cvwrap"
+  ondragover="event.preventDefault()"
+  ondrop="onDrop(event)">
+  <svg id="cv" xmlns="http://www.w3.org/2000/svg"
+    onmousedown="cvMD(event)"
+    onmousemove="cvMM(event)"
+    onmouseup="cvMU(event)">
     <defs>
-      <marker id="m-push" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#111"/></marker>
-      <marker id="m-pull" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1d9e75"/></marker>
-      <marker id="m-info" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1a5fa8"/></marker>
-      <marker id="m-transport" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#b87316"/></marker>
-      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-        <path d="M20 0L0 0 0 20" fill="none" stroke="rgba(0,0,0,.06)" stroke-width=".5"/>
-      </pattern>
-      <pattern id="grid5" width="100" height="100" patternUnits="userSpaceOnUse">
-        <rect width="100" height="100" fill="url(#grid)"/>
-        <path d="M100 0L0 0 0 100" fill="none" stroke="rgba(0,0,0,.10)" stroke-width=".5"/>
-      </pattern>
+      <marker id="ap" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#111"/></marker>
+      <marker id="al" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1d9e75"/></marker>
+      <marker id="ai" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#1a5fa8"/></marker>
+      <marker id="at" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 12,6 0,11" fill="#b87316"/></marker>
+      <pattern id="g1" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0L0 0 0 20" fill="none" stroke="rgba(0,0,0,.06)" stroke-width=".5"/></pattern>
+      <pattern id="g5" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#g1)"/><path d="M100 0L0 0 0 100" fill="none" stroke="rgba(0,0,0,.10)" stroke-width=".5"/></pattern>
     </defs>
-    <rect width="100%" height="100%" fill="url(#grid5)"/>
-    <g id="glayer"></g>
-    <g id="clayer"></g>
-    <g id="elayer"></g>
-    <g id="tarrow" style="display:none">
-      <line id="tline" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#m-info)"/>
-    </g>
-    <g id="drawrect" style="display:none">
-      <rect id="drawbox" fill="rgba(79,140,213,.08)" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
-    </g>
+    <rect id="gridbg" width="100%" height="100%" fill="url(#g5)"/>
+    <g id="gl"></g><!-- groups -->
+    <g id="cl"></g><!-- connections -->
+    <g id="el"></g><!-- elements -->
+    <!-- temp connection line -->
+    <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
+    <!-- group draw rect -->
+    <rect id="dr" style="display:none" fill="rgba(26,95,168,.07)" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
   </svg>
 </div>
 
+<!-- RIGHT PANEL -->
 <div class="rp">
   <div class="rtabs">
-    <button class="rtab on" id="rt-props"   onclick="rtab('props')">Параметри</button>
-    <button class="rtab"    id="rt-metrics" onclick="rtab('metrics')">Метрики</button>
-    <button class="rtab"    id="rt-maps"    onclick="rtab('maps')">Карти</button>
-    <button class="rtab"    id="rt-ai"      onclick="rtab('ai')">AI</button>
+    <button class="rtab on" id="rt-p" onclick="rtab('p')">Параметри</button>
+    <button class="rtab"    id="rt-m" onclick="rtab('m')">Метрики</button>
+    <button class="rtab"    id="rt-s" onclick="rtab('s')">Карти</button>
+    <button class="rtab"    id="rt-a" onclick="rtab('a')">AI</button>
   </div>
-  <div class="rpb" id="rpb-props">
-    <div class="no-sel" id="nosel">Виберіть елемент<br>для редагування</div>
-    <div id="pform" style="display:none"></div>
+  <div class="rpb" id="rp-p">
+    <div class="nosel" id="nosel">Виберіть елемент<br>або групу для<br>редагування</div>
+    <div id="pf" style="display:none"></div>
   </div>
-  <div class="rpb" id="rpb-metrics" style="display:none"><div id="mcont"></div></div>
-  <div class="rpb" id="rpb-maps" style="display:none"><div id="mapcont"></div></div>
-  <div class="rpb" id="rpb-ai" style="display:none">
+  <div class="rpb" id="rp-m" style="display:none"><div id="mc"></div></div>
+  <div class="rpb" id="rp-s" style="display:none"><div id="sc"></div></div>
+  <div class="rpb" id="rp-a" style="display:none">
     <div class="pl">Claude API ключ</div>
-    <div class="ai-key-row">
-      <input class="ai-ki" type="password" id="aikey" placeholder="sk-ant-…">
-      <button class="ai-ks" onclick="saveKey()">✓ OK</button>
-    </div>
-    <p class="ai-hint">Ключ зберігається локально в браузері. <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p>
-    <button class="ai-btn" id="aibtn" onclick="runAi()">✦ Проаналізувати потік</button>
-    <div id="aiout" style="display:none" class="ai-out"></div>
+    <div class="akr"><input class="aki" type="password" id="aik" placeholder="sk-ant-…"><button class="aks" onclick="saveKey()">✓</button></div>
+    <p class="ah">Зберігається локально. <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p>
+    <button class="abtn" id="aibtn" onclick="runAi()">✦ Проаналізувати потік</button>
+    <div id="aio" style="display:none" class="aout"></div>
   </div>
 </div>
 </div>
 
+<!-- TIMELINE -->
 <div class="tl">
-  <span class="tl-lbl">Lead Time</span>
-  <div class="tl-bar" id="tlbar">
-    <div class="tl-va" style="width:5%"><span class="tl-bl"></span></div>
-    <div class="tl-nva" style="width:95%"><span class="tl-bl"></span></div>
-  </div>
-  <span class="tl-st" id="tllt" style="color:var(--text3)">—</span>
-  <span class="tl-ef" id="tlef" style="color:var(--text3)">—</span>
+  <span class="tl-l">Lead Time</span>
+  <div class="tl-b" id="tlb"><div class="tl-va" style="width:5%"></div><div class="tl-nv" style="width:95%"></div></div>
+  <span style="font-size:11px;white-space:nowrap" id="tllt">—</span>
+  <span class="tl-e" id="tlef" style="color:var(--text3)">—</span>
 </div>
 </div>
 
-<div id="mov" class="mov" style="display:none" onclick="if(event.target===this)closeMod()">
+<!-- MODAL -->
+<div id="movbg" class="mov" style="display:none" onclick="if(event.target===this)cmod()">
   <div id="mod" class="mod"></div>
 </div>
-<div class="tarea" id="tarea"></div>
+<div class="ta" id="ta"></div>
 
 <script>
-/* ═══════════ STATE ═══════════ */
-let ELS=[],CONNS=[],GROUPS=[],selId=null,selGrpId=null,tool='select',dragging=null,draggingGrp=null,doff={x:0,y:0},connStart=null,IDC=1,atab='props';
-let drawing=false,drawStart={x:0,y:0},drawKind='section',pendingGroupKind='section';
-const GRID=20;
+'use strict';
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let ELS=[], CONNS=[], GROUPS=[];
+let selId=null, selGid=null;
+let tool='select', gkind='section';
+let drag=null, dragG=null, dragOff={x:0,y:0};
+let resizeG=null, resizeOff={x:0,y:0};
+let connFrom=null;
+let drawing=false, drawSt={x:0,y:0};
+let IDC=1, atab='p';
+const GR=20;
 
-/* ═══════════ GROUP CONFIG ═══════════ */
-const GRP_CONF={
-  section:    {label:'Дільниця',    stroke:'#1a5fa8', fill:'rgba(79,140,213,.07)',  hfill:'rgba(79,140,213,.18)',  htext:'#1a5fa8'},
-  workstation:{label:'Роб. місце', stroke:'#1d9e75', fill:'rgba(30,160,90,.07)',   hfill:'rgba(30,160,90,.18)',   htext:'#0c6b4e'},
-};
-
-/* ═══════════ BBOX ═══════════ */
+/* ══════════════════════════════════════
+   GEOMETRY
+══════════════════════════════════════ */
 const BBOX={
-  process:{w:150,h:88},supplier:{w:120,h:60},customer:{w:120,h:60},
-  inventory:{w:92,h:72},supermarket:{w:104,h:70},kaizen:{w:62,h:62},
-  operator:{w:50,h:68},truck:{w:92,h:44},production_control:{w:120,h:52},
+  process:{w:150,h:88}, supplier:{w:120,h:60}, customer:{w:120,h:60},
+  inventory:{w:92,h:72}, supermarket:{w:104,h:72}, kaizen:{w:62,h:62},
+  operator:{w:50,h:68}, truck:{w:92,h:44}, production_control:{w:120,h:52},
 };
-function bbox(el){return BBOX[el.type]||{w:100,h:60}}
-function center(el){const b=bbox(el);return{x:el.x+b.w/2,y:el.y+b.h/2}}
+function bb(el){return BBOX[el.type]||{w:100,h:60}}
+function ctr(el){const b=bb(el);return{x:el.x+b.w/2,y:el.y+b.h/2}}
+function snap(v){return Math.round(v/GR)*GR}
+function svgXY(e){const r=document.getElementById('cv').getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function newId(pfx){return(pfx||'e')+(Date.now()+(IDC++))}
 
-/* ═══════════ DEFAULTS ═══════════ */
+/* ══════════════════════════════════════
+   ELEMENT DEFAULTS
+══════════════════════════════════════ */
 const DEFS={
   supplier:{label:'Постачальник',lead:5},
   customer:{label:'Клієнт',demand:500},
-  process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inventory_out:0},
+  process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inv_out:0},
   inventory:{label:'',qty:500,days:2},
   supermarket:{label:'Супермаркет',qty:200,days:1},
   kaizen:{label:'Kaizen',note:''},
@@ -383,477 +321,492 @@ const DEFS={
   production_control:{label:''},
 };
 
-/* ═══════════ SYMBOL LIBRARY (Standard LEI/Toyota VSM) ═══════════ */
-function selRing(el,pad=4){
-  const b=bbox(el);
-  return `<rect x="${el.x-pad}" y="${el.y-pad}" width="${b.w+pad*2}" height="${b.h+pad*2}" rx="6" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`;
-}
+/* ══════════════════════════════════════
+   METRICS HELPERS (needed by SYMS)
+══════════════════════════════════════ */
+function getProcs(){return ELS.filter(e=>e.type==='process'&&!e._hid)}
+function getInvs(){return ELS.filter(e=>(e.type==='inventory'||e.type==='supermarket')&&!e._hid)}
+function getTakt(){const c=ELS.find(e=>e.type==='customer');return(c&&c.demand)?Math.round(28800/c.demand):0}
+function isBN(el){if(el.type!=='process')return false;const p=getProcs();return p.length>1&&el.ct===Math.max(...p.map(x=>x.ct))}
 
-const SYMS={
-  supplier(el,sel){
-    const {x,y}=el,w=120,h=60;
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#1a1a18"/>
-    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
+/* ══════════════════════════════════════
+   VSM SYMBOLS
+══════════════════════════════════════ */
+function sRing(el,pad=4){const b=bb(el);return`<rect x="${el.x-pad}" y="${el.y-pad}" width="${b.w+pad*2}" height="${b.h+pad*2}" rx="6" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`}
+
+const SYM={
+  supplier(el,s){const{x,y}=el,w=120,h=60;return`${s?sRing(el):''}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#111" stroke-width="2"/>
+    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#111"/>
+    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
     <text x="${x+w/2}" y="${y+36}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
-    <text x="${x+w/2}" y="${y+50}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">Плечо: ${el.lead} дн</text>`;
-  },
+    <text x="${x+w/2}" y="${y+50}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">Плечо: ${el.lead} дн</text>`},
 
-  customer(el,sel){
-    const {x,y}=el,w=120,h=60;
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#1a1a18"/>
-    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
+  customer(el,s){const{x,y}=el,w=120,h=60;return`${s?sRing(el):''}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#111" stroke-width="2"/>
+    <rect x="${x}" y="${y}" width="${w}" height="16" fill="#111"/>
+    <text x="${x+w/2}" y="${y+8}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">FACTORY</text>
     <text x="${x+w/2}" y="${y+34}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
-    <text x="${x+w/2}" y="${y+48}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.demand} шт/зм</text>`;
-  },
+    <text x="${x+w/2}" y="${y+48}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.demand} шт/зм</text>`},
 
-  process(el,sel){
-    const {x,y}=el,w=150,h=88;
+  process(el,s){
+    const{x,y}=el,w=150,h=88;
     const bn=isBN(el),tk=getTakt();
-    const sw=bn?2.5:2,sc=bn?'#a02d2d':'#1a1a18';
-    const taktWarn=tk&&el.ct>tk&&!bn?`<text x="${x+w-4}" y="${y+h-8}" text-anchor="end" font-size="8" fill="#b87316" font-family="Arial,sans-serif" font-weight="600">▲CT&gt;Takt</text>`:'';
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${sc}" stroke-width="${sw}"/>
+    const sc=bn?'#a02d2d':'#111',sw=bn?2.5:2;
+    return`${s?sRing(el):''}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${sc}" stroke-width="${sw}"/>
     ${bn?`<rect x="${x}" y="${y}" width="${w}" height="5" fill="#e24b4a"/>
     <rect x="${x+w-50}" y="${y+h-16}" width="48" height="14" rx="2" fill="#e24b4a"/>
     <text x="${x+w-26}" y="${y+h-9}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">BOTTLENECK</text>`:''}
-    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
-    <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#1a1a18" stroke-width="1.5"/>
-    <line x1="${x+w/2}" y1="${y+24}" x2="${x+w/2}" y2="${y+64}" stroke="#1a1a18" stroke-width="1"/>
-    <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan></text>
-    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">C/O: <tspan font-weight="700">${el.co}s</tspan></text>
-    <text x="${x+6}" y="${y+58}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Up: <tspan font-weight="700">${el.uptime}%</tspan></text>
-    <text x="${x+w/2+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${el.operators}</tspan></text>
-    <text x="${x+w/2+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Зм: <tspan font-weight="700">${el.shifts}</tspan></text>
-    <line x1="${x}" y1="${y+64}" x2="${x+w}" y2="${y+64}" stroke="#1a1a18" stroke-width="1"/>
-    <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inventory_out||0} шт</text>
-    ${taktWarn}`;
-  },
+    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
+    <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#111" stroke-width="1.5"/>
+    <line x1="${x+w/2}" y1="${y+24}" x2="${x+w/2}" y2="${y+64}" stroke="#111" stroke-width="1"/>
+    <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan></text>
+    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">C/O: <tspan font-weight="700">${el.co}s</tspan></text>
+    <text x="${x+6}" y="${y+58}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Up: <tspan font-weight="700">${el.uptime}%</tspan></text>
+    <text x="${x+w/2+5}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${el.operators}</tspan></text>
+    <text x="${x+w/2+5}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Зм: <tspan font-weight="700">${el.shifts}</tspan></text>
+    <line x1="${x}" y1="${y+64}" x2="${x+w}" y2="${y+64}" stroke="#111" stroke-width="1"/>
+    <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inv_out||0} шт</text>
+    ${tk&&el.ct>tk&&!bn?`<text x="${x+w-3}" y="${y+h-5}" text-anchor="end" font-size="7" fill="#b87316" font-family="Arial,sans-serif" font-weight="700">▲CT&gt;Takt</text>`:''}`},
 
-  inventory(el,sel){
-    const {x,y}=el;
-    const b=bbox(el);
-    return`${sel?selRing(el):''
-    }<polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <text x="${x+46}" y="${y+38}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">${el.qty}</text>
-    <text x="${x+46}" y="${y+70}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="600">${el.days} дн</text>`;
-  },
+  inventory(el,s){const{x,y}=el;return`${s?sRing(el):''}
+    <polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#111" stroke-width="2"/>
+    <text x="${x+46}" y="${y+38}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.qty}</text>
+    <text x="${x+46}" y="${y+68}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.days} дн</text>`},
 
-  supermarket(el,sel){
-    const {x,y}=el,w=104,sh=38;
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y+6}" width="${w}" height="${sh}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <line x1="${x}" y1="${y+18}" x2="${x+w}" y2="${y+18}" stroke="#1a1a18" stroke-width="1.5"/>
-    <line x1="${x}" y1="${y+29}" x2="${x+w}" y2="${y+29}" stroke="#1a1a18" stroke-width="1.5"/>
-    <line x1="${x+26}" y1="${y+6}" x2="${x+26}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
-    <line x1="${x+52}" y1="${y+6}" x2="${x+52}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
-    <line x1="${x+78}" y1="${y+6}" x2="${x+78}" y2="${y+44}" stroke="#1a1a18" stroke-width="1.2"/>
-    <line x1="${x+14}" y1="${y+44}" x2="${x+14}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
-    <line x1="${x+90}" y1="${y+44}" x2="${x+90}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
-    <line x1="${x+8}" y1="${y+52}" x2="${x+96}" y2="${y+52}" stroke="#1a1a18" stroke-width="2.5"/>
-    <text x="${x+w/2}" y="${y+61}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
-    <text x="${x+w/2}" y="${y+71}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.qty}шт · ${el.days}дн</text>`;
-  },
+  supermarket(el,s){const{x,y}=el,w=104,sh=36;return`${s?sRing(el):''}
+    <rect x="${x}" y="${y+5}" width="${w}" height="${sh}" fill="#fff" stroke="#111" stroke-width="2"/>
+    <line x1="${x}" y1="${y+17}" x2="${x+w}" y2="${y+17}" stroke="#111" stroke-width="1.4"/>
+    <line x1="${x}" y1="${y+28}" x2="${x+w}" y2="${y+28}" stroke="#111" stroke-width="1.4"/>
+    <line x1="${x+25}" y1="${y+5}" x2="${x+25}" y2="${y+41}" stroke="#111" stroke-width="1.1"/>
+    <line x1="${x+50}" y1="${y+5}" x2="${x+50}" y2="${y+41}" stroke="#111" stroke-width="1.1"/>
+    <line x1="${x+76}" y1="${y+5}" x2="${x+76}" y2="${y+41}" stroke="#111" stroke-width="1.1"/>
+    <line x1="${x+14}" y1="${y+41}" x2="${x+14}" y2="${y+49}" stroke="#111" stroke-width="2.2"/>
+    <line x1="${x+90}" y1="${y+41}" x2="${x+90}" y2="${y+49}" stroke="#111" stroke-width="2.2"/>
+    <line x1="${x+8}" y1="${y+49}" x2="${x+96}" y2="${y+49}" stroke="#111" stroke-width="2.2"/>
+    <text x="${x+w/2}" y="${y+60}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.label}</text>
+    <text x="${x+w/2}" y="${y+71}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#555" font-family="Arial,sans-serif">${el.qty}шт·${el.days}дн</text>`},
 
-  kaizen(el,sel){
-    const cx=el.x+31,cy=el.y+31,r=27;
-    function pt(i){const a=(i/12)*Math.PI*2-Math.PI/2,ri=i%2===0?r:r*.62;return`${cx+Math.cos(a)*ri},${cy+Math.sin(a)*ri}`}
+  kaizen(el,s){const cx=el.x+31,cy=el.y+31,r=27;
+    function pt(i){const a=i/12*Math.PI*2-Math.PI/2,ri=i%2===0?r:r*.62;return`${cx+Math.cos(a)*ri},${cy+Math.sin(a)*ri}`}
     const pts=Array.from({length:12},(_,i)=>pt(i)).join(' ');
-    return`${sel?`<rect x="${el.x-4}" y="${el.y-4}" width="70" height="70" rx="35" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''
+    return`${s?`<rect x="${el.x-4}" y="${el.y-4}" width="70" height="70" rx="35" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''
     }<polygon points="${pts}" fill="#FF8C00" stroke="#B85C00" stroke-width="1.5"/>
-    <text x="${cx}" y="${cy-7}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="Arial,sans-serif" font-weight="700">⚡</text>
-    <text x="${cx}" y="${cy+7}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="600">${(el.label||'').slice(0,9)}</text>`;
-  },
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#fff" font-family="Arial,sans-serif" font-weight="700">⚡</text>
+    <text x="${cx}" y="${cy+7}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="600">${(el.label||'').slice(0,9)}</text>`},
 
-  operator(el,sel){
-    const {x,y}=el;
-    return`${sel?selRing(el):''
-    }<circle cx="${x+25}" cy="${y+14}" r="12" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <circle cx="${x+25}" cy="${y+14}" r="5" fill="#1a1a18"/>
-    <path d="M${x+5} ${y+58} Q${x+5} ${y+36} ${x+25} ${y+36} Q${x+45} ${y+36} ${x+45} ${y+58}" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <text x="${x+25}" y="${y+68}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif">${el.label}</text>`;
-  },
+  operator(el,s){const{x,y}=el;return`${s?sRing(el):''}
+    <circle cx="${x+25}" cy="${y+14}" r="12" fill="#fff" stroke="#111" stroke-width="2"/>
+    <circle cx="${x+25}" cy="${y+14}" r="5" fill="#111"/>
+    <path d="M${x+5} ${y+58} Q${x+5} ${y+36} ${x+25} ${y+36} Q${x+45} ${y+36} ${x+45} ${y+58}" fill="#fff" stroke="#111" stroke-width="2"/>
+    <text x="${x+25}" y="${y+67}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif">${el.label}</text>`},
 
-  truck(el,sel){
-    const {x,y}=el;
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y+4}" width="52" height="28" rx="2" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <path d="M${x+52} ${y+12} L${x+52} ${y+32} L${x+90} ${y+32} L${x+90} ${y+24} L${x+80} ${y+12} Z" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <circle cx="${x+16}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <circle cx="${x+40}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <circle cx="${x+74}" cy="${y+36}" r="5.5" fill="#fff" stroke="#1a1a18" stroke-width="2"/>
-    <rect x="${x+55}" y="${y+14}" width="13" height="9" rx="1" fill="#cce6ff" stroke="#1a1a18" stroke-width="1"/>
-    <text x="${x+46}" y="${y+46}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif">${el.label||'Транспорт'}</text>`;
-  },
+  truck(el,s){const{x,y}=el;return`${s?sRing(el):''}
+    <rect x="${x}" y="${y+4}" width="52" height="27" rx="2" fill="#fff" stroke="#111" stroke-width="2"/>
+    <path d="M${x+52} ${y+12} L${x+52} ${y+31} L${x+90} ${y+31} L${x+90} ${y+23} L${x+80} ${y+12} Z" fill="#fff" stroke="#111" stroke-width="2"/>
+    <circle cx="${x+16}" cy="${y+36}" r="5.5" fill="#fff" stroke="#111" stroke-width="2"/>
+    <circle cx="${x+40}" cy="${y+36}" r="5.5" fill="#fff" stroke="#111" stroke-width="2"/>
+    <circle cx="${x+74}" cy="${y+36}" r="5.5" fill="#fff" stroke="#111" stroke-width="2"/>
+    <rect x="${x+54}" y="${y+14}" width="13" height="8" rx="1" fill="#cce6ff" stroke="#111" stroke-width="1"/>
+    <text x="${x+46}" y="${y+46}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif">${el.label||'Транспорт'}</text>`},
 
-  production_control(el,sel){
-    const {x,y}=el,w=120,h=52;
-    return`${sel?selRing(el):''
-    }<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="#fff" stroke="#1a1a18" stroke-width="2" stroke-dasharray="8 4"/>
-    <text x="${x+w/2}" y="${y+18}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">PRODUCTION</text>
-    <text x="${x+w/2}" y="${y+30}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#1a1a18" font-family="Arial,sans-serif" font-weight="700">CONTROL</text>
-    <text x="${x+w/2}" y="${y+43}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#555" font-family="Arial,sans-serif">${el.label||''}</text>`;
-  },
+  production_control(el,s){const{x,y}=el,w=120,h=52;return`${s?sRing(el):''}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="#fff" stroke="#111" stroke-width="2" stroke-dasharray="8 4"/>
+    <text x="${x+w/2}" y="${y+18}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif" font-weight="700">PRODUCTION</text>
+    <text x="${x+w/2}" y="${y+30}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#111" font-family="Arial,sans-serif" font-weight="700">CONTROL</text>
+    <text x="${x+w/2}" y="${y+43}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#555" font-family="Arial,sans-serif">${el.label||''}</text>`},
 };
 
-/* ═══════════ GROUP RENDERING ═══════════ */
-function grpChildIds(grp){
-  // which ELS centers are inside group bbox?
-  return ELS.filter(el=>{
-    if(el._hidden)return false;
-    const c=center(el);
-    return c.x>=grp.x&&c.x<=grp.x+grp.w&&c.y>=grp.y&&c.y<=grp.y+grp.h;
-  }).map(e=>e.id);
-}
-
-function grpCollapsedBBox(grp){
-  // when collapsed, group shows as compact process-like box
-  return{x:grp.x,y:grp.y,w:160,h:72};
-}
-
-function rGroups(){
-  const L=document.getElementById('glayer');L.innerHTML='';
-  // sort: sections first (larger), workstations on top
-  const sorted=[...GROUPS].sort((a,b)=>(a.kind==='section'?0:1)-(b.kind==='section'?0:1));
-  sorted.forEach(grp=>{
-    const G=document.createElementNS('http://www.w3.org/2000/svg','g');
-    G.setAttribute('id','grp_'+grp.id);
-    const cfg=GRP_CONF[grp.kind]||GRP_CONF.section;
-    const isSel=selGrpId===grp.id;
-
-    if(grp.collapsed){
-      // ── COLLAPSED: show aggregate process box ──
-      const {x,y,w,h}=grpCollapsedBBox(grp);
-      const children=GROUPS.length?ELS.filter(el=>grp.childIds&&grp.childIds.includes(el.id)):[];
-      const totalCT=children.filter(e=>e.type==='process').reduce((s,e)=>s+e.ct,0);
-      const totalOp=children.filter(e=>e.type==='process').reduce((s,e)=>s+(e.operators||0),0);
-      const procCount=children.filter(e=>e.type==='process').length;
-      G.innerHTML=`
-        ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''}
-        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${cfg.hfill}" stroke="${cfg.stroke}" stroke-width="2"/>
-        <rect x="${x}" y="${y}" width="${w}" height="18" rx="3" fill="${cfg.hfill}"/>
-        <rect x="${x}" y="${y+14}" width="${w}" height="4" fill="${cfg.hfill}"/>
-        <text x="${x+22}" y="${y+9}" dominant-baseline="central" font-size="10" fill="${cfg.htext}" font-family="Arial,sans-serif" font-weight="700">${grp.label}</text>
-        <text x="${x+w-5}" y="${y+9}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.htext}" font-family="Arial,sans-serif">${procCount} оп.</text>
-        <line x1="${x}" y1="${y+18}" x2="${x+w}" y2="${y+18}" stroke="${cfg.stroke}" stroke-width="1.5"/>
-        <line x1="${x+w/2}" y1="${y+18}" x2="${x+w/2}" y2="${y+58}" stroke="${cfg.stroke}" stroke-width="1" stroke-dasharray="3 2"/>
-        <text x="${x+6}" y="${y+30}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">ΣCT: <tspan font-weight="700">${totalCT}s</tspan></text>
-        <text x="${x+6}" y="${y+44}" dominant-baseline="central" font-size="9" fill="#1a1a18" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${totalOp}</tspan></text>
-        <text x="${x+w/2+6}" y="${y+30}" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">${procCount} процес(ів)</text>
-        <line x1="${x}" y1="${y+58}" x2="${x+w}" y2="${y+58}" stroke="${cfg.stroke}" stroke-width="1"/>
-        <text x="${x+w/2}" y="${y+65}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#888" font-family="Arial,sans-serif">згорнуто · натисни ▶ для розгортання</text>
-        <!-- expand button -->
-        <g class="grp-btn" onclick="toggleGroup('${grp.id}')" style="cursor:pointer">
-          <rect x="${x+w-20}" y="${y+2}" width="16" height="14" rx="3" fill="${cfg.stroke}"/>
-          <text x="${x+w-12}" y="${y+9}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700">▶</text>
-        </g>
-        <!-- move handle -->
-        <rect x="${x}" y="${y}" width="${w-22}" height="18" fill="transparent" style="cursor:move"
-          onmousedown="grpMD(event,'${grp.id}')"/>`;
-    } else {
-      // ── EXPANDED: show container ──
-      const {x,y,w,h}=grp;
-      const HAT=20; // header height
-      G.innerHTML=`
-        ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:''}
-        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${cfg.fill}" stroke="${cfg.stroke}" stroke-width="1.5" stroke-dasharray="7 4"/>
-        <rect x="${x}" y="${y}" width="${w}" height="${HAT}" rx="4" fill="${cfg.hfill}"/>
-        <rect x="${x}" y="${y+HAT-4}" width="${w}" height="4" fill="${cfg.hfill}"/>
-        <text x="${x+26}" y="${y+10}" dominant-baseline="central" font-size="10" fill="${cfg.htext}" font-family="Arial,sans-serif" font-weight="700">${grp.label}</text>
-        <!-- resize handle -->
-        <rect x="${x+w-10}" y="${y+h-10}" width="10" height="10" fill="${cfg.stroke}" rx="2" style="cursor:se-resize" onmousedown="grpResize(event,'${grp.id}')"/>
-        <!-- collapse button -->
-        <g onclick="toggleGroup('${grp.id}')" style="cursor:pointer">
-          <rect x="${x+4}" y="${y+4}" width="18" height="13" rx="3" fill="${cfg.stroke}"/>
-          <text x="${x+13}" y="${y+10}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700">▼</text>
-        </g>
-        <!-- move handle (rest of header) -->
-        <rect x="${x+24}" y="${y}" width="${w-36}" height="${HAT}" fill="transparent" style="cursor:move"
-          onmousedown="grpMD(event,'${grp.id}')"/>
-        <!-- select click area -->
-        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent" onmousedown="grpClick(event,'${grp.id}')"/>`;
-    }
-    G.addEventListener('mousedown',e=>e.stopPropagation());
-    L.appendChild(G);
-  });
-}
-
-function grpClick(e,id){
-  e.stopPropagation();
-  if(e.target.classList.contains('grp-btn'))return;
-  selGrpId=id;selId=null;renderAll();showGrpProps();
-}
-
-function grpMD(e,id){
-  e.stopPropagation();
-  selGrpId=id;selId=null;draggingGrp=id;
-  const grp=GROUPS.find(g=>g.id===id);
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  doff={x:e.clientX-r.left-grp.x,y:e.clientY-r.top-grp.y};
-  renderAll();showGrpProps();
-}
-
-let resizingGrp=null,resizeOff={x:0,y:0};
-function grpResize(e,id){
-  e.stopPropagation();
-  resizingGrp=id;
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  const grp=GROUPS.find(g=>g.id===id);
-  resizeOff={x:e.clientX-r.left-(grp.x+grp.w),y:e.clientY-r.top-(grp.y+grp.h)};
-}
-
-function toggleGroup(id){
-  const grp=GROUPS.find(g=>g.id===id);if(!grp)return;
-  if(!grp.collapsed){
-    // save child ids before collapsing
-    grp.childIds=grpChildIds(grp);
-    grp.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hidden=true});
-    grp.collapsed=true;
-  } else {
-    // restore
-    (grp.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hidden});
-    grp.collapsed=false;
-  }
-  renderAll();
-}
-
-/* ═══════════ GROUP CONNECTIONS (reroute to collapsed group) ═══════════ */
-function resolveCenter(elId){
-  // if el is hidden inside a collapsed group, return group's collapsed bbox center
-  const el=ELS.find(e=>e.id===elId);
-  if(!el)return null;
-  if(el._hidden){
-    const grp=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(elId));
-    if(grp){const b=grpCollapsedBBox(grp);return{x:b.x+b.w/2,y:b.y+b.h/2}}
-  }
-  return center(el);
-}
-const CCONF={
-  push:     {color:'#1a1a18',dash:'0',   marker:'m-push',     label:'Push',       curved:false},
-  pull:     {color:'#1d9e75',dash:'8 4', marker:'m-pull',     label:'Pull',       curved:false},
-  info:     {color:'#1a5fa8',dash:'0',   marker:'m-info',     label:'Інфо',       curved:true},
-  'info-e': {color:'#1a5fa8',dash:'5 3', marker:'m-info',     label:'Інфо(ел.)',  curved:true},
-  transport:{color:'#b87316',dash:'0',   marker:'m-transport',label:'Транспорт',  curved:false},
+/* ══════════════════════════════════════
+   GROUP CONFIG
+══════════════════════════════════════ */
+const GC={
+  section:    {label:'Дільниця',   stroke:'#1a5fa8',fill:'rgba(26,95,168,.06)',  hf:'rgba(26,95,168,.16)',  ht:'#1a5fa8'},
+  workstation:{label:'Роб. місце', stroke:'#1d9e75',fill:'rgba(29,158,117,.06)', hf:'rgba(29,158,117,.16)', ht:'#0c6b4e'},
 };
 
-/* ═══════════ RENDER ═══════════ */
-function renderAll(){rGroups();rConns();rEls();updTL();if(atab==='metrics')updMetrics();if(atab==='maps')rMaps()}
+/* ══════════════════════════════════════
+   CONNECTIONS CONFIG
+══════════════════════════════════════ */
+const CC={
+  push:    {c:'#111',   d:'0',   m:'ap', lbl:'Push',       cv:false},
+  pull:    {c:'#1d9e75',d:'8 4', m:'al', lbl:'Pull',       cv:false},
+  info:    {c:'#1a5fa8',d:'0',   m:'ai', lbl:'Інфо',       cv:true},
+  'info-e':{c:'#1a5fa8',d:'5 3', m:'ai', lbl:'Інфо(ел.)',  cv:true},
+  transport:{c:'#b87316',d:'0',  m:'at', lbl:'Транспорт',  cv:false},
+};
 
-function rEls(){
-  const L=document.getElementById('elayer');L.innerHTML='';
+/* ══════════════════════════════════════
+   RENDER
+══════════════════════════════════════ */
+function renderAll(){
+  renderGroups();
+  renderConns();
+  renderEls();
+  updTL();
+  if(atab==='m')updMetrics();
+  if(atab==='s')renderMaps();
+}
+
+function renderEls(){
+  const L=document.getElementById('el');
+  L.innerHTML='';
   ELS.forEach(el=>{
-    if(el._hidden)return; // skip if inside collapsed group
+    if(el._hid)return;
     const G=document.createElementNS('http://www.w3.org/2000/svg','g');
-    G.setAttribute('id','g_'+el.id);
-    G.style.cursor=tool==='connect'?'crosshair':'move';
-    const fn=SYMS[el.type];
+    G.setAttribute('id','e_'+el.id);
+    G.style.cursor=(tool==='connect')?'crosshair':'move';
+    const fn=SYM[el.type];
     if(fn)G.innerHTML=fn(el,selId===el.id);
     G.addEventListener('mousedown',e=>elMD(e,el.id));
     L.appendChild(G);
   });
 }
 
-function rConns(){
-  const L=document.getElementById('clayer');L.innerHTML='';
-  CONNS.forEach(c=>{
-    const f=ELS.find(e=>e.id===c.from),t=ELS.find(e=>e.id===c.to);
-    if(!f||!t)return;
-    // skip connections hidden inside same collapsed group
-    const fg=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(c.from));
-    const tg=GROUPS.find(g=>g.collapsed&&g.childIds&&g.childIds.includes(c.to));
-    if(fg&&tg&&fg.id===tg.id)return;
-    const fc=resolveCenter(c.from),tc=resolveCenter(c.to);
-    if(!fc||!tc)return;
-    const cfg=CCONF[c.type]||CCONF.push;
+function renderGroups(){
+  const L=document.getElementById('gl');
+  L.innerHTML='';
+  // sections first (background), then workstations
+  [...GROUPS].sort((a,b)=>(a.kind==='section'?0:1)-(b.kind==='section'?0:1)).forEach(g=>{
     const G=document.createElementNS('http://www.w3.org/2000/svg','g');
-    if(cfg.curved){
-      const mx=(fc.x+tc.x)/2,my=Math.min(fc.y,tc.y)-45;
-      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-      p.setAttribute('d',`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`);
-      p.setAttribute('fill','none');p.setAttribute('stroke',cfg.color);p.setAttribute('stroke-width','2');
-      p.setAttribute('stroke-dasharray',cfg.dash);p.setAttribute('marker-end','url(#'+cfg.marker+')');
-      G.appendChild(p);
-      // info lightning bolt symbol mid-curve
-      const bmx=(fc.x+mx)/2+(mx+tc.x)/2,bmy=(fc.y+my)/2+(my+tc.y)/2;
-      const lx=(fc.x*0.25+mx*0.5+tc.x*0.25),ly=(fc.y*0.25+my*0.5+tc.y*0.25);
-      const bolt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      bolt.setAttribute('x',lx);bolt.setAttribute('y',ly);bolt.setAttribute('text-anchor','middle');
-      bolt.setAttribute('font-size','12');bolt.setAttribute('fill',cfg.color);bolt.textContent='✉';
-      G.appendChild(bolt);
+    G.setAttribute('id','g_'+g.id);
+    const cfg=GC[g.kind]||GC.section;
+    const isSel=selGid===g.id;
+    if(g.collapsed){
+      renderGroupCollapsed(G,g,cfg,isSel);
     } else {
-      const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-      l.setAttribute('x1',fc.x);l.setAttribute('y1',fc.y);l.setAttribute('x2',tc.x);l.setAttribute('y2',tc.y);
-      l.setAttribute('stroke',cfg.color);l.setAttribute('stroke-width','2.5');
-      l.setAttribute('stroke-dasharray',cfg.dash);l.setAttribute('marker-end','url(#'+cfg.marker+')');
-      G.appendChild(l);
+      renderGroupExpanded(G,g,cfg,isSel);
     }
-    const lx=(fc.x+tc.x)/2,ly=(fc.y+tc.y)/2-(cfg.curved?28:10);
-    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
-    lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');
-    lbl.setAttribute('font-size','8');lbl.setAttribute('font-family','Arial,sans-serif');
-    lbl.setAttribute('fill',cfg.color);lbl.setAttribute('font-weight','700');
-    lbl.textContent=cfg.label;G.appendChild(lbl);
     L.appendChild(G);
   });
 }
 
-/* ═══════════ INTERACTIONS ═══════════ */
-function pdrag(e,t){e.dataTransfer.setData('type',t)}
-function onDrop(e){
-  const type=e.dataTransfer.getData('type');if(!DEFS[type])return;
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  const x=snap(e.clientX-r.left),y=snap(e.clientY-r.top);
-  const el={id:'e'+(Date.now()+IDC++),type,x,y,...JSON.parse(JSON.stringify(DEFS[type]))};
-  ELS.push(el);renderAll();selEl(el.id);
+function renderGroupExpanded(G,g,cfg,isSel){
+  const{x,y,w,h}=g, H=22;
+  G.innerHTML=`
+    ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:``}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${cfg.fill}" stroke="${cfg.stroke}" stroke-width="1.5" stroke-dasharray="8 5"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${H}" rx="4" fill="${cfg.hf}"/>
+    <rect x="${x}" y="${y+H-5}" width="${w}" height="5" fill="${cfg.hf}"/>
+    <text x="${x+28}" y="${y+11}" dominant-baseline="central" font-size="10" fill="${cfg.ht}" font-family="Arial,sans-serif" font-weight="700">${g.label}</text>
+    <text x="${x+w-5}" y="${y+11}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${grpChildProcs(g).length} оп.</text>
+    <!-- collapse btn -->
+    <rect x="${x+3}" y="${y+5}" width="18" height="13" rx="3" fill="${cfg.stroke}" style="cursor:pointer" onclick="toggleGrp('${g.id}')"/>
+    <text x="${x+12}" y="${y+11}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700" style="cursor:pointer;pointer-events:none">▼</text>
+    <!-- resize corner -->
+    <rect x="${x+w-10}" y="${y+h-10}" width="10" height="10" rx="2" fill="${cfg.stroke}" style="cursor:se-resize" onmousedown="gResizeMD(event,'${g.id}')"/>
+    <!-- drag area (header) -->
+    <rect x="${x+23}" y="${y}" width="${w-35}" height="${H}" fill="transparent" style="cursor:move" onmousedown="gDragMD(event,'${g.id}')"/>
+    <!-- click for select -->
+    <rect x="${x}" y="${y+H}" width="${w}" height="${h-H}" fill="transparent" onclick="gClick(event,'${g.id}')"/>`;
 }
-function snap(v){return Math.round(v/GRID)*GRID}
+
+function renderGroupCollapsed(G,g,cfg,isSel){
+  const x=g.x,y=g.y,w=170,h=78;
+  const procs=grpChildProcs(g);
+  const sumCT=procs.reduce((s,p)=>s+p.ct,0);
+  const sumOp=procs.reduce((s,p)=>s+(p.operators||0),0);
+  G.innerHTML=`
+    ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:``}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${cfg.hf}" stroke="${cfg.stroke}" stroke-width="2"/>
+    <rect x="${x}" y="${y}" width="${w}" height="20" rx="3" fill="${cfg.hf}"/>
+    <rect x="${x}" y="${y+15}" width="${w}" height="5" fill="${cfg.hf}"/>
+    <text x="${x+26}" y="${y+10}" dominant-baseline="central" font-size="10" fill="${cfg.ht}" font-family="Arial,sans-serif" font-weight="700">${g.label}</text>
+    <text x="${x+w-5}" y="${y+10}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${procs.length} оп.</text>
+    <line x1="${x}" y1="${y+20}" x2="${x+w}" y2="${y+20}" stroke="${cfg.stroke}" stroke-width="1.5"/>
+    <line x1="${x+w/2}" y1="${y+20}" x2="${x+w/2}" y2="${y+62}" stroke="${cfg.stroke}" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="${x+5}" y="${y+32}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">ΣCT: <tspan font-weight="700">${sumCT}s</tspan></text>
+    <text x="${x+5}" y="${y+45}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${sumOp}</tspan></text>
+    <text x="${x+w/2+5}" y="${y+32}" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">${procs.length} процес(ів)</text>
+    <line x1="${x}" y1="${y+62}" x2="${x+w}" y2="${y+62}" stroke="${cfg.stroke}" stroke-width="1"/>
+    <text x="${x+w/2}" y="${y+70}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#888" font-family="Arial,sans-serif">згорнуто</text>
+    <!-- expand btn -->
+    <rect x="${x+3}" y="${y+4}" width="18" height="13" rx="3" fill="${cfg.stroke}" style="cursor:pointer" onclick="toggleGrp('${g.id}')"/>
+    <text x="${x+12}" y="${y+10}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700" style="cursor:pointer;pointer-events:none">▶</text>
+    <!-- drag area -->
+    <rect x="${x+23}" y="${y}" width="${w-26}" height="20" fill="transparent" style="cursor:move" onmousedown="gDragMD(event,'${g.id}')"/>
+    <rect x="${x}" y="${y+20}" width="${w}" height="${h-20}" fill="transparent" onclick="gClick(event,'${g.id}')"/>`;
+}
+
+function renderConns(){
+  const L=document.getElementById('cl');
+  L.innerHTML='';
+  CONNS.forEach(c=>{
+    const fe=ELS.find(e=>e.id===c.from), te=ELS.find(e=>e.id===c.to);
+    if(!fe||!te)return;
+    // skip intra-group connections when collapsed
+    const fg=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(c.from));
+    const tg=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(c.to));
+    if(fg&&tg&&fg.id===tg.id)return;
+    const fc=resolveCenter(c.from), tc=resolveCenter(c.to);
+    if(!fc||!tc)return;
+    const cfg=CC[c.type]||CC.push;
+    const G=document.createElementNS('http://www.w3.org/2000/svg','g');
+    if(cfg.cv){
+      const mx=(fc.x+tc.x)/2,my=Math.min(fc.y,tc.y)-40;
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d',`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`);
+      p.setAttribute('fill','none');p.setAttribute('stroke',cfg.c);p.setAttribute('stroke-width','2');
+      p.setAttribute('stroke-dasharray',cfg.d==='0'?'':cfg.d);
+      p.setAttribute('marker-end',`url(#${cfg.m})`);
+      G.appendChild(p);
+      const lx=fc.x*.25+mx*.5+tc.x*.25,ly=fc.y*.25+my*.5+tc.y*.25;
+      const em=document.createElementNS('http://www.w3.org/2000/svg','text');
+      em.setAttribute('x',lx);em.setAttribute('y',ly);em.setAttribute('text-anchor','middle');
+      em.setAttribute('font-size','11');em.setAttribute('fill',cfg.c);em.textContent='✉';
+      G.appendChild(em);
+    } else {
+      const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',fc.x);l.setAttribute('y1',fc.y);l.setAttribute('x2',tc.x);l.setAttribute('y2',tc.y);
+      l.setAttribute('stroke',cfg.c);l.setAttribute('stroke-width','2.5');
+      l.setAttribute('stroke-dasharray',cfg.d==='0'?'':cfg.d);
+      l.setAttribute('marker-end',`url(#${cfg.m})`);
+      G.appendChild(l);
+    }
+    const lx=(fc.x+tc.x)/2,ly=(fc.y+tc.y)/2-(cfg.cv?26:9);
+    const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lt.setAttribute('x',lx);lt.setAttribute('y',ly);lt.setAttribute('text-anchor','middle');
+    lt.setAttribute('font-size','8');lt.setAttribute('fill',cfg.c);lt.setAttribute('font-weight','700');
+    lt.setAttribute('font-family','Arial,sans-serif');lt.textContent=cfg.lbl;
+    G.appendChild(lt);
+    L.appendChild(G);
+  });
+}
+
+/* ══════════════════════════════════════
+   GROUP HELPERS
+══════════════════════════════════════ */
+function grpChildProcs(g){
+  if(g.collapsed) return (g.childIds||[]).map(id=>ELS.find(e=>e.id===id)).filter(e=>e&&e.type==='process');
+  return ELS.filter(el=>{if(el.type!=='process')return false;const c=ctr(el);return c.x>=g.x&&c.x<=g.x+g.w&&c.y>=g.y&&c.y<=g.y+g.h});
+}
+
+function resolveCenter(elId){
+  const el=ELS.find(e=>e.id===elId);
+  if(!el)return null;
+  if(el._hid){
+    const g=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(elId));
+    if(g){return{x:g.x+85,y:g.y+39}}
+  }
+  return ctr(el);
+}
+
+function toggleGrp(id){
+  const g=GROUPS.find(x=>x.id===id);if(!g)return;
+  if(!g.collapsed){
+    // collapse: find all elements whose center is inside
+    g.childIds=ELS.filter(el=>{const c=ctr(el);return c.x>=g.x&&c.x<=g.x+g.w&&c.y>=g.y&&c.y<=g.y+g.h}).map(e=>e.id);
+    g.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true});
+    g.collapsed=true;
+  } else {
+    (g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hid});
+    g.collapsed=false;
+  }
+  renderAll();
+  if(selGid===id)showGrpProps();
+}
+
+/* ══════════════════════════════════════
+   INTERACTIONS
+══════════════════════════════════════ */
+function pd(e,t){e.dataTransfer.setData('type',t)}
+
+function onDrop(e){
+  e.preventDefault();
+  const type=e.dataTransfer.getData('type');
+  if(!DEFS[type])return;
+  const{x,y}=svgXY(e);
+  const el={id:newId('e'),type,x:snap(x),y:snap(y),...JSON.parse(JSON.stringify(DEFS[type]))};
+  ELS.push(el);renderAll();selectEl(el.id);
+}
 
 function elMD(e,id){
   e.stopPropagation();
   if(tool==='connect'){
-    if(!connStart){connStart=id;document.getElementById('tarrow').style.display=''}
-    else if(connStart!==id){showConnModal(connStart,id);connStart=null;document.getElementById('tarrow').style.display='none';rEls()}
+    if(!connFrom){connFrom=id;document.getElementById('tl').style.display=''}
+    else if(connFrom!==id){showConnModal(connFrom,id);connFrom=null;document.getElementById('tl').style.display='none'}
     return;
   }
-  selEl(id);dragging=id;
+  selectEl(id);
+  drag=id;
   const el=ELS.find(x=>x.id===id);
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  doff={x:e.clientX-r.left-el.x,y:e.clientY-r.top-el.y};
+  const{x,y}=svgXY(e);
+  dragOff={x:x-el.x,y:y-el.y};
 }
-function svgMD(e){
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  const mx=e.clientX-r.left,my=e.clientY-r.top;
-  const onGrid=e.target===document.getElementById('canvas')||e.target.getAttribute&&e.target.getAttribute('fill')==='url(#grid5)';
+
+function gClick(e,id){e.stopPropagation();selGid=id;selId=null;renderAll();showGrpProps()}
+function gDragMD(e,id){
+  e.stopPropagation();
+  selGid=id;selId=null;dragG=id;
+  const g=GROUPS.find(x=>x.id===id);
+  const{x,y}=svgXY(e);
+  dragOff={x:x-g.x,y:y-g.y};
+  renderAll();showGrpProps();
+}
+function gResizeMD(e,id){
+  e.stopPropagation();
+  resizeG=id;
+  const g=GROUPS.find(x=>x.id===id);
+  const{x,y}=svgXY(e);
+  resizeOff={x:x-(g.x+g.w),y:y-(g.y+g.h)};
+}
+
+function cvMD(e){
+  const t=e.target;
+  const onGrid=t===document.getElementById('cv')||t.id==='gridbg';
   if(tool==='group'&&onGrid){
-    drawing=true;drawStart={x:snap(mx),y:snap(my)};
-    document.getElementById('drawrect').style.display='';
-    const box=document.getElementById('drawbox');
-    box.setAttribute('x',drawStart.x);box.setAttribute('y',drawStart.y);
-    box.setAttribute('width',0);box.setAttribute('height',0);
-    const cfg=GRP_CONF[pendingGroupKind]||GRP_CONF.section;
-    box.setAttribute('stroke',cfg.stroke);
+    drawing=true;const{x,y}=svgXY(e);
+    drawSt={x:snap(x),y:snap(y)};
+    const dr=document.getElementById('dr');
+    const cfg=GC[gkind]||GC.section;
+    dr.setAttribute('stroke',cfg.stroke);
+    dr.setAttribute('x',drawSt.x);dr.setAttribute('y',drawSt.y);
+    dr.setAttribute('width',0);dr.setAttribute('height',0);
+    dr.style.display='';
     return;
   }
   if(onGrid){
-    selId=null;selGrpId=null;connStart=null;document.getElementById('tarrow').style.display='none';renderAll();showProps();
+    selId=null;selGid=null;connFrom=null;
+    document.getElementById('tl').style.display='none';
+    renderAll();showProps();
   }
 }
-function svgMM(e){
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  const mx=e.clientX-r.left,my=e.clientY-r.top;
+
+function cvMM(e){
+  const{x,y}=svgXY(e);
   if(drawing){
-    const bx=Math.min(mx,drawStart.x),by=Math.min(my,drawStart.y);
-    const bw=Math.abs(mx-drawStart.x),bh=Math.abs(my-drawStart.y);
-    const box=document.getElementById('drawbox');
-    box.setAttribute('x',bx);box.setAttribute('y',by);box.setAttribute('width',bw);box.setAttribute('height',bh);
+    const bx=Math.min(x,drawSt.x),by=Math.min(y,drawSt.y);
+    const dr=document.getElementById('dr');
+    dr.setAttribute('x',bx);dr.setAttribute('y',by);
+    dr.setAttribute('width',Math.abs(x-drawSt.x));dr.setAttribute('height',Math.abs(y-drawSt.y));
     return;
   }
-  if(connStart){const f=ELS.find(el=>el.id===connStart);if(f){const c=center(f);const tl=document.getElementById('tline');tl.setAttribute('x1',c.x);tl.setAttribute('y1',c.y);tl.setAttribute('x2',mx);tl.setAttribute('y2',my)}}
-  if(dragging){const el=ELS.find(x=>x.id===dragging);if(el){el.x=snap(mx-doff.x);el.y=snap(my-doff.y);renderAll()}}
-  if(draggingGrp){
-    const grp=GROUPS.find(g=>g.id===draggingGrp);
-    if(grp){
-      const nx=snap(mx-doff.x),ny=snap(my-doff.y);
-      const dx=nx-grp.x,dy=ny-grp.y;
-      // move children with group if collapsed
-      if(grp.collapsed&&grp.childIds){
-        grp.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el){el.x+=dx;el.y+=dy}});
-      }
-      grp.x=nx;grp.y=ny;
-      renderAll();
+  if(connFrom){
+    const fe=ELS.find(el=>el.id===connFrom);
+    if(fe){const c=ctr(fe);const tl=document.getElementById('tl');tl.setAttribute('x1',c.x);tl.setAttribute('y1',c.y);tl.setAttribute('x2',x);tl.setAttribute('y2',y)}
+  }
+  if(drag){
+    const el=ELS.find(el=>el.id===drag);
+    if(el){el.x=snap(x-dragOff.x);el.y=snap(y-dragOff.y);renderAll()}
+  }
+  if(dragG){
+    const g=GROUPS.find(g=>g.id===dragG);
+    if(g){
+      const nx=snap(x-dragOff.x),ny=snap(y-dragOff.y);
+      const dx=nx-g.x,dy=ny-g.y;
+      if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el){el.x+=dx;el.y+=dy}});
+      g.x=nx;g.y=ny;renderAll();
     }
   }
-  if(resizingGrp){
-    const grp=GROUPS.find(g=>g.id===resizingGrp);
-    if(grp){grp.w=Math.max(120,snap(mx-resizeOff.x-grp.x));grp.h=Math.max(80,snap(my-resizeOff.y-grp.y));renderAll()}
+  if(resizeG){
+    const g=GROUPS.find(g=>g.id===resizeG);
+    if(g){g.w=Math.max(100,snap(x-resizeOff.x-g.x));g.h=Math.max(60,snap(y-resizeOff.y-g.y));renderAll()}
   }
 }
-function svgMU(e){
+
+function cvMU(e){
   if(drawing){
-    drawing=false;
-    document.getElementById('drawrect').style.display='none';
-    const r=document.getElementById('canvas').getBoundingClientRect();
-    const mx=e.clientX-r.left,my=e.clientY-r.top;
-    const x=snap(Math.min(mx,drawStart.x)),y=snap(Math.min(my,drawStart.y));
-    const w=snap(Math.abs(mx-drawStart.x)),h=snap(Math.abs(my-drawStart.y));
-    if(w>60&&h>40){
-      const grp={id:'g'+(Date.now()+IDC++),kind:pendingGroupKind,label:GRP_CONF[pendingGroupKind].label,x,y,w,h,collapsed:false,childIds:[]};
-      GROUPS.push(grp);selGrpId=grp.id;selId=null;
-      renderAll();showGrpProps();toast('Групу створено. Перемісти елементи всередину.','ok');
+    drawing=false;document.getElementById('dr').style.display='none';
+    const{x,y}=svgXY(e);
+    const gx=snap(Math.min(x,drawSt.x)),gy=snap(Math.min(y,drawSt.y));
+    const gw=snap(Math.abs(x-drawSt.x)),gh=snap(Math.abs(y-drawSt.y));
+    if(gw>80&&gh>40){
+      const cfg=GC[gkind]||GC.section;
+      const ng={id:newId('g'),kind:gkind,label:cfg.label,x:gx,y:gy,w:gw,h:gh,collapsed:false,childIds:[]};
+      GROUPS.push(ng);selGid=ng.id;selId=null;renderAll();showGrpProps();
+      toast('Групу створено','ok');
     }
     return;
   }
-  dragging=null;draggingGrp=null;resizingGrp=null;
+  drag=null;dragG=null;resizeG=null;
 }
-function selEl(id){selId=id;renderAll();showProps()}
-function delSel(){if(!selId)return;ELS=ELS.filter(e=>e.id!==selId);CONNS=CONNS.filter(c=>c.from!==selId&&c.to!==selId);selId=null;renderAll();showProps()}
+
+function selectEl(id){selId=id;selGid=null;renderAll();showProps()}
+
+function delSel(){
+  if(selGid){delGrp(selGid);return}
+  if(!selId)return;
+  ELS=ELS.filter(e=>e.id!==selId);
+  CONNS=CONNS.filter(c=>c.from!==selId&&c.to!==selId);
+  selId=null;renderAll();showProps();
+}
+function delGrp(id){
+  const g=GROUPS.find(x=>x.id===id);
+  if(g&&g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hid});
+  GROUPS=GROUPS.filter(x=>x.id!==id);selGid=null;renderAll();showProps();
+}
+
+/* ══════════════════════════════════════
+   TOOLS
+══════════════════════════════════════ */
+function setTool(t){
+  tool=t;connFrom=null;drawing=false;
+  document.getElementById('tl').style.display='none';
+  document.getElementById('dr').style.display='none';
+  ['sel','con','grp'].forEach(k=>document.getElementById('b'+k).classList.remove('on'));
+  if(t==='select')document.getElementById('bsel').classList.add('on');
+  if(t==='connect')document.getElementById('bcon').classList.add('on');
+  if(t==='group')document.getElementById('bgrp').classList.add('on');
+  const cw=document.getElementById('cvwrap');
+  cw.style.cursor=(t==='connect'||t==='group')?'crosshair':'';
+  renderEls();
+}
+function setToolKind(kind){gkind=kind;setTool('group')}
 
 document.addEventListener('keydown',e=>{
-  if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
   if(e.key==='v'||e.key==='V')setTool('select');
   if(e.key==='c'||e.key==='C')setTool('connect');
   if(e.key==='g'||e.key==='G')setTool('group');
-  if(e.key==='Escape'){setTool('select');selGrpId=null;renderAll();showProps()}
-  if(e.key==='Delete'||e.key==='Backspace'){
-    if(selGrpId){delGroup(selGrpId);selGrpId=null;renderAll();showProps()}
-    else delSel();
-  }
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveToLocal()}
+  if(e.key==='Escape'){setTool('select');selGid=null;renderAll();showProps()}
+  if(e.key==='Delete'||e.key==='Backspace')delSel();
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveMap()}
 });
 
-function setTool(t){
-  tool=t;connStart=null;drawing=false;
-  document.getElementById('tarrow').style.display='none';
-  document.getElementById('drawrect').style.display='none';
-  document.getElementById('bsel').classList.toggle('on',t==='select');
-  document.getElementById('bcon').classList.toggle('on',t==='connect');
-  document.getElementById('bgrp').classList.toggle('on',t==='group');
-  document.getElementById('cvswrap').classList.toggle('conn-mode',t==='connect');
-  document.getElementById('cvswrap').style.cursor=t==='group'?'crosshair':'';
-  if(t==='group')pendingGroupKind='section';
-  rEls();
-}
-function setToolGroup(kind){
-  pendingGroupKind=kind;setTool('group');
-}
-
-/* ═══════════ CONNECT MODAL ═══════════ */
+/* ══════════════════════════════════════
+   CONNECT MODAL
+══════════════════════════════════════ */
 function showConnModal(from,to){
   const opts=[
-    {k:'push',c:'#1a1a18',lbl:'Push потік',sub:'Матеріальний потік — виштовхування (суцільна стрілка)'},
-    {k:'pull',c:'#1d9e75',lbl:'Pull / Канбан',sub:'Матеріальний потік — витягування (пунктирна стрілка)'},
-    {k:'info',c:'#1a5fa8',lbl:'Інформаційний (ручний)',sub:'Замовлення, плани, наряди — крива стрілка'},
-    {k:'info-e',c:'#1a5fa8',lbl:'Інформаційний (електронний)',sub:'MRP/ERP/EDI — крива пунктирна стрілка'},
-    {k:'transport',c:'#b87316',lbl:'Зовнішній транспорт',sub:'Вантажівка, залізниця — суцільна коричнева'},
+    {k:'push',lbl:'Push потік',sub:'Матеріальний потік — виштовхування'},
+    {k:'pull',lbl:'Pull / Канбан',sub:'Матеріальний потік — витягування'},
+    {k:'info',lbl:'Інформаційний (ручний)',sub:'Замовлення, плани, наряди'},
+    {k:'info-e',lbl:'Інформаційний (електронний)',sub:'MRP/ERP/EDI'},
+    {k:'transport',lbl:'Зовнішній транспорт',sub:'Вантажівка, залізниця'},
   ];
-  openMod(`<div class="mod-t">Тип з'єднання</div>
-    <div class="mod-opts">${opts.map(o=>`<div class="mod-opt" onclick="addConn('${from}','${to}','${o.k}');closeMod()">
-      <svg width="40" height="14" viewBox="0 0 40 14">
-        ${o.k==='push'?`<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
-          o.k==='pull'?`<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
-          o.k==='info'?`<path d="M0 7 Q20 1 40 7" fill="none" stroke="${o.c}" stroke-width="2"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
-          o.k==='info-e'?`<path d="M0 7 Q20 1 40 7" fill="none" stroke="${o.c}" stroke-width="2" stroke-dasharray="5 2"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`:
-          `<line x1="0" y1="7" x2="32" y2="7" stroke="${o.c}" stroke-width="2.5"/><polygon points="32,3 40,7 32,11" fill="${o.c}"/>`}
+  omod(`<div class="modt">Тип з'єднання</div>
+    <div class="modo">${opts.map(o=>`<div class="modoo" onclick="addConn('${from}','${to}','${o.k}');cmod()">
+      <svg width="38" height="13" viewBox="0 0 38 13">
+        ${o.k==='push'?`<line x1="0" y1="6" x2="30" y2="6" stroke="${CC[o.k].c}" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`:
+          o.k==='pull'?`<line x1="0" y1="6" x2="30" y2="6" stroke="${CC[o.k].c}" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`:
+          (o.k==='info'||o.k==='info-e')?`<path d="M0 6 Q19 1 38 6" fill="none" stroke="${CC[o.k].c}" stroke-width="2"${o.k==='info-e'?' stroke-dasharray="5 2"':''}/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`:
+          `<line x1="0" y1="6" x2="30" y2="6" stroke="${CC[o.k].c}" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`}
       </svg>
-      <div><div class="mod-opt-t">${o.lbl}</div><div class="mod-opt-s">${o.sub}</div></div>
+      <div><div class="modot">${o.lbl}</div><div class="modos">${o.sub}</div></div>
     </div>`).join('')}
-    </div><div class="mod-bts"><button class="mbtn" onclick="closeMod()">Скасувати</button></div>`);
+    </div><div class="modbts"><button class="mbtn" onclick="cmod()">Скасувати</button></div>`);
 }
 function addConn(f,t,type){CONNS.push({from:f,to:t,type});renderAll()}
+function delConn(f,t){CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));renderAll();showProps()}
 
-/* ═══════════ PROPS ═══════════ */
+/* ══════════════════════════════════════
+   PROPS PANEL
+══════════════════════════════════════ */
 function rtab(t){
   atab=t;
-  ['props','metrics','maps','ai'].forEach(x=>{document.getElementById('rpb-'+x).style.display=x===t?'':'none';document.getElementById('rt-'+x).classList.toggle('on',x===t)});
-  if(t==='metrics')updMetrics();if(t==='maps')rMaps();
+  ['p','m','s','a'].forEach(k=>{
+    document.getElementById('rp-'+k).style.display=k===t?'':'none';
+    document.getElementById('rt-'+k).classList.toggle('on',k===t);
+  });
+  if(t==='m')updMetrics();
+  if(t==='s')renderMaps();
 }
+
 const FLDS={
   supplier:[{k:'label',l:'Назва',t:'text'},{k:'lead',l:'Плече поставки (дні)',t:'number'}],
   customer:[{k:'label',l:'Назва',t:'text'},{k:'demand',l:'Попит (шт/зміна)',t:'number'}],
-  process:[{k:'label',l:'Назва процесу',t:'text'},{k:'ct',l:'CT (сек)',t:'number',r:1},{k:'co',l:'C/O (сек)',t:'number',r:1},{k:'uptime',l:'Uptime (%)',t:'number',r:1},{k:'operators',l:'Операторів',t:'number',r:1},{k:'shifts',l:'Змін',t:'number',r:1},{k:'inventory_out',l:'Запас на виході (шт)',t:'number',r:1}],
+  process:[{k:'label',l:'Назва процесу',t:'text'},{k:'ct',l:'CT (сек)',t:'number',r:1},{k:'co',l:'C/O (сек)',t:'number',r:1},{k:'uptime',l:'Uptime (%)',t:'number',r:1},{k:'operators',l:'Операторів',t:'number',r:1},{k:'shifts',l:'Змін',t:'number',r:1},{k:'inv_out',l:'Запас на виході',t:'number',r:1}],
   inventory:[{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
   supermarket:[{k:'label',l:'Назва',t:'text'},{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
   kaizen:[{k:'label',l:'Назва',t:'text'},{k:'note',l:'Примітка',t:'text'}],
@@ -861,93 +814,77 @@ const FLDS={
   truck:[{k:'label',l:'Маршрут',t:'text'}],
   production_control:[{k:'label',l:'Підпис',t:'text'}],
 };
+
 function showProps(){
-  const msg=document.getElementById('nosel'),fm=document.getElementById('pform');
-  if(!selId){msg.style.display='';fm.style.display='none';return}
-  const el=ELS.find(e=>e.id===selId);if(!el){msg.style.display='';fm.style.display='none';return}
-  msg.style.display='none';fm.style.display='';
+  const ns=document.getElementById('nosel'),f=document.getElementById('pf');
+  if(!selId){ns.style.display='';f.style.display='none';return}
+  const el=ELS.find(e=>e.id===selId);
+  if(!el){ns.style.display='';f.style.display='none';return}
+  ns.style.display='none';f.style.display='';
   const flds=FLDS[el.type]||[];
-  let h=`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">${el.type} · ${el.id.slice(-5)}</div>`;
+  let h=`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">${el.type} · ${el.id.slice(-5)}</div>`;
   let i=0;
-  while(i<flds.length){const f=flds[i];
-    if(f.r&&i+1<flds.length&&flds[i+1].r){const f2=flds[i+1];
-      h+=`<div class="prow"><div class="pg"><div class="pl">${f.l}</div><input class="pi" type="${f.t}" value="${el[f.k]??''}" oninput="setProp('${el.id}','${f.k}',this.value)"></div><div class="pg"><div class="pl">${f2.l}</div><input class="pi" type="${f2.t}" value="${el[f2.k]??''}" oninput="setProp('${el.id}','${f2.k}',this.value)"></div></div>`;i+=2;
-    }else{h+=`<div class="pg"><div class="pl">${f.l}</div><input class="pi" type="${f.t}" value="${el[f.k]??''}" oninput="setProp('${el.id}','${f.k}',this.value)"></div>`;i++}
+  while(i<flds.length){
+    const fl=flds[i];
+    if(fl.r&&i+1<flds.length&&flds[i+1].r){
+      const f2=flds[i+1];
+      h+=`<div class="pr"><div class="pg"><div class="pl">${fl.l}</div><input class="pi" type="${fl.t}" value="${el[fl.k]??''}" oninput="setP('${el.id}','${fl.k}',this.value)"></div>
+      <div class="pg"><div class="pl">${f2.l}</div><input class="pi" type="${f2.t}" value="${el[f2.k]??''}" oninput="setP('${el.id}','${f2.k}',this.value)"></div></div>`;i+=2;
+    } else {
+      h+=`<div class="pg"><div class="pl">${fl.l}</div><input class="pi" type="${fl.t}" value="${el[fl.k]??''}" oninput="setP('${el.id}','${fl.k}',this.value)"></div>`;i++;
+    }
   }
   const mc=CONNS.filter(c=>c.from===el.id||c.to===el.id);
-  if(mc.length){h+=`<div class="sh">З'єднання</div>`;mc.forEach(c=>{const ot=ELS.find(e=>e.id===(c.from===el.id?c.to:c.from));const cfg=CCONF[c.type]||CCONF.push;const dir=c.from===el.id?'→':'←';h+=`<div class="prow2"><div class="pdot" style="background:${cfg.color}"></div><span style="flex:1;font-size:10px">${cfg.label} ${dir} ${ot?ot.label:'?'}</span><button onclick="delConn('${c.from}','${c.to}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3);padding:1px 4px">✕</button></div>`})}
+  if(mc.length){
+    h+=`<div class="sh">З'єднання</div>`;
+    mc.forEach(c=>{const ot=ELS.find(e=>e.id===(c.from===el.id?c.to:c.from));const cfg=CC[c.type]||CC.push;const dir=c.from===el.id?'→':'←';
+      h+=`<div class="pr2"><div class="dot" style="background:${cfg.c}"></div><span style="flex:1;font-size:10px">${cfg.lbl} ${dir} ${ot?ot.label:'?'}</span><button onclick="delConn('${c.from}','${c.to}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3)">✕</button></div>`;
+    });
+  }
   h+=`<button class="delbtn" onclick="delSel()">✕ Видалити елемент</button>`;
-  fm.innerHTML=h;
+  f.innerHTML=h;
 }
-function setProp(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note','va','nva'].includes(k))?v:+v;renderAll()}
-function delConn(f,t){CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));renderAll();showProps()}
 
 function showGrpProps(){
-  rtab('props');
-  const msg=document.getElementById('nosel'),fm=document.getElementById('pform');
-  if(!selGrpId){msg.style.display='';fm.style.display='none';return}
-  const grp=GROUPS.find(g=>g.id===selGrpId);
-  if(!grp){msg.style.display='';fm.style.display='none';return}
-  msg.style.display='none';fm.style.display='';
-  const cfg=GRP_CONF[grp.kind]||GRP_CONF.section;
-  const children=grp.collapsed?(grp.childIds||[]).map(id=>ELS.find(e=>e.id===id)).filter(Boolean):ELS.filter(el=>{const c=center(el);return c.x>=grp.x&&c.x<=grp.x+grp.w&&c.y>=grp.y&&c.y<=grp.y+grp.h});
-  const procs=children.filter(e=>e.type==='process');
-  const totalCT=procs.reduce((s,e)=>s+e.ct,0);
-  const totalOp=procs.reduce((s,e)=>s+(e.operators||0),0);
-  fm.innerHTML=`
-    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">${cfg.label} · ${grp.id.slice(-5)}</div>
-    <div class="pg"><div class="pl">Назва</div>
-      <input class="pi" type="text" value="${grp.label}" oninput="updateGrp('${grp.id}','label',this.value)">
+  rtab('p');
+  const ns=document.getElementById('nosel'),f=document.getElementById('pf');
+  if(!selGid){ns.style.display='';f.style.display='none';return}
+  const g=GROUPS.find(x=>x.id===selGid);
+  if(!g){ns.style.display='';f.style.display='none';return}
+  ns.style.display='none';f.style.display='';
+  const cfg=GC[g.kind]||GC.section;
+  const procs=grpChildProcs(g);
+  const sumCT=procs.reduce((s,p)=>s+p.ct,0);
+  const sumOp=procs.reduce((s,p)=>s+(p.operators||0),0);
+  f.innerHTML=`
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">${cfg.label} · ${g.id.slice(-5)}</div>
+    <div class="pg"><div class="pl">Назва</div><input class="pi" type="text" value="${g.label}" oninput="updGrp('${g.id}','label',this.value)"></div>
+    <div class="pg"><div class="pl">Тип</div>
+      <select class="pi" onchange="updGrp('${g.id}','kind',this.value)">
+        <option value="section" ${g.kind==='section'?'selected':''}>Дільниця</option>
+        <option value="workstation" ${g.kind==='workstation'?'selected':''}>Робоче місце</option>
+      </select>
     </div>
-    <div class="prow">
-      <div class="pg"><div class="pl">Тип</div>
-        <select class="pi" onchange="updateGrp('${grp.id}','kind',this.value)">
-          <option value="section" ${grp.kind==='section'?'selected':''}>Дільниця</option>
-          <option value="workstation" ${grp.kind==='workstation'?'selected':''}>Роб. місце</option>
-        </select>
-      </div>
-    </div>
-    <div class="sh" style="border-top:none;padding-top:0">Зведення групи</div>
-    <div class="mc" style="margin-bottom:6px">
-      <div class="ml">Операцій</div><div class="mv" style="font-size:16px">${procs.length}</div>
-    </div>
-    <div class="mc" style="margin-bottom:6px">
-      <div class="ml">Сумарний CT</div><div class="mv" style="font-size:16px">${totalCT}s</div>
-    </div>
-    <div class="mc" style="margin-bottom:6px">
-      <div class="ml">Операторів</div><div class="mv" style="font-size:16px">${totalOp}</div>
-    </div>
-    <div class="sh">Операції в групі</div>
-    ${procs.map(p=>`<div class="prow2">
-      <div class="pdot" style="background:${isBN(p)?'var(--danger)':'var(--success)'}"></div>
-      <span style="flex:1;font-size:10px">${p.label}</span>
-      <span style="font-size:10px;color:var(--text2)">CT:${p.ct}s Op:${p.operators}</span>
-    </div>`).join('')}
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="ai-btn" style="margin-bottom:0;flex:1" onclick="toggleGroup('${grp.id}');showGrpProps()">
-        ${grp.collapsed?'▶ Розгорнути':'▼ Згорнути'}
+    <div class="sh" style="border-top:none;padding-top:0">Зведення</div>
+    <div class="mc"><div class="ml">Процесів</div><div class="mv" style="font-size:16px">${procs.length}</div></div>
+    <div class="mc"><div class="ml">Сумарний CT</div><div class="mv" style="font-size:16px">${sumCT}s</div></div>
+    <div class="mc"><div class="ml">Операторів</div><div class="mv" style="font-size:16px">${sumOp}</div></div>
+    <div class="sh">Процеси в групі</div>
+    ${procs.map(p=>`<div class="pr2"><div class="dot" style="background:${isBN(p)?'var(--err)':'var(--ok)'}"></div><span style="flex:1;font-size:10px">${p.label}</span><span style="font-size:10px;color:var(--text2)">CT:${p.ct}s Op:${p.operators}</span></div>`).join('')}
+    <div style="margin-top:10px">
+      <button class="abtn" style="margin-bottom:0" onclick="toggleGrp('${g.id}');showGrpProps()">
+        ${g.collapsed?'▶ Розгорнути':'▼ Згорнути'}
       </button>
     </div>
-    <button class="delbtn" onclick="delGroup('${grp.id}')">✕ Видалити групу</button>`;
+    <button class="delbtn" onclick="delGrp('${g.id}')">✕ Видалити групу</button>`;
 }
 
-function updateGrp(id,key,val){
-  const grp=GROUPS.find(g=>g.id===id);if(!grp)return;
-  grp[key]=val;renderAll();showGrpProps();
-}
+function setP(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note'].includes(k))?v:+v;renderAll()}
+function updGrp(id,k,v){const g=GROUPS.find(x=>x.id===id);if(!g)return;g[k]=v;renderAll();showGrpProps()}
 
-function delGroup(id){
-  const grp=GROUPS.find(g=>g.id===id);
-  if(grp&&grp.collapsed){(grp.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)delete el._hidden})}
-  GROUPS=GROUPS.filter(g=>g.id!==id);
-  selGrpId=null;renderAll();showProps();
-}
-
-/* ═══════════ METRICS ═══════════ */
-function getProcs(){return ELS.filter(e=>e.type==='process')}
-function getInvs(){return ELS.filter(e=>e.type==='inventory'||e.type==='supermarket')}
-function getTakt(){const c=ELS.find(e=>e.type==='customer');if(!c||!c.demand)return 0;return Math.round(28800/c.demand)}
-function isBN(el){if(el.type!=='process')return false;const p=getProcs();if(p.length<2)return false;return el.ct===Math.max(...p.map(x=>x.ct))}
+/* ══════════════════════════════════════
+   METRICS
+══════════════════════════════════════ */
 function fmtT(s){if(!s)return'0s';if(s<60)return s+'s';if(s<3600)return Math.round(s/60)+'хв';return(s/3600).toFixed(1)+'год'}
 
 function updMetrics(){
@@ -955,94 +892,103 @@ function updMetrics(){
   const vat=p.reduce((s,x)=>s+x.ct,0),invd=inv.reduce((s,x)=>s+x.days,0);
   const nva=invd*28800,lt=vat+nva,eff=lt>0?Math.round(vat/lt*100):0;
   const bn=p.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
-  const ec=eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';
-  const ebg=eff<10?'var(--danger-bg)':eff<30?'var(--warn-bg)':'var(--success-bg)';
-  document.getElementById('mcont').innerHTML=
+  const ec=eff<10?'var(--err)':eff<30?'var(--warn)':'var(--ok)';
+  const ebg=eff<10?'var(--err-bg)':eff<30?'var(--warn-bg)':'var(--ok-bg)';
+  document.getElementById('mc').innerHTML=
     `<div class="mc"><div class="ml">VA Time</div><div class="mv">${fmtT(vat)}</div><div class="ms">${p.length} процес(ів)</div></div>
-    <div class="mc"><div class="ml">Час такту</div><div class="mv" style="color:${tk?'var(--success)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм · 8год зміна</div></div>
-    <div class="mc"><div class="ml">NVA (запаси)</div><div class="mv">${invd} дн</div><div class="ms">${fmtT(nva)} очікування</div></div>
-    <div class="mc" style="background:${ebg};border-color:${ec}"><div class="ml" style="color:${ec}">Ефективність потоку</div><div class="mv" style="color:${ec}">${eff}%</div><div class="ms" style="color:${ec}">${eff<10?'⚠ Критично низька':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div></div>
-    ${bn?`<div class="mc" style="background:var(--danger-bg);border-color:var(--danger)"><div class="ml" style="color:var(--danger)">Вузьке місце (Bottleneck)</div><div class="mv" style="font-size:14px;color:var(--danger)">${bn.label}</div><div class="ms" style="color:var(--danger)">CT=${bn.ct}s${tk?' '+(bn.ct>tk?'▲ > такту':'✓ ≤ такту'):''} · Uptime=${bn.uptime}%</div></div>`:''}
-    <div class="sh" style="border-top:none;padding-top:0">Всі процеси</div>
-    ${p.map(x=>{const ib=bn&&x.id===bn.id;const col=ib?'var(--danger)':tk&&x.ct>tk?'var(--warn)':'var(--success)';return`<div class="prow2"><div class="pdot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${ib?'<span class="badge bd">BN</span>':''}</div>`}).join('')}`;
+    <div class="mc"><div class="ml">Час такту</div><div class="mv" style="color:${tk?'var(--ok)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div></div>
+    <div class="mc"><div class="ml">NVA (запаси)</div><div class="mv">${invd} дн</div><div class="ms">${fmtT(nva)}</div></div>
+    <div class="mc" style="background:${ebg};border-color:${ec}"><div class="ml" style="color:${ec}">Ефективність потоку</div><div class="mv" style="color:${ec}">${eff}%</div><div class="ms" style="color:${ec}">${eff<10?'⚠ Критично':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div></div>
+    ${bn?`<div class="mc" style="background:var(--err-bg);border-color:var(--err)"><div class="ml" style="color:var(--err)">Вузьке місце</div><div class="mv" style="font-size:14px;color:var(--err)">${bn.label}</div><div class="ms" style="color:var(--err)">CT=${bn.ct}s${tk?' '+(bn.ct>tk?'▲>такту':'✓≤такту'):''} · Up=${bn.uptime}%</div></div>`:''}
+    <div class="sh" style="border-top:none;padding-top:0">Процеси</div>
+    ${p.map(x=>{const ib=bn&&x.id===bn.id;const col=ib?'var(--err)':tk&&x.ct>tk?'var(--warn)':'var(--ok)';return`<div class="pr2"><div class="dot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${ib?'<span class="bdg bd">BN</span>':''}</div>`}).join('')}`;
 }
 
 function updTL(){
   const vat=getProcs().reduce((s,p)=>s+p.ct,0),invd=getInvs().reduce((s,i)=>s+i.days,0);
   const lt=vat+invd*28800,eff=lt>0?Math.round(vat/lt*100):0;
-  const vp=lt>0?Math.max(3,Math.round(vat/lt*100)):4,np=100-vp;
-  document.getElementById('tlbar').innerHTML=`<div class="tl-va" style="width:${vp}%"><span class="tl-bl">${vp>12?'VA':''}</span></div><div class="tl-nva" style="width:${np}%"><span class="tl-bl">${np>12?'NVA':''}</span></div>`;
+  const vp=lt>0?Math.max(3,Math.round(vat/lt*100)):4;
+  document.getElementById('tlb').innerHTML=`<div class="tl-va" style="width:${vp}%"><span class="tl-bl">${vp>14?'VA':''}</span></div><div class="tl-nv" style="width:${100-vp}%"><span class="tl-bl">${100-vp>14?'NVA':''}</span></div>`;
   document.getElementById('tllt').innerHTML=`LT: <strong>${fmtT(lt)}</strong>`;
-  const ef=document.getElementById('tlef');ef.style.color=eff<10?'var(--danger)':eff<30?'var(--warn)':'var(--success)';ef.textContent=eff+'%';
+  const ef=document.getElementById('tlef');ef.style.color=eff<10?'var(--err)':eff<30?'var(--warn)':'var(--ok)';ef.textContent=eff+'%';
 }
 
-/* ═══════════ SAVE/LOAD ═══════════ */
-function getState(){return{v:3,name:document.getElementById('mapName').value,ts:Date.now(),ELS,CONNS,GROUPS}}
+/* ══════════════════════════════════════
+   SAVE / LOAD
+══════════════════════════════════════ */
+function getState(){return{v:3,name:document.getElementById('mapName').value,ts:Date.now(),ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS}}
 function loadState(s){
   ELS=s.ELS||[];CONNS=s.CONNS||[];GROUPS=s.GROUPS||[];
-  // restore hidden state for collapsed groups
-  GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hidden=true})});
-  document.getElementById('mapName').value=s.name||'VSM';IDC=ELS.length+GROUPS.length+1;selId=null;selGrpId=null;renderAll();showProps();
+  GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
+  document.getElementById('mapName').value=s.name||'VSM';
+  IDC=Math.max(ELS.length,GROUPS.length)+10;selId=null;selGid=null;renderAll();showProps();
 }
 function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
-function saveToLocal(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
-function loadFromLocal(n){const m=allMaps();if(m[n]){loadState(m[n]);toast('Відкрито: '+n,'ok')}}
-function delMap(n){const m=allMaps();delete m[n];localStorage.setItem('vsm_maps',JSON.stringify(m));rMaps();toast('Видалено')}
-function rMaps(){
-  const m=allMaps(),ks=Object.keys(m),mc=document.getElementById('mapcont');
-  if(!ks.length){mc.innerHTML='<div class="empty-maps">Немає збережених карт.<br>Натисніть «Зберегти» у шапці.</div>';return}
-  mc.innerHTML=`<button class="ai-btn" style="margin-bottom:10px" onclick="saveToLocal()">+ Зберегти поточну</button><div class="sh" style="border-top:none;padding-top:0">Збережені (${ks.length})</div>`+
-    ks.map(n=>{const ts=m[n].ts?new Date(m[n].ts).toLocaleDateString('uk-UA'):'';return`<div class="map-row" onclick="loadFromLocal('${n.replace(/'/g,"\\'")}')"><span>🗺</span><div style="flex:1;overflow:hidden"><div class="mrn">${n}</div><div class="mrd">${ts} · ${(m[n].ELS||[]).length} ел.</div></div><button class="mdb" onclick="event.stopPropagation();if(confirm('Видалити?'))delMap('${n.replace(/'/g,"\\'")}')">✕</button></div>`}).join('');
+function saveMap(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
+function loadMap(n){const m=allMaps();if(m[n]){loadState(m[n]);toast('Відкрито: '+n,'ok')}}
+function delMap(n){const m=allMaps();delete m[n];localStorage.setItem('vsm_maps',JSON.stringify(m));renderMaps();toast('Видалено')}
+function renderMaps(){
+  const m=allMaps(),ks=Object.keys(m),c=document.getElementById('sc');
+  if(!ks.length){c.innerHTML='<div class="emaps">Немає збережених карт.<br>Натисніть «Зберегти».</div>';return}
+  c.innerHTML=`<button class="abtn" style="margin-bottom:8px" onclick="saveMap()">+ Зберегти поточну</button>
+    <div class="sh" style="border-top:none;padding-top:0">Збережені (${ks.length})</div>`+
+    ks.map(n=>{const ts=m[n].ts?new Date(m[n].ts).toLocaleDateString('uk-UA'):'';return`<div class="mrow" onclick="loadMap('${n.replace(/'/g,"\\'")}')"><span>🗺</span><div style="flex:1;overflow:hidden"><div class="mrn">${n}</div><div class="mrd">${ts}·${(m[n].ELS||[]).length}ел.</div></div><button class="mdb" onclick="event.stopPropagation();if(confirm('Видалити?'))delMap('${n.replace(/'/g,"\\'")}')">✕</button></div>`}).join('');
 }
 function exportJSON(){const a=document.createElement('a');const n=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(getState(),null,2));a.download=n+'.vsm.json';a.click();toast('JSON збережено','ok')}
 function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{loadState(JSON.parse(ev.target.result));toast('Імпортовано','ok')}catch{toast('Помилка файлу','err')}};r.readAsText(f);e.target.value=''}
 
-/* ═══════════ AI ═══════════ */
+/* ══════════════════════════════════════
+   AI
+══════════════════════════════════════ */
 window.addEventListener('load',()=>{
-  const k=localStorage.getItem('vsm_api_key')||'';if(k)document.getElementById('aikey').value=k;
-  const m=allMaps(),ks=Object.keys(m);if(ks.length)loadState(m[ks[ks.length-1]]);
+  const k=localStorage.getItem('vsm_api_key')||'';if(k)document.getElementById('aik').value=k;
+  const m=allMaps(),ks=Object.keys(m);
+  if(ks.length)loadState(m[ks[ks.length-1]]);else{renderAll();showProps()}
 });
-function saveKey(){const k=document.getElementById('aikey').value.trim();localStorage.setItem('vsm_api_key',k);toast(k?'Ключ збережено':'Ключ очищено',k?'ok':'')}
+function saveKey(){const k=document.getElementById('aik').value.trim();localStorage.setItem('vsm_api_key',k);toast(k?'Ключ збережено':'Ключ очищено',k?'ok':'')}
 async function runAi(){
   const key=localStorage.getItem('vsm_api_key')||'';if(!key){toast('Введіть API ключ','err');return}
-  const btn=document.getElementById('aibtn'),out=document.getElementById('aiout');
+  const btn=document.getElementById('aibtn'),out=document.getElementById('aio');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Аналізую…';out.style.display='';out.textContent='';
   const p=getProcs(),inv=getInvs(),tk=getTakt();
   const vat=p.reduce((s,x)=>s+x.ct,0),invd=inv.reduce((s,x)=>s+x.days,0);
   const eff=vat>0?Math.round(vat/(vat+invd*28800)*100):0;
   const bn=p.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
-  const sum=`VSM: "${document.getElementById('mapName').value}"\nПроцеси (${p.length}):\n${p.map(x=>`• ${x.label}: CT=${x.ct}s C/O=${x.co}s Uptime=${x.uptime}% Op=${x.operators} Зм=${x.shifts}`).join('\n')}\nЗапаси: ${inv.map(x=>`${x.label||'WIP'} ${x.days}дн`).join(', ')||'немає'} → NVA: ${invd}дн\nTakt=${tk}s | Eff=${eff}% | Bottleneck: ${bn?bn.label+' CT='+bn.ct+'s':'—'}\nПотоки: ${[...new Set(CONNS.map(c=>c.type))].join(', ')||'немає'}`;
+  const grpInfo=GROUPS.map(g=>{const pr=grpChildProcs(g);return`${g.label}(${g.kind}): ${pr.map(x=>x.label).join(',')||'порожня'}`}).join('; ');
+  const sum=`VSM: "${document.getElementById('mapName').value}"\nПроцеси(${p.length}):\n${p.map(x=>`• ${x.label}: CT=${x.ct}s C/O=${x.co}s Up=${x.uptime}% Op=${x.operators} Зм=${x.shifts}`).join('\n')}\nЗапаси: ${inv.map(x=>`${x.days}дн`).join(',')||'немає'} NVA=${invd}дн\nTakt=${tk}s Eff=${eff}% BN=${bn?bn.label:'—'}\nГрупи: ${grpInfo||'немає'}\nПотоки: ${[...new Set(CONNS.map(c=>c.type))].join(',')||'немає'}`;
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
-        system:'Ти старший Lean-консультант з VSM. Відповідай українською. Структура: 1) Загальна оцінка 2) Ключові проблеми (з цифрами) 3) Вузькі місця та дисбаланс 4) Виявлені втрати (7 видів муда) 5) Рекомендації Future State. Конкретно і практично.',
-        messages:[{role:'user',content:'Проаналізуй VSM карту:\n\n'+sum}]})});
+        system:'Ти старший Lean-консультант з VSM. Відповідай українською. Структура: 1) Загальна оцінка 2) Ключові проблеми (з цифрами) 3) Вузькі місця 4) 7 видів втрат 5) Рекомендації Future State.',
+        messages:[{role:'user',content:'Проаналізуй:\n\n'+sum}]})});
     const d=await resp.json();if(d.error)throw new Error(d.error.message);
     out.textContent=d.content?.map(c=>c.text).join('')||'Порожньо';
   }catch(err){out.textContent='Помилка: '+err.message;toast('AI помилка','err')}
   btn.disabled=false;btn.innerHTML='✦ Проаналізувати знову';
 }
 
-/* ═══════════ DEMO ═══════════ */
+/* ══════════════════════════════════════
+   DEMO
+══════════════════════════════════════ */
 function loadDemo(){
   ELS=[
     {id:'d_sup',type:'supplier',x:20,y:80,label:'ТОВ Металопрокат',lead:5},
     {id:'d_pc', type:'production_control',x:260,y:20,label:'MRP система'},
-    {id:'d_cus',type:'customer',x:580,y:80,label:'ОЕМ Замовник',demand:480},
-    {id:'d_i1', type:'inventory',x:188,y:240,label:'',qty:2400,days:5},
-    {id:'d_p1', type:'process',x:20,y:280,label:'Штампування',ct:45,co:240,uptime:72,operators:2,shifts:2,inventory_out:50},
-    {id:'d_i2', type:'inventory',x:328,y:240,label:'',qty:960,days:2},
-    {id:'d_p2', type:'process',x:180,y:280,label:'Зварювання',ct:92,co:60,uptime:65,operators:3,shifts:1,inventory_out:20},
-    {id:'d_i3', type:'inventory',x:468,y:240,label:'',qty:480,days:1},
-    {id:'d_p3', type:'process',x:340,y:280,label:'Складання',ct:55,co:30,uptime:90,operators:4,shifts:2,inventory_out:30},
-    {id:'d_i4', type:'inventory',x:600,y:240,label:'',qty:240,days:0.5},
-    {id:'d_p4', type:'process',x:500,y:280,label:'Контроль ВТК',ct:22,co:0,uptime:98,operators:1,shifts:2,inventory_out:0},
-    {id:'d_tr', type:'truck',x:500,y:80,label:'Щоденно'},
-    {id:'d_k1', type:'kaizen',x:230,y:400,label:'SMED',note:'C/O→30хв'},
-    {id:'d_k2', type:'kaizen',x:380,y:400,label:'TPM',note:'Up→85%'},
-    {id:'d_op1',type:'operator',x:60,y:395,label:'2 оп.'},
-    {id:'d_op2',type:'operator',x:230,y:390,label:'3 оп.'},
+    {id:'d_cus',type:'customer',x:600,y:80,label:'ОЕМ Замовник',demand:480},
+    {id:'d_i1', type:'inventory',x:195,y:245,label:'',qty:2400,days:5},
+    {id:'d_p1', type:'process',x:20,y:285,label:'Штампування',ct:45,co:240,uptime:72,operators:2,shifts:2,inv_out:50},
+    {id:'d_i2', type:'inventory',x:340,y:245,label:'',qty:960,days:2},
+    {id:'d_p2', type:'process',x:185,y:285,label:'Зварювання',ct:92,co:60,uptime:65,operators:3,shifts:1,inv_out:20},
+    {id:'d_i3', type:'inventory',x:480,y:245,label:'',qty:480,days:1},
+    {id:'d_p3', type:'process',x:350,y:285,label:'Складання',ct:55,co:30,uptime:90,operators:4,shifts:2,inv_out:30},
+    {id:'d_i4', type:'inventory',x:615,y:245,label:'',qty:240,days:0.5},
+    {id:'d_p4', type:'process',x:510,y:285,label:'Контроль ВТК',ct:22,co:0,uptime:98,operators:1,shifts:2,inv_out:0},
+    {id:'d_tr', type:'truck',x:510,y:80,label:'Щоденно'},
+    {id:'d_k1', type:'kaizen',x:218,y:410,label:'SMED',note:'C/O→30хв'},
+    {id:'d_k2', type:'kaizen',x:395,y:410,label:'TPM',note:'Up→85%'},
+    {id:'d_op1',type:'operator',x:60,y:405,label:'2 оп.'},
+    {id:'d_op2',type:'operator',x:240,y:405,label:'3 оп.'},
   ];
   CONNS=[
     {from:'d_sup',to:'d_p1',type:'transport'},
@@ -1055,21 +1001,31 @@ function loadDemo(){
     {from:'d_pc',to:'d_p1',type:'info-e'},
     {from:'d_pc',to:'d_sup',type:'info-e'},
   ];
-  document.getElementById('mapName').value='Виробнича лінія (Current State)';
   GROUPS=[
-    {id:'g_press',  kind:'section',    label:'Дільниця пресування', x:10,  y:220, w:300, h:220, collapsed:false, childIds:[]},
-    {id:'g_weld',   kind:'section',    label:'Дільниця зварювання',  x:320, y:220, w:200, h:220, collapsed:false, childIds:[]},
-    {id:'g_asm',    kind:'workstation',label:'Роб. місце складання', x:330, y:260, w:170, h:120, collapsed:false, childIds:[]},
+    {id:'g1',kind:'section',    label:'Дільниця пресування', x:10, y:230,w:310,h:220,collapsed:false,childIds:[]},
+    {id:'g2',kind:'section',    label:'Дільниця зварювання',  x:175,y:230,w:310,h:220,collapsed:false,childIds:[]},
+    {id:'g3',kind:'workstation',label:'Роб. місце складання', x:340,y:265,w:180,h:125,collapsed:false,childIds:[]},
   ];
-  IDC=50;selId=null;selGrpId=null;renderAll();showProps();toast('Приклад завантажено','ok');
+  document.getElementById('mapName').value='Виробнича лінія (Current State)';
+  IDC=50;selId=null;selGid=null;renderAll();showProps();toast('Приклад завантажено','ok');
 }
 
-/* ═══════════ UTIL ═══════════ */
-function showSettings(){openMod(`<div class="mod-t">⚙ Налаштування</div><div class="pg"><div class="pl">Claude API ключ</div><div class="ai-key-row"><input class="ai-ki" type="password" id="skey" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}"><button class="ai-ks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('skey').value);toast('Збережено','ok')">✓</button></div><p class="ai-hint">Зберігається тільки у вашому браузері.</p></div><div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.1 · BPI Group<br>Символи за стандартом LEI / Toyota Production System</p></div><div class="mod-bts"><button class="mbtn" onclick="closeMod()">Закрити</button></div>`)}
-function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGrpId=null;renderAll();showProps()}
-function openMod(h){document.getElementById('mod').innerHTML=h;document.getElementById('mov').style.display='flex'}
-function closeMod(){document.getElementById('mov').style.display='none'}
-function toast(msg,type=''){const a=document.getElementById('tarea'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
+/* ══════════════════════════════════════
+   UTIL
+══════════════════════════════════════ */
+function showSettings(){
+  omod(`<div class="modt">⚙ Налаштування</div>
+    <div class="pg"><div class="pl">Claude API ключ</div>
+    <div class="akr"><input class="aki" type="password" id="sk" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
+    <button class="aks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('sk').value);toast('Збережено','ok')">✓</button></div>
+    <p class="ah">Зберігається тільки у вашому браузері.</p></div>
+    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.2 · BPI Group<br>Символи: LEI/Toyota VSM Standard<br>G — намалювати групу · V — вибір · C — з'єднати</p></div>
+    <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
+}
+function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGid=null;renderAll();showProps()}
+function omod(h){document.getElementById('mod').innerHTML=h;document.getElementById('movbg').style.display='flex'}
+function cmod(){document.getElementById('movbg').style.display='none'}
+function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
 renderAll();showProps();
 </script>
