@@ -130,10 +130,14 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <button class="hbtn"    id="bcon" onclick="setTool('connect')">→ З'єднати</button>
   <button class="hbtn"    id="bgrp" onclick="setTool('group')" title="G — намалювати групу">⬜ Група</button>
   <div class="hsep"></div>
+  <button class="hbtn" id="bfs" onclick="toggleFS()" title="Future State режим">◈ Future State</button>
+  <button class="hbtn" id="btl" onclick="toggleTimeline()" title="Показати Timeline на карті">⏱ Timeline</button>
+  <div class="hsep"></div>
   <button class="hbtn" id="bundo" onclick="undo()" title="Ctrl+Z" style="opacity:.35">↩ Undo</button>
   <button class="hbtn" id="bredo" onclick="redo()" title="Ctrl+Y" style="opacity:.35">↪ Redo</button>
   <div class="hsep"></div>
   <button class="hbtn" onclick="saveMap()">💾 Зберегти</button>
+  <button class="hbtn" onclick="saveToSheets()" title="Зберегти в Google Sheets">📊 Sheets</button>
   <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
   <button class="hbtn" onclick="exportSVG()" title="Експорт SVG">SVG</button>
   <button class="hbtn" onclick="exportPNG()" title="Експорт PNG">PNG</button>
@@ -237,6 +241,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
       <g id="gl"></g><!-- groups -->
       <g id="cl"></g><!-- connections -->
       <g id="el"></g><!-- elements -->
+      <g id="tll"></g><!-- timeline layer -->
+      <g id="fsl"></g><!-- future state layer -->
       <g id="snapl"></g><!-- snap guides -->
       <!-- temp connection line -->
       <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
@@ -321,6 +327,11 @@ let CLIPBOARD=null;
 
 /* snap guides */
 let snapLines=[];
+
+/* Future State & Timeline */
+let fsMode=false;       // Future State overlay active
+let showTL=false;       // Timeline on canvas active
+let FS_ELS=[], FS_CONNS=[];  // Future State elements/connections
 
 /* ══════════════════════════════════════
    GEOMETRY
@@ -667,9 +678,400 @@ function renderAll(){
   renderGroups();
   renderConns();
   renderEls();
+  renderTimelineLayer();
+  renderFSLayer();
   updTL();
   if(atab==='m')updMetrics();
   if(atab==='s')renderMaps();
+}
+
+/* ══════════════════════════════════════
+   TIMELINE ON CANVAS
+══════════════════════════════════════ */
+function toggleTimeline(){
+  showTL=!showTL;
+  document.getElementById('btl').classList.toggle('on',showTL);
+  renderAll();
+}
+
+function renderTimelineLayer(){
+  const L=document.getElementById('tll');
+  if(!L){return}
+  L.innerHTML='';
+  if(!showTL)return;
+
+  // Collect ordered processes by X position
+  const procs=ELS.filter(e=>e.type==='process'&&!e._hid)
+    .sort((a,b)=>a.x-b.x);
+  const invs=ELS.filter(e=>(e.type==='inventory'||e.type==='supermarket')&&!e._hid)
+    .sort((a,b)=>a.x-b.x);
+  if(!procs.length)return;
+
+  const tk=getTakt();
+  // Find bottom Y of all process boxes + margin
+  const procBottom=Math.max(...procs.map(p=>p.y+88))+20;
+  const TL_Y=procBottom;     // top of timeline
+  const ROW_H=22;            // height of each row (VA, NVA)
+  const TOTAL_H=ROW_H*2+28; // total timeline strip height
+
+  // Build ordered sequence: interleave processes and inventories by X
+  const seq=[];
+  const allItems=[...procs.map(p=>({...p,_kind:'proc'})),...invs.map(i=>({...i,_kind:'inv'}))];
+  allItems.sort((a,b)=>a.x-b.x);
+
+  // Assign each item a width proportional to its time
+  const maxTime=Math.max(...procs.map(p=>p.ct), ...invs.map(i=>i.days*3600), 1);
+  const totalTime=procs.reduce((s,p)=>s+p.ct,0)+invs.reduce((s,i)=>s+i.days*28800,0);
+
+  // Calculate canvas span from leftmost to rightmost process
+  const leftX=Math.min(...procs.map(p=>p.x));
+  const rightX=Math.max(...procs.map(p=>p.x+150));
+  const spanW=Math.max(rightX-leftX, 200);
+
+  // Draw timeline background
+  const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('x',leftX);bg.setAttribute('y',TL_Y);
+  bg.setAttribute('width',spanW);bg.setAttribute('height',TOTAL_H);
+  bg.setAttribute('fill','#f8f8f6');bg.setAttribute('stroke','#ccc');bg.setAttribute('stroke-width','1');
+  bg.setAttribute('rx','3');
+  L.appendChild(bg);
+
+  // Row labels
+  const mkLabel=(text,x,y,col)=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('dominant-baseline','central');
+    t.setAttribute('font-size','8');t.setAttribute('font-weight','700');
+    t.setAttribute('font-family','Arial,sans-serif');t.setAttribute('fill',col);
+    t.textContent=text;L.appendChild(t);
+  };
+  mkLabel('VA',leftX-22,TL_Y+ROW_H/2,'#1d9e75');
+  mkLabel('NVA',leftX-28,TL_Y+ROW_H+ROW_H/2,'#e24b4a');
+
+  // Draw step bars for each item
+  let curX=leftX;
+  let vaBarX=leftX; // for staircase
+  const stairPoints=[]; // for the staircase line
+
+  allItems.forEach((item,idx)=>{
+    const b=bb(item);
+    // width = proportional to item span on canvas
+    const itemW=Math.max(b.w, b.w); // use actual element width
+    const barW=item.type==='process'?150:92;
+
+    if(item._kind==='proc'){
+      // VA bar — green, in top row, under this process
+      const barX=item.x;
+      // Height proportional to CT vs takt
+      const vaRect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      const isBn=isBN(item);
+      const col=isBn?'#e24b4a':tk&&item.ct>tk?'#f59e0b':'#1d9e75';
+      vaRect.setAttribute('x',barX);vaRect.setAttribute('y',TL_Y+2);
+      vaRect.setAttribute('width',barW);vaRect.setAttribute('height',ROW_H-4);
+      vaRect.setAttribute('fill',col);vaRect.setAttribute('rx','2');
+      vaRect.setAttribute('opacity','0.85');
+      L.appendChild(vaRect);
+
+      // CT label inside bar
+      const vaLabel=document.createElementNS('http://www.w3.org/2000/svg','text');
+      vaLabel.setAttribute('x',barX+barW/2);vaLabel.setAttribute('y',TL_Y+ROW_H/2);
+      vaLabel.setAttribute('text-anchor','middle');vaLabel.setAttribute('dominant-baseline','central');
+      vaLabel.setAttribute('font-size','8');vaLabel.setAttribute('font-weight','700');
+      vaLabel.setAttribute('font-family','Arial,sans-serif');vaLabel.setAttribute('fill','#fff');
+      vaLabel.textContent=item.ct+'s';
+      L.appendChild(vaLabel);
+
+      // Staircase connector line DOWN from process box to timeline
+      const connLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+      connLine.setAttribute('x1',barX+barW/2);connLine.setAttribute('y1',item.y+88);
+      connLine.setAttribute('x2',barX+barW/2);connLine.setAttribute('y2',TL_Y);
+      connLine.setAttribute('stroke','#ccc');connLine.setAttribute('stroke-width','0.5');
+      connLine.setAttribute('stroke-dasharray','3 2');
+      L.appendChild(connLine);
+
+    } else {
+      // NVA bar — red, in bottom row, under inventory
+      const barX=item.x;
+      const nvaRect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      nvaRect.setAttribute('x',barX);nvaRect.setAttribute('y',TL_Y+ROW_H+2);
+      nvaRect.setAttribute('width',barW);nvaRect.setAttribute('height',ROW_H-4);
+      nvaRect.setAttribute('fill','#e24b4a');nvaRect.setAttribute('rx','2');
+      nvaRect.setAttribute('opacity','0.8');
+      L.appendChild(nvaRect);
+
+      const nvaLabel=document.createElementNS('http://www.w3.org/2000/svg','text');
+      nvaLabel.setAttribute('x',barX+barW/2);nvaLabel.setAttribute('y',TL_Y+ROW_H+ROW_H/2);
+      nvaLabel.setAttribute('text-anchor','middle');nvaLabel.setAttribute('dominant-baseline','central');
+      nvaLabel.setAttribute('font-size','8');nvaLabel.setAttribute('font-weight','700');
+      nvaLabel.setAttribute('font-family','Arial,sans-serif');nvaLabel.setAttribute('fill','#fff');
+      nvaLabel.textContent=item.days+'дн';
+      L.appendChild(nvaLabel);
+
+      // connector
+      const connLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+      connLine.setAttribute('x1',barX+46);connLine.setAttribute('y1',item.y+72);
+      connLine.setAttribute('x2',barX+46);connLine.setAttribute('y2',TL_Y+ROW_H);
+      connLine.setAttribute('stroke','#ccc');connLine.setAttribute('stroke-width','0.5');
+      connLine.setAttribute('stroke-dasharray','3 2');
+      L.appendChild(connLine);
+    }
+  });
+
+  // Summary bar at bottom
+  const vaTime=procs.reduce((s,p)=>s+p.ct,0);
+  const nvaTime=invs.reduce((s,i)=>s+i.days,0);
+  const eff=totalTime>0?Math.round(vaTime/(vaTime+nvaTime*28800)*100):0;
+  const sumY=TL_Y+ROW_H*2+4;
+
+  const sumBg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  sumBg.setAttribute('x',leftX);sumBg.setAttribute('y',sumY);
+  sumBg.setAttribute('width',spanW);sumBg.setAttribute('height',20);
+  sumBg.setAttribute('fill',eff<10?'#fbebeb':eff<30?'#faeeda':'#e0f4ec');sumBg.setAttribute('rx','2');
+  L.appendChild(sumBg);
+
+  // mini progress bar
+  const vaFrac=Math.max(0.02,Math.min(0.98,vaTime/(vaTime+nvaTime*28800||1)));
+  const vaBar2=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  vaBar2.setAttribute('x',leftX+2);vaBar2.setAttribute('y',sumY+2);
+  vaBar2.setAttribute('width',(spanW-4)*vaFrac);vaBar2.setAttribute('height',16);
+  vaBar2.setAttribute('fill','#1d9e75');vaBar2.setAttribute('rx','2');vaBar2.setAttribute('opacity','0.35');
+  L.appendChild(vaBar2);
+
+  const sumT=document.createElementNS('http://www.w3.org/2000/svg','text');
+  sumT.setAttribute('x',leftX+spanW/2);sumT.setAttribute('y',sumY+10);
+  sumT.setAttribute('text-anchor','middle');sumT.setAttribute('dominant-baseline','central');
+  sumT.setAttribute('font-size','8');sumT.setAttribute('font-weight','700');
+  sumT.setAttribute('font-family','Arial,sans-serif');
+  sumT.setAttribute('fill',eff<10?'#a02d2d':eff<30?'#b87316':'#0c6b4e');
+  sumT.textContent=`VA: ${fmtT(vaTime)}  |  NVA: ${nvaTime}дн  |  Ефективність: ${eff}%${tk?' | Takt:'+tk+'s':''}`;
+  L.appendChild(sumT);
+
+  // Takt line over VA bars
+  if(tk){
+    // draw takt threshold indicator
+    procs.forEach(p=>{
+      if(p.ct>tk){
+        const over=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        over.setAttribute('x',p.x);over.setAttribute('y',TL_Y+2);
+        over.setAttribute('width',150);over.setAttribute('height',ROW_H-4);
+        over.setAttribute('fill','none');over.setAttribute('stroke','#f59e0b');
+        over.setAttribute('stroke-width','1.5');over.setAttribute('rx','2');
+        L.appendChild(over);
+      }
+    });
+  }
+}
+
+/* ══════════════════════════════════════
+   FUTURE STATE OVERLAY
+══════════════════════════════════════ */
+function toggleFS(){
+  fsMode=!fsMode;
+  const btn=document.getElementById('bfs');
+  btn.classList.toggle('on',fsMode);
+  btn.textContent=fsMode?'◈ Current State':'◈ Future State';
+  // show/hide FS panel info
+  renderAll();
+  toast(fsMode?'Future State режим — редагуйте карту майбутнього стану':'Повернуто до Current State');
+}
+
+function renderFSLayer(){
+  const L=document.getElementById('fsl');
+  if(!L){return}
+  L.innerHTML='';
+  if(!fsMode)return;
+
+  // Overlay label top-left
+  const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+  // Get world bounds
+  const allEls=ELS.filter(e=>!e._hid);
+  if(!allEls.length)return;
+  const leftX=Math.min(...allEls.map(e=>e.x))-10;
+  const topY=Math.min(...allEls.map(e=>e.y))-36;
+
+  const badge=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  badge.setAttribute('x',leftX);badge.setAttribute('y',topY);
+  badge.setAttribute('width',160);badge.setAttribute('height',24);
+  badge.setAttribute('rx','4');badge.setAttribute('fill','#1d9e75');badge.setAttribute('opacity','0.9');
+  L.appendChild(badge);
+
+  lbl.setAttribute('x',leftX+8);lbl.setAttribute('y',topY+12);
+  lbl.setAttribute('dominant-baseline','central');
+  lbl.setAttribute('font-size','11');lbl.setAttribute('font-weight','700');
+  lbl.setAttribute('font-family','Arial,sans-serif');lbl.setAttribute('fill','#fff');
+  lbl.textContent='◈ FUTURE STATE';
+  L.appendChild(lbl);
+
+  // Green tint overlay on whole canvas
+  const overlay=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  const minX=leftX-20,minY=topY-20;
+  const maxX=Math.max(...allEls.map(e=>{const b=bb(e);return e.x+b.w}))+20;
+  const maxY=Math.max(...allEls.map(e=>{const b=bb(e);return e.y+b.h}))+80;
+  overlay.setAttribute('x',minX);overlay.setAttribute('y',minY);
+  overlay.setAttribute('width',maxX-minX);overlay.setAttribute('height',maxY-minY);
+  overlay.setAttribute('fill','rgba(29,158,117,0.04)');
+  overlay.setAttribute('stroke','#1d9e75');overlay.setAttribute('stroke-width','2');
+  overlay.setAttribute('stroke-dasharray','12 6');overlay.setAttribute('rx','6');
+  L.insertBefore(overlay, L.firstChild);
+
+  // Compare metrics: show delta if FS changes exist
+  renderFSDelta(L, leftX+170, topY);
+}
+
+function renderFSDelta(L, x, y){
+  // Calculate delta between current and FS stored metrics
+  const fsMeta=FS_ELS.length?FS_ELS:null;
+  if(!fsMeta)return;
+  const fsProcs=FS_ELS.filter(e=>e.type==='process');
+  const fsInvs=FS_ELS.filter(e=>e.type==='inventory'||e.type==='supermarket');
+  const curProcs=getProcs(); const curInvs=getInvs();
+  const curVAT=curProcs.reduce((s,p)=>s+p.ct,0);
+  const fsVAT=fsProcs.reduce((s,p)=>s+p.ct,0);
+  const curLT=curInvs.reduce((s,i)=>s+i.days,0);
+  const fsLT=fsInvs.reduce((s,i)=>s+i.days,0);
+  const deltaVAT=fsVAT-curVAT;
+  const deltaLT=fsLT-curLT;
+
+  const rows=[
+    {lbl:'VA Time',cur:fmtT(curVAT),fs:fmtT(fsVAT),delta:deltaVAT,unit:'s'},
+    {lbl:'Запаси',cur:curLT+'дн',fs:fsLT+'дн',delta:deltaLT,unit:'дн'},
+  ];
+  rows.forEach((r,i)=>{
+    const col=r.delta<0?'#1d9e75':r.delta>0?'#e24b4a':'#666';
+    const sign=r.delta<0?'▼':r.delta>0?'▲':'';
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x);t.setAttribute('y',y+12+i*14);
+    t.setAttribute('dominant-baseline','central');t.setAttribute('font-size','9');
+    t.setAttribute('font-family','Arial,sans-serif');t.setAttribute('fill',col);t.setAttribute('font-weight','600');
+    t.textContent=`${r.lbl}: ${r.cur}→${r.fs} ${sign}${Math.abs(r.delta)}${r.unit}`;
+    L.appendChild(t);
+  });
+}
+
+/* ══════════════════════════════════════
+   GOOGLE SHEETS INTEGRATION
+══════════════════════════════════════ */
+function saveToSheets(){
+  // Check if GAS URL is configured
+  const url=localStorage.getItem('vsm_gas_url')||'';
+  if(!url){
+    showSheetsSetup();return;
+  }
+  const state=getState();
+  const btn=document.querySelector('[onclick="saveToSheets()"]');
+  if(btn){btn.textContent='📊 Збереження…';btn.disabled=true}
+  fetch(url,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'save',data:state})
+  }).then(()=>{
+    toast('Збережено в Google Sheets','ok');
+    if(btn){btn.textContent='📊 Sheets';btn.disabled=false}
+  }).catch(err=>{
+    toast('Помилка: '+err.message,'err');
+    if(btn){btn.textContent='📊 Sheets';btn.disabled=false}
+  });
+}
+
+function loadFromSheets(){
+  const url=localStorage.getItem('vsm_gas_url')||'';
+  if(!url){showSheetsSetup();return}
+  fetch(url+'?action=load').then(r=>r.json()).then(d=>{
+    if(d&&d.data)loadState(d.data);
+    toast('Завантажено з Google Sheets','ok');
+  }).catch(err=>toast('Помилка: '+err.message,'err'));
+}
+
+function showSheetsSetup(){
+  omod(`<div class="modt">📊 Google Sheets інтеграція</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+      Для збереження в Google Sheets потрібен Google Apps Script веб-застосунок.<br>
+      Скрипт створює таблицю де зберігаються всі карти.
+    </p>
+    <div class="pg"><div class="pl">URL вашого Apps Script</div>
+      <input class="pi" type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec"
+        value="${localStorage.getItem('vsm_gas_url')||''}">
+    </div>
+    <details style="margin-bottom:12px">
+      <summary style="font-size:11px;color:var(--accent);cursor:pointer;margin-bottom:6px">Як створити Apps Script →</summary>
+      <div style="font-size:10px;color:var(--text2);line-height:1.7;background:var(--bg3);padding:8px;border-radius:4px">
+        1. Відкрий <b>script.google.com</b> → Новий проєкт<br>
+        2. Вставте код (кнопка нижче скопіює в буфер)<br>
+        3. Розгорни як веб-застосунок: Виконувати як → Я, Доступ → Всі<br>
+        4. Скопіюй URL та вставте вище
+      </div>
+    </details>
+    <button class="mbtn" onclick="copyGASCode()" style="margin-bottom:8px;width:100%">📋 Скопіювати код Apps Script</button>
+    <div class="modbts">
+      <button class="mbtn" onclick="cmod()">Скасувати</button>
+      <button class="mbtn" style="background:var(--accent);color:#fff" onclick="
+        const u=document.getElementById('gasUrl').value.trim();
+        if(u){localStorage.setItem('vsm_gas_url',u);cmod();saveToSheets()}
+        else alert('Введіть URL')">Зберегти і підключити</button>
+    </div>`);
+}
+
+function copyGASCode(){
+  const code=`// VSM Constructor — Google Apps Script Backend
+// Розгорни як веб-застосунок (виконувати як: Я, доступ: Всі)
+const SHEET_NAME = 'VSM Maps';
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.action === 'save') {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheet = ss.getSheetByName(SHEET_NAME);
+      if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+      const name = payload.data.name || 'VSM';
+      const ts = new Date().toISOString();
+      const json = JSON.stringify(payload.data);
+      // Find existing row or append
+      const data = sheet.getDataRange().getValues();
+      let found = -1;
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0] === name) { found = i + 1; break; }
+      }
+      if (found > 0) {
+        sheet.getRange(found, 1, 1, 3).setValues([[name, ts, json]]);
+      } else {
+        sheet.appendRow([name, ts, json]);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ok:true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error:err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  const action = e.parameter.action;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return ContentService.createTextOutput(JSON.stringify({maps:[]}))
+    .setMimeType(ContentService.MimeType.JSON);
+  if (action === 'list') {
+    const data = sheet.getDataRange().getValues().slice(1);
+    const maps = data.map(r => ({name:r[0], ts:r[1]}));
+    return ContentService.createTextOutput(JSON.stringify({maps}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (action === 'load') {
+    const name = e.parameter.name;
+    const data = sheet.getDataRange().getValues().slice(1);
+    const row = data.find(r => r[0] === name);
+    if (row) {
+      return ContentService.createTextOutput(JSON.stringify({data:JSON.parse(row[2])}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({error:'not found'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+  navigator.clipboard.writeText(code).then(()=>toast('Код скопійовано в буфер','ok'))
+    .catch(()=>toast('Не вдалось скопіювати — відкрийте консоль','err'));
 }
 
 function renderEls(){
@@ -1264,9 +1666,10 @@ function updTL(){
 /* ══════════════════════════════════════
    SAVE / LOAD
 ══════════════════════════════════════ */
-function getState(){return{v:3,name:document.getElementById('mapName').value,ts:Date.now(),ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS}}
+function getState(){return{v:4,name:document.getElementById('mapName').value,ts:Date.now(),ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS,FS_ELS,FS_CONNS}}
 function loadState(s){
   ELS=s.ELS||[];CONNS=s.CONNS||[];GROUPS=s.GROUPS||[];
+  FS_ELS=s.FS_ELS||[];FS_CONNS=s.FS_CONNS||[];
   GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
   document.getElementById('mapName').value=s.name||'VSM';
   IDC=Math.max(ELS.length,GROUPS.length)+10;selId=null;selGid=null;renderAll();showProps();
@@ -1369,15 +1772,19 @@ function showSettings(){
     <div class="akr"><input class="aki" type="password" id="sk" placeholder="sk-ant-…" value="${localStorage.getItem('vsm_api_key')||''}">
     <button class="aks" onclick="localStorage.setItem('vsm_api_key',document.getElementById('sk').value);toast('Збережено','ok')">✓</button></div>
     <p class="ah">Зберігається тільки у вашому браузері.</p></div>
-    <div class="pg"><div class="pl">Про застосунок</div><p style="font-size:11px;color:var(--text2);line-height:1.8">VSM Constructor v1.4 · BPI Group<br>
+    <div class="pg"><div class="pl">Google Sheets Apps Script URL</div>
+    <div class="akr"><input class="aki" type="url" id="gsu" placeholder="https://script.google.com/macros/s/…/exec" value="${localStorage.getItem('vsm_gas_url')||''}">
+    <button class="aks" onclick="localStorage.setItem('vsm_gas_url',document.getElementById('gsu').value);toast('Збережено','ok')">✓</button></div>
+    <button class="mbtn" onclick="copyGASCode();cmod()" style="width:100%;margin-top:4px">📋 Скопіювати код Apps Script</button></div>
+    <div class="pg"><div class="pl">Клавіші</div><p style="font-size:10px;color:var(--text2);line-height:1.8">
     <b>V</b> вибір · <b>C</b> з'єднати · <b>G</b> група · <b>F</b> вписати<br>
-    <b>Ctrl+Z/Y</b> undo/redo · <b>Ctrl+C/V</b> копія/вставка<br>
-    <b>Ctrl+D</b> дублювати · <b>Ctrl+S</b> зберегти<br>
-    <b>Scroll</b> масштаб · <b>Space+drag</b> переміщення<br>
-    <b>Del</b> видалити · клік на стрілку — редагувати</p></div>
+    <b>Ctrl+Z/Y</b> undo/redo · <b>Ctrl+C/V/D</b> копія/вставка/дублювання<br>
+    <b>Scroll</b> масштаб · <b>Space+drag</b> переміщення · <b>Del</b> видалити<br>
+    <b>Timeline</b> — кнопка ⏱ · <b>Future State</b> — кнопка ◈</p></div>
+    <div class="pg"><div class="pl">Версія</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.5 · BPI Group · LEI/Toyota Standard</p></div>
     <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
 }
-function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];selId=null;selGid=null;renderAll();showProps()}
+function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];FS_ELS=[];FS_CONNS=[];selId=null;selGid=null;renderAll();showProps()}
 function omod(h){document.getElementById('mod').innerHTML=h;document.getElementById('movbg').style.display='flex'}
 function cmod(){document.getElementById('movbg').style.display='none'}
 function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
