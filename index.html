@@ -483,9 +483,9 @@ function exportSVG(){
   const svgStr=`<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${minX} ${minY} ${W} ${H}">
   <rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="#f4f3f0"/>
-  <style>text{font-family:Arial,sans-serif}</style>
+  <style>text{font-family:Arial,sans-serif}<\/style>
   ${clone.innerHTML}
-</svg>`;
+<\/svg>`;
   const a=document.createElement('a');
   const name=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');
   a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
@@ -507,9 +507,9 @@ function exportPNG(){
 
   const svgStr=`<svg xmlns="http://www.w3.org/2000/svg" width="${W*sc}" height="${H*sc}" viewBox="${minX} ${minY} ${W} ${H}">
     <rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="#f4f3f0"/>
-    <style>text{font-family:Arial,sans-serif}</style>
+    <style>text{font-family:Arial,sans-serif}<\/style>
     ${clone.innerHTML}
-  </svg>`;
+  <\/svg>`;
 
   const img=new Image();
   const blob=new Blob([svgStr],{type:'image/svg+xml'});
@@ -1076,7 +1076,7 @@ function showConnModal(from,to){
           o.k==='pull'?`<line x1="0" y1="6" x2="30" y2="6" stroke="${CC[o.k].c}" stroke-width="2.5" stroke-dasharray="7 3"/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`:
           (o.k==='info'||o.k==='info-e')?`<path d="M0 6 Q19 1 38 6" fill="none" stroke="${CC[o.k].c}" stroke-width="2"${o.k==='info-e'?' stroke-dasharray="5 2"':''}/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`:
           `<line x1="0" y1="6" x2="30" y2="6" stroke="${CC[o.k].c}" stroke-width="2.5"/><polygon points="30,2 38,6 30,10" fill="${CC[o.k].c}"/>`}
-      </svg>
+      <\/svg>
       <div><div class="modot">${o.lbl}</div><div class="modos">${o.sub}</div></div>
     </div>`).join('')}
     </div><div class="modbts"><button class="mbtn" onclick="cmod()">Скасувати</button></div>`);
@@ -1239,7 +1239,7 @@ function updMetrics(){
         <text x="${bx+barW/2}" y="${by-4}" text-anchor="middle" font-size="8" fill="${col}" font-family="Arial,sans-serif" font-weight="600">${proc.ct}s</text>
         <text x="${bx+barW/2}" y="${chartH+14}" text-anchor="middle" font-size="8" fill="#666" font-family="Arial,sans-serif">${lbl}</text>`;
       }).join('')}
-    </svg></div>`:'';
+    <\/svg></div>`:'';
 
   document.getElementById('mc').innerHTML=
     `<div class="mc"><div class="ml">VA Time</div><div class="mv">${fmtT(vat)}</div><div class="ms">${p.length} процес(ів)</div></div>
