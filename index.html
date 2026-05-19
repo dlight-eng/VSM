@@ -179,6 +179,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
   <button class="hbtn" onclick="exportSVG()" title="Експорт SVG">SVG</button>
   <button class="hbtn" onclick="exportPNG()" title="Експорт PNG">PNG</button>
+  <button class="hbtn" onclick="exportPDF()" title="PDF звіт">PDF</button>
   <button class="hbtn" onclick="document.getElementById('impF').click()">↙ Імпорт</button>
   <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
   <div class="hsep"></div>
@@ -284,6 +285,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
       <g id="tll"></g><!-- timeline layer -->
       <g id="fsl"></g><!-- future state layer -->
       <g id="snapl"></g><!-- snap guides -->
+      <rect id="marq" style="display:none" fill="rgba(26,95,168,.08)" stroke="#1a5fa8" stroke-width="1" stroke-dasharray="4 2"/>
       <!-- temp connection line -->
       <line id="tl" style="display:none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ai)"/>
       <!-- group draw rect -->
@@ -378,6 +380,11 @@ let FS_ELS=[], FS_CONNS=[];
 /* Kanban & Operators */
 let showKanban=false;   // show kanban card counts on pull arrows
 let showOpsCalc=false;  // show operator need delta on process boxes
+
+/* Multiselect */
+let selIds=new Set();       // multi-selected element ids
+let marqStart=null;         // marquee start world coords
+let marqActive=false;       // marquee drag active
 
 /* Sticky editing */
 let editingStickyId=null;
@@ -1406,6 +1413,179 @@ function printMap(){
     setTimeout(()=>{vx=prevVx;vy=prevVy;vz=prevVz;applyVP()},500);
   },200);
 }
+
+/* ══════════════════════════════════════
+   MULTISELECT PROPS & ALIGNMENT
+══════════════════════════════════════ */
+function showMultiSelProps(){
+  rtab('p');
+  const ns=document.getElementById('nosel'),f=document.getElementById('pf');
+  ns.style.display='none';f.style.display='';
+  const els=[...selIds].map(id=>ELS.find(e=>e.id===id)).filter(Boolean);
+  f.innerHTML=`
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">ВИДІЛЕНО ${els.length} ЕЛЕМЕНТІВ</div>
+    <div class="mc" style="margin-bottom:8px">
+      <div class="ml">Типи</div>
+      <div style="font-size:11px;margin-top:3px">${[...new Set(els.map(e=>e.type))].join(', ')}</div>
+    </div>
+    <div class="sh" style="border-top:none;padding-top:0">Вирівнювання</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('left')">⇤ По лівому краю</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('right')">⇥ По правому</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('top')">⇡ По верхньому</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('bottom')">⇣ По нижньому</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('centerH')">↔ По центру H</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="alignEls('centerV')">↕ По центру V</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="distributeEls('h')">⇔ Розподілити H</button>
+      <button class="abtn" style="margin:0;font-size:10px;padding:6px" onclick="distributeEls('v')">⇕ Розподілити V</button>
+    </div>
+    <button class="delbtn" onclick="delMultiSel()">✕ Видалити всі вибрані</button>`;
+}
+
+function alignEls(dir){
+  const els=[...selIds].map(id=>ELS.find(e=>e.id===id)).filter(Boolean);
+  if(els.length<2)return;snapshot();
+  const xs=els.map(e=>e.x),ys=els.map(e=>e.y);
+  const x2s=els.map(e=>e.x+bb(e).w),y2s=els.map(e=>e.y+bb(e).h);
+  const minX=Math.min(...xs),minY=Math.min(...ys);
+  const maxX=Math.max(...x2s),maxY=Math.max(...y2s);
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+  els.forEach(el=>{
+    const b=bb(el);
+    if(dir==='left')   el.x=minX;
+    if(dir==='right')  el.x=maxX-b.w;
+    if(dir==='top')    el.y=minY;
+    if(dir==='bottom') el.y=maxY-b.h;
+    if(dir==='centerH')el.x=Math.round(cx-b.w/2);
+    if(dir==='centerV')el.y=Math.round(cy-b.h/2);
+    el.x=snap(el.x);el.y=snap(el.y);
+  });
+  renderAll();showMultiSelProps();toast('Вирівняно','ok');
+}
+
+function distributeEls(axis){
+  const els=[...selIds].map(id=>ELS.find(e=>e.id===id)).filter(Boolean);
+  if(els.length<3)return;snapshot();
+  if(axis==='h'){
+    const sorted=els.slice().sort((a,b)=>a.x-b.x);
+    const first=sorted[0],last=sorted[sorted.length-1];
+    const totalW=sorted.reduce((s,e)=>s+bb(e).w,0);
+    const gap=(last.x+bb(last).w-first.x-totalW)/(sorted.length-1);
+    let cx=first.x+bb(first).w+gap;
+    sorted.slice(1,-1).forEach(el=>{el.x=snap(cx);cx+=bb(el).w+gap;});
+  } else {
+    const sorted=els.slice().sort((a,b)=>a.y-b.y);
+    const first=sorted[0],last=sorted[sorted.length-1];
+    const totalH=sorted.reduce((s,e)=>s+bb(e).h,0);
+    const gap=(last.y+bb(last).h-first.y-totalH)/(sorted.length-1);
+    let cy=first.y+bb(first).h+gap;
+    sorted.slice(1,-1).forEach(el=>{el.y=snap(cy);cy+=bb(el).h+gap;});
+  }
+  renderAll();showMultiSelProps();toast('Розподілено','ok');
+}
+
+function delMultiSel(){
+  snapshot();
+  const ids=[...selIds];
+  ELS=ELS.filter(e=>!ids.includes(e.id));
+  CONNS=CONNS.filter(c=>!ids.includes(c.from)&&!ids.includes(c.to));
+  selIds.clear();selId=null;renderAll();showProps();
+}
+
+/* ══════════════════════════════════════
+   PDF REPORT EXPORT
+══════════════════════════════════════ */
+async function exportPDF(){
+  const name=document.getElementById('mapName').value.trim()||'VSM';
+  const date=new Date().toLocaleDateString('uk-UA',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Capture map SVG
+  const all2=[...ELS.filter(e=>!e._hid).map(e=>{const b_=bb(e);return{x1:e.x,y1:e.y,x2:e.x+b_.w,y2:e.y+b_.h}}),
+    ...GROUPS.map(g=>({x1:g.x,y1:g.y,x2:g.x+(g.collapsed?170:g.w),y2:g.y+(g.collapsed?78:g.h)}))];
+  const pad2=40;
+  const minX2=all2.length?Math.min(...all2.map(r=>r.x1))-pad2:0;
+  const minY2=all2.length?Math.min(...all2.map(r=>r.y1))-pad2:0;
+  const maxX2=all2.length?Math.max(...all2.map(r=>r.x2))+pad2:600;
+  const maxY2=all2.length?Math.max(...all2.map(r=>r.y2))+pad2:400;
+  const W2=maxX2-minX2,H2=maxY2-minY2;
+
+  const world=document.getElementById('world');
+  const clone=world.cloneNode(true);
+  ['snapl','dr','tl','marq'].forEach(id=>{const el=clone.querySelector('#'+id);if(el)el.remove()});
+
+  const mapSVG=`<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="${minX2} ${minY2} ${W2} ${H2}" style="max-height:260px">
+    <rect x="${minX2}" y="${minY2}" width="${W2}" height="${H2}" fill="#f4f3f0"/>
+    <style>text{font-family:Arial,sans-serif}<\/style>
+    ${clone.innerHTML}
+  <\/svg>`;
+
+  // Metrics
+  const procs2=getProcs(),invs2=getInvs(),tk2=getTakt();
+  const vat2=procs2.reduce((s,p)=>s+p.ct,0);
+  const invd2=invs2.reduce((s,i)=>s+i.days,0);
+  const eff2=vat2>0?Math.round(vat2/(vat2+invd2*28800)*100):0;
+  const bn2=procs2.reduce((b,p)=>(!b||p.ct>b.ct)?p:b,null);
+
+  // FS comparison
+  let fsHTML='';
+  if(FS_ELS.length){
+    const fp=FS_ELS.filter(e=>e.type==='process');
+    const fi=FS_ELS.filter(e=>e.type==='inventory'||e.type==='supermarket');
+    const fvat=fp.reduce((s,p)=>s+p.ct,0);
+    const finvd=fi.reduce((s,i)=>s+i.days,0);
+    const feff=fvat>0?Math.round(fvat/(fvat+finvd*28800)*100):0;
+    const dEff=feff-eff2,dNVA=finvd-invd2,dVAT=fvat-vat2;
+    fsHTML=`<h2 style="margin:24px 0 10px;font-size:14px;color:#1a5fa8;border-bottom:1px solid #ddd;padding-bottom:4px">◈ Current State → Future State</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f0f4fb"><th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Показник</th><th style="padding:6px 8px;border:1px solid #ddd">Current State</th><th style="padding:6px 8px;border:1px solid #ddd">Future State</th><th style="padding:6px 8px;border:1px solid #ddd">Дельта</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:6px 8px;border:1px solid #ddd">VA Time</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${fmtT(vat2)}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${fmtT(fvat)}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center;color:${dVAT<0?'#0c6b4e':'#a02d2d'};font-weight:700">${dVAT>0?'+':''}${dVAT}s</td></tr>
+        <tr style="background:#fafafa"><td style="padding:6px 8px;border:1px solid #ddd">Запаси (NVA)</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${invd2} дн</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${finvd} дн</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center;color:${dNVA<0?'#0c6b4e':'#a02d2d'};font-weight:700">${dNVA>0?'+':''}${dNVA} дн</td></tr>
+        <tr><td style="padding:6px 8px;border:1px solid #ddd">Ефективність</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${eff2}%</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${feff}%</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:center;color:${dEff>0?'#0c6b4e':'#a02d2d'};font-weight:700">${dEff>0?'+':''}${dEff}%</td></tr>
+      </tbody></table>`;
+  }
+
+  // Process table rows
+  const procRows=procs2.map((p,i)=>`<tr ${i%2?'style="background:#fafafa"':''}>
+    <td style="padding:5px 8px;border:1px solid #ddd">${p.label}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;${isBN(p)?'color:#a02d2d;font-weight:700':''}">${p.ct}s</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center">${p.co}s</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center">${p.uptime}%</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center">${p.operators}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center">${p.shifts}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;${tk2&&p.ct>tk2?'color:#b87316;font-weight:700':'color:#0c6b4e'}">${tk2?p.ct>tk2?'▲ > Takt':'✓ OK':'—'}</td>
+  </tr>`).join('');
+
+  // Stickies
+  const stickies=ELS.filter(e=>e.type==='sticky'&&(e.text||'').trim()&&!e._hid);
+  const stickiesHTML=stickies.length?`<h2 style="margin:24px 0 10px;font-size:14px;color:#1a5fa8;border-bottom:1px solid #ddd;padding-bottom:4px">📝 Нотатки</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${stickies.map(s=>`<div style="background:${s.color||'#fef9c3'};padding:8px;border-radius:4px;font-size:11px;border:1px solid #ddd;white-space:pre-wrap">${(s.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`).join('')}</div>`:'';
+
+  const html=`<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><title>VSM Звіт — ${name}<\/title>
+  <style>body{font-family:Arial,sans-serif;margin:0;padding:20px 24px;color:#181816;font-size:12px}h1{font-size:18px;font-weight:700;margin:0 0 3px}.sub{font-size:11px;color:#666;margin-bottom:16px}.mets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.met{background:#f4f3f0;border-radius:5px;padding:9px 12px;border-left:3px solid #1a5fa8}.ml{font-size:9px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em}.mv{font-size:20px;font-weight:700;margin-top:2px}.ms{font-size:10px;color:#888;margin-top:1px}.mw{background:#f4f3f0;border-radius:5px;padding:10px;margin-bottom:16px}h2{font-size:13px;color:#1a5fa8;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}table{width:100%;border-collapse:collapse;font-size:11px}@media print{@page{margin:10mm;size:A4 portrait}body{padding:0}}<\/style><\/head><body>
+  <h1>${name}</h1><div class="sub">VSM Звіт · BPI Group · ${date}</div>
+  <div class="mets">
+    <div class="met"><div class="ml">VA Time</div><div class="mv">${fmtT(vat2)}</div><div class="ms">${procs2.length} процес(ів)</div></div>
+    <div class="met"><div class="ml">NVA (Запаси)</div><div class="mv">${invd2} дн</div><div class="ms">між процесами</div></div>
+    <div class="met" style="border-left-color:${eff2<10?'#a02d2d':eff2<30?'#b87316':'#0c6b4e'}"><div class="ml">Ефективність</div><div class="mv" style="color:${eff2<10?'#a02d2d':eff2<30?'#b87316':'#0c6b4e'}">${eff2}%</div><div class="ms">${eff2<10?'Критично':eff2<30?'Низька':'Прийнятна'}</div></div>
+    <div class="met" style="border-left-color:${tk2?'#0c6b4e':'#999'}"><div class="ml">Час такту</div><div class="mv">${tk2?tk2+'s':'—'}</div><div class="ms">${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div></div>
+  </div>
+  ${bn2?('<div style="background:#fbebeb;border:1px solid #e24b4a;border-radius:5px;padding:8px 12px;margin-bottom:12px;font-size:11px"><strong style="color:#a02d2d">⚠ Вузьке місце:</strong> '+bn2.label+' — CT='+bn2.ct+'s'+(tk2?' ('+(bn2.ct>tk2?'перевищує такт на '+(bn2.ct-tk2)+'s':'в межах такту')+')':'')+' </div>'):''}
+  <div class="mw"><div style="font-size:9px;font-weight:700;color:#666;text-transform:uppercase;margin-bottom:8px">Карта потоку</div>${mapSVG}</div>
+  <h2>Параметри процесів</h2>
+  <table><thead><tr style="background:#f0f4fb"><th style="text-align:left;padding:5px 8px;border:1px solid #ddd">Процес</th><th style="padding:5px 8px;border:1px solid #ddd">CT</th><th style="padding:5px 8px;border:1px solid #ddd">C/O</th><th style="padding:5px 8px;border:1px solid #ddd">Uptime</th><th style="padding:5px 8px;border:1px solid #ddd">Op</th><th style="padding:5px 8px;border:1px solid #ddd">Зміни</th><th style="padding:5px 8px;border:1px solid #ddd">vs Takt</th></tr></thead><tbody>${procRows}</tbody></table>
+  ${fsHTML}${stickiesHTML}
+  <div style="margin-top:24px;padding-top:10px;border-top:1px solid #eee;font-size:10px;color:#aaa">VSM Constructor v1.8 · BPI Group · ${new Date().toISOString().slice(0,19).replace('T',' ')}</div>
+  </body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,'_blank');
+  if(w)setTimeout(()=>{w.focus();w.print();},900);
+  setTimeout(()=>URL.revokeObjectURL(url),15000);
+  toast('PDF звіт відкрито','ok');
+}
+
 function saveToSheets(){
   // Check if GAS URL is configured
   const url=localStorage.getItem('vsm_gas_url')||'';
@@ -1539,7 +1719,18 @@ function renderEls(){
     G.setAttribute('id','e_'+el.id);
     G.style.cursor=(tool==='connect')?'crosshair':'move';
     const fn=SYM[el.type];
-    if(fn)G.innerHTML=fn(el,selId===el.id);
+    if(fn)G.innerHTML=fn(el,selId===el.id||selIds.has(el.id));
+    // multiselect tint overlay
+    if(selIds.size>1&&selIds.has(el.id)&&selId!==el.id){
+      const b=bb(el);
+      const ov=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      ov.setAttribute('x',el.x-3);ov.setAttribute('y',el.y-3);
+      ov.setAttribute('width',b.w+6);ov.setAttribute('height',b.h+6);
+      ov.setAttribute('rx','5');ov.setAttribute('fill','rgba(26,95,168,.06)');
+      ov.setAttribute('stroke','#1a5fa8');ov.setAttribute('stroke-width','1');
+      ov.setAttribute('stroke-dasharray','4 2');
+      G.appendChild(ov);
+    }
     G.addEventListener('mousedown',e=>elMD(e,el.id));
     L.appendChild(G);
   });
@@ -1565,13 +1756,15 @@ function renderGroups(){
 
 function renderGroupExpanded(G,g,cfg,isSel){
   const{x,y,w,h}=g, H=22;
+  const isHov=_hovGrpId===g.id;
   G.innerHTML=`
+    ${isHov?`<rect x="${x-4}" y="${y-4}" width="${w+8}" height="${h+8}" rx="7" fill="${cfg.hf}" stroke="${cfg.stroke}" stroke-width="2.5" opacity="0.6"/>`:``}
     ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:``}
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${cfg.fill}" stroke="${cfg.stroke}" stroke-width="1.5" stroke-dasharray="8 5"/>
     <rect x="${x}" y="${y}" width="${w}" height="${H}" rx="4" fill="${cfg.hf}"/>
     <rect x="${x}" y="${y+H-5}" width="${w}" height="5" fill="${cfg.hf}"/>
     <text x="${x+28}" y="${y+11}" dominant-baseline="central" font-size="10" fill="${cfg.ht}" font-family="Arial,sans-serif" font-weight="700">${g.label}</text>
-    <text x="${x+w-5}" y="${y+11}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${grpChildProcs(g).length} оп.</text>
+    <text x="${x+w-5}" y="${y+11}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${grpChildProcs(g).length} оп. · ${g.mode==='parallel'?'‖ пар.':'→ посл.'}</text>
     <!-- collapse btn -->
     <rect x="${x+3}" y="${y+5}" width="18" height="13" rx="3" fill="${cfg.stroke}" style="cursor:pointer" onclick="toggleGrp('${g.id}')"/>
     <text x="${x+12}" y="${y+11}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700" style="cursor:pointer;pointer-events:none">▼</text>
@@ -1584,24 +1777,27 @@ function renderGroupExpanded(G,g,cfg,isSel){
 }
 
 function renderGroupCollapsed(G,g,cfg,isSel){
-  const x=g.x,y=g.y,w=170,h=78;
+  const x=g.x,y=g.y,w=180,h=82;
   const procs=grpChildProcs(g);
-  const sumCT=procs.reduce((s,p)=>s+p.ct,0);
-  const sumOp=procs.reduce((s,p)=>s+(p.operators||0),0);
+  const effCT=grpEffCT(g);
+  const effOps=grpEffOps(g);
+  const tk=getTakt();
+  const ctColor=tk&&effCT>tk?'#a02d2d':tk&&effCT<=tk?'#0c6b4e':'#111';
   G.innerHTML=`
     ${isSel?`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7" fill="none" stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="5 3"/>`:``}
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${cfg.hf}" stroke="${cfg.stroke}" stroke-width="2"/>
     <rect x="${x}" y="${y}" width="${w}" height="20" rx="3" fill="${cfg.hf}"/>
     <rect x="${x}" y="${y+15}" width="${w}" height="5" fill="${cfg.hf}"/>
     <text x="${x+26}" y="${y+10}" dominant-baseline="central" font-size="10" fill="${cfg.ht}" font-family="Arial,sans-serif" font-weight="700">${g.label}</text>
-    <text x="${x+w-5}" y="${y+10}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${procs.length} оп.</text>
+    <text x="${x+w-5}" y="${y+10}" text-anchor="end" dominant-baseline="central" font-size="8" fill="${cfg.ht}" font-family="Arial,sans-serif">${g.mode==='parallel'?'‖ паралельно':'→ послідовно'}</text>
     <line x1="${x}" y1="${y+20}" x2="${x+w}" y2="${y+20}" stroke="${cfg.stroke}" stroke-width="1.5"/>
-    <line x1="${x+w/2}" y1="${y+20}" x2="${x+w/2}" y2="${y+62}" stroke="${cfg.stroke}" stroke-width="1" stroke-dasharray="3 2"/>
-    <text x="${x+5}" y="${y+32}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">ΣCT: <tspan font-weight="700">${sumCT}s</tspan></text>
-    <text x="${x+5}" y="${y+45}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${sumOp}</tspan></text>
-    <text x="${x+w/2+5}" y="${y+32}" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">${procs.length} процес(ів)</text>
-    <line x1="${x}" y1="${y+62}" x2="${x+w}" y2="${y+62}" stroke="${cfg.stroke}" stroke-width="1"/>
-    <text x="${x+w/2}" y="${y+70}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#888" font-family="Arial,sans-serif">згорнуто</text>
+    <line x1="${x+w/2}" y1="${y+20}" x2="${x+w/2}" y2="${y+65}" stroke="${cfg.stroke}" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="${x+6}" y="${y+33}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">CT ефект.: <tspan font-weight="700" fill="${ctColor}">${effCT}s</tspan></text>
+    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op ефект.: <tspan font-weight="700">${effOps}</tspan></text>
+    <text x="${x+w/2+6}" y="${y+33}" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">${procs.length} процес(ів)</text>
+    ${tk?`<text x="${x+w/2+6}" y="${y+46}" dominant-baseline="central" font-size="8" font-weight="700" fill="${ctColor}" font-family="Arial,sans-serif">${effCT>tk?'▲ CT > Takt':'✓ CT ≤ Takt'}</text>`:''}
+    <line x1="${x}" y1="${y+65}" x2="${x+w}" y2="${y+65}" stroke="${cfg.stroke}" stroke-width="1"/>
+    <text x="${x+w/2}" y="${y+74}" text-anchor="middle" dominant-baseline="central" font-size="7.5" fill="#888" font-family="Arial,sans-serif">згорнуто · ${procs.map(p=>p.label).join(', ').slice(0,28)}</text>
     <!-- expand btn -->
     <rect x="${x+3}" y="${y+4}" width="18" height="13" rx="3" fill="${cfg.stroke}" style="cursor:pointer" onclick="toggleGrp('${g.id}')"/>
     <text x="${x+12}" y="${y+10}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700" style="cursor:pointer;pointer-events:none">▶</text>
@@ -1707,19 +1903,53 @@ function renderConns(){
 }
 
 /* ══════════════════════════════════════
-   GROUP HELPERS
+   GROUP HELPERS — PARENT-CHILD BINDING
 ══════════════════════════════════════ */
+
+/* Returns all ELS whose center is inside group bbox */
+function elInsideGrp(g){
+  if(g.collapsed) return (g.childIds||[]).map(id=>ELS.find(e=>e.id===id)).filter(Boolean);
+  return ELS.filter(el=>{
+    if(el._hid) return false;
+    const c=ctr(el);
+    return c.x>g.x&&c.x<g.x+g.w&&c.y>g.y&&c.y<g.y+g.h;
+  });
+}
+
+/* Sync childIds from current spatial containment */
+function syncGrpChildren(){
+  GROUPS.forEach(g=>{
+    if(!g.collapsed){
+      g.childIds=elInsideGrp(g).map(e=>e.id);
+    }
+  });
+}
+
 function grpChildProcs(g){
-  if(g.collapsed) return (g.childIds||[]).map(id=>ELS.find(e=>e.id===id)).filter(e=>e&&e.type==='process');
-  return ELS.filter(el=>{if(el.type!=='process')return false;const c=ctr(el);return c.x>=g.x&&c.x<=g.x+g.w&&c.y>=g.y&&c.y<=g.y+g.h});
+  return elInsideGrp(g).filter(e=>e.type==='process');
+}
+
+/* Effective CT of a group based on mode */
+function grpEffCT(g){
+  const procs=grpChildProcs(g);
+  if(!procs.length) return 0;
+  if(g.mode==='parallel') return Math.max(...procs.map(p=>p.ct));
+  if(g.mode==='sequential') return procs.reduce((s,p)=>s+p.ct,0);
+  return procs.reduce((s,p)=>s+p.ct,0); // default sequential
+}
+
+/* Effective operators: override if set, else sum */
+function grpEffOps(g){
+  if(g.operators!=null&&g.operators!=='') return +g.operators;
+  return grpChildProcs(g).reduce((s,p)=>s+(p.operators||0),0);
 }
 
 function resolveCenter(elId){
   const el=ELS.find(e=>e.id===elId);
-  if(!el)return null;
+  if(!el) return null;
   if(el._hid){
     const g=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(elId));
-    if(g){return{x:g.x+85,y:g.y+39}}
+    if(g) return{x:g.x+85,y:g.y+39};
   }
   return ctr(el);
 }
@@ -1728,8 +1958,8 @@ function toggleGrp(id){
   const g=GROUPS.find(x=>x.id===id);if(!g)return;
   snapshot();
   if(!g.collapsed){
-    // collapse: find all elements whose center is inside
-    g.childIds=ELS.filter(el=>{const c=ctr(el);return c.x>=g.x&&c.x<=g.x+g.w&&c.y>=g.y&&c.y<=g.y+g.h}).map(e=>e.id);
+    syncGrpChildren();
+    g.childIds=(g.childIds||[]);
     g.childIds.forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true});
     g.collapsed=true;
   } else {
@@ -1737,7 +1967,48 @@ function toggleGrp(id){
     g.collapsed=false;
   }
   renderAll();
-  if(selGid===id)showGrpProps();
+  if(selGid===id) showGrpProps();
+}
+
+/* Move group AND all children together */
+function moveGrpAndChildren(g, newX, newY){
+  const dx=newX-g.x, dy=newY-g.y;
+  // Move all children spatially
+  (g.childIds||[]).forEach(cid=>{
+    const el=ELS.find(e=>e.id===cid);
+    if(el){el.x+=dx;el.y+=dy;}
+  });
+  g.x=newX;g.y=newY;
+}
+
+/* After element drag: re-attach to group if overlapping, or detach */
+function reAttachEl(elId){
+  const el=ELS.find(e=>e.id===elId);if(!el)return;
+  const c=ctr(el);
+  // Find deepest (smallest area) non-collapsed group that contains center
+  const candidates=GROUPS.filter(g=>!g.collapsed&&c.x>g.x&&c.x<g.x+g.w&&c.y>g.y&&c.y<g.y+g.h);
+  candidates.sort((a,b)=>(a.w*a.h)-(b.w*b.h));
+  // Update all groups childIds
+  GROUPS.forEach(g=>{
+    if(!g.collapsed){
+      syncGrpChildren();
+    }
+  });
+}
+
+/* Highlight group under dragged element */
+let _hovGrpId=null;
+function highlightDropTarget(worldX, worldY){
+  const candidates=GROUPS.filter(g=>!g.collapsed&&worldX>g.x&&worldX<g.x+g.w&&worldY>g.y&&worldY<g.y+g.h);
+  candidates.sort((a,b)=>(a.w*a.h)-(b.w*b.h));
+  const newHov=candidates.length?candidates[0].id:null;
+  if(newHov!==_hovGrpId){_hovGrpId=newHov;return true;}
+  return false;
+}
+
+function renderHoverHighlight(){
+  // Render a glow on the hovered group during drag
+  // Done inside renderGroups via _hovGrpId
 }
 
 /* ══════════════════════════════════════
@@ -1754,6 +2025,8 @@ function onDrop(e){
   const el={id:newId('e'),type,x:snap(x),y:snap(y),...JSON.parse(JSON.stringify(DEFS[type]))};
   snapshot();
   ELS.push(el);renderAll();selectEl(el.id);
+  // Re-sync group memberships after drop
+  syncGrpChildren();
 }
 
 function elMD(e,id){
@@ -1763,6 +2036,24 @@ function elMD(e,id){
     else if(connFrom!==id){showConnModal(connFrom,id);connFrom=null;document.getElementById('tl').style.display='none'}
     return;
   }
+  // Shift+click: toggle in multiselect
+  if(e.shiftKey){
+    if(selIds.has(id))selIds.delete(id);
+    else{selIds.add(id);selId=null;selGid=null;}
+    renderAll();
+    if(selIds.size===1){selId=[...selIds][0];selIds.clear();showProps();}
+    return;
+  }
+  // If clicking already-multiselected item => drag all
+  if(selIds.size>1&&selIds.has(id)){
+    drag='__multi__';
+    const refEl=ELS.find(x=>x.id===id);
+    const{x,y}=svgXY(e);
+    dragOff={x:x-refEl.x,y:y-refEl.y};
+    selIds.forEach(sid=>{const el=ELS.find(x=>x.id===sid);if(el){el._dragX=el.x;el._dragY=el.y;}});
+    return;
+  }
+  selIds.clear();
   selectEl(id);
   drag=id;
   const el=ELS.find(x=>x.id===id);
@@ -1777,6 +2068,13 @@ function gDragMD(e,id){
   const g=GROUPS.find(x=>x.id===id);
   const{x,y}=svgXY(e);
   dragOff={x:x-g.x,y:y-g.y};
+  // Store initial positions of all children
+  syncGrpChildren();
+  (g.childIds||[]).forEach(cid=>{
+    const el=ELS.find(e=>e.id===cid);
+    if(el){el._dragX=el.x;el._dragY=el.y;}
+  });
+  g._dragX=g.x;g._dragY=g.y;
   renderAll();showGrpProps();
 }
 function gResizeMD(e,id){
@@ -1817,11 +2115,17 @@ function cvMD(e){
       snapshot();
       ELS.push(el);renderAll();selectEl(el.id);
       setTool('select');
-      // immediately open edit
       setTimeout(()=>startStickyEdit({stopPropagation:()=>{}},el.id),100);
       return;
     }
-    selId=null;selGid=null;connFrom=null;
+    // Marquee selection (select tool, empty canvas)
+    if(tool==='select'){
+      const{x,y}=svgXY(e);
+      marqStart={x,y};marqActive=false;
+      const m=document.getElementById('marq');
+      m.setAttribute('x',x);m.setAttribute('y',y);m.setAttribute('width',0);m.setAttribute('height',0);
+    }
+    selId=null;selGid=null;selIds.clear();connFrom=null;
     document.getElementById('tl').style.display='none';
     renderAll();showProps();
   }
@@ -1844,22 +2148,53 @@ function cvMM(e){
     const fe=ELS.find(el=>el.id===connFrom);
     if(fe){const c=ctr(fe);const tl=document.getElementById('tl');tl.setAttribute('x1',c.x);tl.setAttribute('y1',c.y);tl.setAttribute('x2',x);tl.setAttribute('y2',y)}
   }
-  if(drag){
+  if(drag==='__multi__'){
+    // Move all selected elements together
+    const{x,y}=svgXY(e);
+    const refEl=ELS.find(x=>selIds.has(x.id));
+    if(!refEl)return;
+    const dx=snap(x-dragOff.x)-refEl._dragX;
+    const dy=snap(y-dragOff.y)-refEl._dragY;
+    selIds.forEach(sid=>{
+      const el=ELS.find(x=>x.id===sid);
+      if(el&&el._dragX!==undefined){el.x=el._dragX+dx;el.y=el._dragY+dy;}
+    });
+    renderAll();return;
+  }
+  // Marquee
+  if(marqStart&&!drag&&!dragG&&!panning&&!drawing&&!connFrom){
+    const{x,y}=svgXY(e);
+    const dx=x-marqStart.x,dy=y-marqStart.y;
+    if(Math.abs(dx)>4||Math.abs(dy)>4){
+      marqActive=true;
+      const m=document.getElementById('marq');m.style.display='';
+      m.setAttribute('x',Math.min(x,marqStart.x));m.setAttribute('y',Math.min(y,marqStart.y));
+      m.setAttribute('width',Math.abs(dx));m.setAttribute('height',Math.abs(dy));
+    }
+  }
+  if(drag&&drag!=='__multi__'){
     const el=ELS.find(el=>el.id===drag);
     if(el){
       const raw={x:x-dragOff.x,y:y-dragOff.y};
       const snapped=snapToElements(el,snap(raw.x),snap(raw.y));
       el.x=snapped.x;el.y=snapped.y;
       renderSnapLines(snapped.lines);
-      renderAll();
+      // Highlight potential parent group
+      const changed=highlightDropTarget(ctr(el).x,ctr(el).y);
+      if(changed)renderGroups();
+      else renderEls();
     }
   }
   if(dragG){
     const g=GROUPS.find(g=>g.id===dragG);
     if(g){
       const nx=snap(x-dragOff.x),ny=snap(y-dragOff.y);
-      const dx=nx-g.x,dy=ny-g.y;
-      if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el){el.x+=dx;el.y+=dy}});
+      const dx=nx-(g._dragX||g.x),dy=ny-(g._dragY||g.y);
+      // Move all bound children with the group
+      (g.childIds||[]).forEach(cid=>{
+        const el=ELS.find(e=>e.id===cid);
+        if(el&&el._dragX!==undefined){el.x=el._dragX+dx;el.y=el._dragY+dy;}
+      });
       g.x=nx;g.y=ny;renderAll();
     }
   }
@@ -1882,14 +2217,53 @@ function cvMU(e){
     const gw=snap(Math.abs(x-drawSt.x)),gh=snap(Math.abs(y-drawSt.y));
     if(gw>80&&gh>40){
       const cfg=GC[gkind]||GC.section;
-      const ng={id:newId('g'),kind:gkind,label:cfg.label,x:gx,y:gy,w:gw,h:gh,collapsed:false,childIds:[]};
+      const ng={id:newId('g'),kind:gkind,label:cfg.label,x:gx,y:gy,w:gw,h:gh,collapsed:false,childIds:[],mode:'sequential',operators:null};
       snapshot();
-      GROUPS.push(ng);selGid=ng.id;selId=null;renderAll();showGrpProps();
+      GROUPS.push(ng);selGid=ng.id;selId=null;
+      syncGrpChildren();renderAll();showGrpProps();
       toast('Групу створено','ok');
     }
     return;
   }
+  if(drag==='__multi__'){
+    // Cleanup drag offsets and snapshot
+    selIds.forEach(sid=>{const el=ELS.find(x=>x.id===sid);if(el){delete el._dragX;delete el._dragY;}});
+    drag=null;renderSnapLines([]);snapshot();return;
+  }
+  // Marquee finalize
+  if(marqActive&&marqStart){
+    const{x,y}=svgXY(e);
+    const rx=Math.min(x,marqStart.x),ry=Math.min(y,marqStart.y);
+    const rw=Math.abs(x-marqStart.x),rh=Math.abs(y-marqStart.y);
+    selIds.clear();selId=null;
+    ELS.filter(el=>!el._hid).forEach(el=>{
+      const c=ctr(el);
+      if(c.x>=rx&&c.x<=rx+rw&&c.y>=ry&&c.y<=ry+rh)selIds.add(el.id);
+    });
+    if(selIds.size===1){selId=[...selIds][0];selIds.clear();}
+    document.getElementById('marq').style.display='none';
+    marqActive=false;marqStart=null;
+    renderAll();
+    if(selIds.size>0)showMultiSelProps();
+    return;
+  }
+  marqStart=null;marqActive=false;
+  if(drag&&drag!=='__multi__'){
+    // Re-sync group membership after element drag
+    reAttachEl(drag);
+    _hovGrpId=null;
+    renderAll();
+  }
   if(drag||dragG||resizeG){
+    // Cleanup stored drag offsets on group children
+    if(dragG){
+      const g=GROUPS.find(x=>x.id===dragG);
+      if(g){
+        delete g._dragX;delete g._dragY;
+        (g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el){delete el._dragX;delete el._dragY;}});
+        syncGrpChildren();
+      }
+    }
     renderSnapLines([]);
     snapshot();
   }
@@ -1910,9 +2284,10 @@ document.getElementById('cvwrap').addEventListener('wheel',e=>{
 /* prevent middle-mouse autoscroll */
 document.getElementById('cvwrap').addEventListener('mousedown',e=>{if(e.button===1)e.preventDefault()});
 
-function selectEl(id){selId=id;selGid=null;renderAll();showProps()}
+function selectEl(id){selId=id;selGid=null;selIds.clear();renderAll();showProps()}
 
 function delSel(){
+  if(selIds.size>0){delMultiSel();return}
   if(selGid){delGrp(selGid);return}
   if(!selId)return;
   snapshot();
@@ -1954,7 +2329,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='g'||e.key==='G'){if(!e.ctrlKey&&!e.metaKey)setTool('group')}
   if(e.key==='n'||e.key==='N'){if(!e.ctrlKey&&!e.metaKey)setTool('sticky')}
   if(e.key==='f'||e.key==='F'){if(!e.ctrlKey&&!e.metaKey)fitView()}
-  if(e.key==='Escape'){setTool('select');selGid=null;renderAll();showProps()}
+  if(e.key==='Escape'){setTool('select');selGid=null;selIds.clear();renderAll();showProps()}
   if(e.key==='Delete'||e.key==='Backspace')delSel();
   if(e.ctrlKey||e.metaKey){
     if(e.key==='z'){e.preventDefault();undo()}
@@ -1962,6 +2337,7 @@ document.addEventListener('keydown',e=>{
     if(e.key==='c'){e.preventDefault();copySel()}
     if(e.key==='v'){e.preventDefault();pasteSel()}
     if(e.key==='d'){e.preventDefault();copySel();pasteSel()}
+    if(e.key==='a'){e.preventDefault();selIds=new Set(ELS.filter(el=>!el._hid).map(e=>e.id));selId=null;selGid=null;renderAll();if(selIds.size>1)showMultiSelProps();}
     if(e.key==='s'){e.preventDefault();saveMap()}
     if(e.key==='0'){e.preventDefault();vx=40;vy=40;vz=1;applyVP()}
     if(e.key==='='||e.key==='+'){e.preventDefault();const cw=document.getElementById('cvwrap');zoomAt(cw.clientWidth/2,cw.clientHeight/2,-1)}
@@ -2090,36 +2466,90 @@ function showGrpProps(){
   if(!g){ns.style.display='';f.style.display='none';return}
   ns.style.display='none';f.style.display='';
   const cfg=GC[g.kind]||GC.section;
-  const procs=grpChildProcs(g);
+  syncGrpChildren();
+  const children=elInsideGrp(g);
+  const procs=children.filter(e=>e.type==='process');
+  const effCT=grpEffCT(g);
+  const effOps=grpEffOps(g);
   const sumCT=procs.reduce((s,p)=>s+p.ct,0);
-  const sumOp=procs.reduce((s,p)=>s+(p.operators||0),0);
+  const sumOps=procs.reduce((s,p)=>s+(p.operators||0),0);
+  const tk=getTakt();
+
   f.innerHTML=`
-    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:9px">${cfg.label} · ${g.id.slice(-5)}</div>
-    <div class="pg"><div class="pl">Назва</div><input class="pi" type="text" value="${g.label}" oninput="updGrp('${g.id}','label',this.value)"></div>
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">${cfg.label}</div>
+
+    <div class="pg"><div class="pl">Назва</div>
+      <input class="pi" type="text" value="${g.label}" oninput="updGrp('${g.id}','label',this.value)">
+    </div>
+
     <div class="pg"><div class="pl">Тип</div>
       <select class="pi" onchange="updGrp('${g.id}','kind',this.value)">
-        <option value="section" ${g.kind==='section'?'selected':''}>Дільниця</option>
+        <option value="section"     ${g.kind==='section'?'selected':''}>Дільниця</option>
         <option value="workstation" ${g.kind==='workstation'?'selected':''}>Робоче місце</option>
       </select>
     </div>
-    <div class="sh" style="border-top:none;padding-top:0">Зведення</div>
-    <div class="mc"><div class="ml">Процесів</div><div class="mv" style="font-size:16px">${procs.length}</div></div>
-    <div class="mc"><div class="ml">Сумарний CT</div><div class="mv" style="font-size:16px">${sumCT}s</div></div>
-    <div class="mc"><div class="ml">Операторів</div><div class="mv" style="font-size:16px">${sumOp}</div></div>
-    <div class="sh">Процеси в групі</div>
-    ${procs.map(p=>`<div class="pr2"><div class="dot" style="background:${isBN(p)?'var(--err)':'var(--ok)'}"></div><span style="flex:1;font-size:10px">${p.label}</span><span style="font-size:10px;color:var(--text2)">CT:${p.ct}s Op:${p.operators}</span></div>`).join('')}
-    <div style="margin-top:10px">
-      <button class="abtn" style="margin-bottom:0" onclick="toggleGrp('${g.id}');showGrpProps()">
+
+    <div class="pg"><div class="pl">Режим виконання операцій</div>
+      <select class="pi" onchange="updGrp('${g.id}','mode',this.value)">
+        <option value="sequential" ${(g.mode||'sequential')==='sequential'?'selected':''}>→ Послідовно (CT = сума)</option>
+        <option value="parallel"   ${g.mode==='parallel'?'selected':''}>‖ Паралельно (CT = максимум)</option>
+      </select>
+    </div>
+
+    <div class="pg">
+      <div class="pl">Оператори групи (порожньо = сума)</div>
+      <input class="pi" type="number" min="0" value="${g.operators!=null?g.operators:''}"
+        placeholder="авто (${sumOps})"
+        oninput="updGrp('${g.id}','operators',this.value===''?null:+this.value)">
+    </div>
+
+    <div class="sh" style="border-top:none;padding-top:0">Ефективні показники</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      <div class="mc" style="margin:0">
+        <div class="ml">CT ефективний</div>
+        <div class="mv" style="font-size:15px;color:${tk&&effCT>tk?'var(--err)':'var(--ok)'}">${effCT}s</div>
+        <div class="ms">${g.mode==='parallel'?'max CT':'сума CT'}</div>
+      </div>
+      <div class="mc" style="margin:0">
+        <div class="ml">Операторів</div>
+        <div class="mv" style="font-size:15px">${effOps}</div>
+        <div class="ms">${g.operators!=null?'ручне':'авто ('+sumOps+')'}</div>
+      </div>
+    </div>
+    ${tk?`<div style="font-size:11px;padding:5px 8px;border-radius:4px;background:${effCT>tk?'var(--err-bg)':'var(--ok-bg)'};color:${effCT>tk?'var(--err)':'var(--ok)'};margin-bottom:8px;font-weight:600">
+      ${effCT>tk?'▲ CT групи ('+effCT+'s) перевищує Takt ('+tk+'s) на '+(effCT-tk)+'s':'✓ CT групи ('+effCT+'s) ≤ Takt ('+tk+'s)'}
+    </div>`:''}
+
+    <div class="sh">Елементи в групі (${children.length})</div>
+    ${children.length===0?`<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px 0">Перемісти елементи всередину рамки групи</div>`:''}
+    ${children.map(el=>{
+      const isProc=el.type==='process';
+      return`<div class="pr2" style="border:.5px solid var(--border);border-radius:4px;padding:4px 6px;margin-bottom:3px;flex-direction:column;align-items:stretch;gap:3px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <div class="dot" style="background:${isProc?(isBN(el)?'var(--err)':'var(--ok)'):'var(--text3)'}"></div>
+          <span style="flex:1;font-size:11px;font-weight:600">${el.label}</span>
+          <span style="font-size:10px;color:var(--text2)">${el.type}</span>
+        </div>
+        ${isProc?`<div style="font-size:10px;color:var(--text2);padding-left:12px">CT: <b>${el.ct}s</b> · C/O: ${el.co}s · Up: ${el.uptime}% · Op: <b>${el.operators}</b></div>`:''}
+      </div>`;
+    }).join('')}
+
+    <div style="margin-top:10px;display:flex;gap:5px">
+      <button class="abtn" style="margin:0;flex:1" onclick="toggleGrp('${g.id}');showGrpProps()">
         ${g.collapsed?'▶ Розгорнути':'▼ Згорнути'}
       </button>
     </div>
-    <button class="delbtn" onclick="delGrp('${g.id}')">✕ Видалити групу</button>`;
+    <button class="delbtn" onclick="delGrp('${g.id}')">✕ Видалити групу (елементи залишаться)</button>`;
 }
 
 let _snapT=null;
 function snapDebounced(){clearTimeout(_snapT);_snapT=setTimeout(snapshot,600)}
 function setP(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note'].includes(k))?v:+v;snapDebounced();renderAll()}
-function updGrp(id,k,v){const g=GROUPS.find(x=>x.id===id);if(!g)return;g[k]=v;snapDebounced();renderAll();showGrpProps()}
+function updGrp(id,k,v){
+  const g=GROUPS.find(x=>x.id===id);if(!g)return;
+  g[k]=(v===null||v==='')?null:v;
+  snapDebounced();renderAll();showGrpProps();
+}
 
 /* ══════════════════════════════════════
    METRICS
