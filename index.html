@@ -24,7 +24,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .hdr{height:42px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none}
 .logo{font-weight:700;font-size:12px;white-space:nowrap}.logo em{color:var(--accent);font-style:normal}
 .hsep{width:.5px;height:18px;background:var(--border2);margin:0 2px}
-.hbtn{display:flex;align-items:center;gap:4px;padding:3px 8px;border:.5px solid var(--border);border-radius:var(--r);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--f);transition:background .1s,color .1s;white-space:nowrap}
+/* Dropdown menus in header */
+.hdd{position:relative;display:inline-flex}
+.hdd-btn{display:flex;align-items:center;gap:3px;padding:3px 7px;border:.5px solid var(--border);border-radius:var(--r);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--f);transition:background .1s,color .1s;white-space:nowrap;height:26px}
+.hdd-btn:hover,.hdd-btn.open{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.hdd-btn.has-active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.hdd-btn .arr{font-size:8px;opacity:.5;margin-left:1px}
+.hdd-menu{position:absolute;top:calc(100% + 4px);left:0;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:170px;padding:3px;display:none}
+.hdd-menu.open{display:block}
+.hdd-item{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:3px;cursor:pointer;font-size:11px;color:var(--text);white-space:nowrap;user-select:none;background:none;border:none;width:100%;text-align:left;font-family:var(--f)}
+.hdd-item:hover{background:var(--bg3)}
+.hdd-item.active{color:var(--accent);font-weight:600}
+.hdd-item .ick{width:14px;text-align:center;font-size:10px;opacity:.6}
+.hdd-item .iname{flex:1}
+.hdd-item .ikbd{font-size:9px;color:var(--text3);font-family:monospace}
+.hdd-sep{height:.5px;background:var(--border);margin:3px 4px}
+.hbtn{display:flex;align-items:center;gap:3px;padding:3px 8px;border:.5px solid var(--border);border-radius:var(--r);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--f);transition:background .1s,color .1s;white-space:nowrap;height:26px}
 .hbtn:hover{background:var(--bg3);color:var(--text)}
 .hbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
 .hsp{flex:1}
@@ -161,33 +176,101 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <div class="hsep"></div>
   <input class="mname" id="mapName" type="text" value="Нова карта VSM">
   <div class="hsp"></div>
-  <button class="hbtn on" id="bsel" onclick="setTool('select')">▷ Вибір</button>
-  <button class="hbtn"    id="bcon" onclick="setTool('connect')">→ З'єднати</button>
-  <button class="hbtn"    id="bgrp" onclick="setTool('group')" title="G — намалювати групу">⬜ Група</button>
-  <button class="hbtn"    id="bstk" onclick="setTool('sticky')" title="N — додати стікер">📝 Стікер</button>
+
+  <!-- Tools -->
+  <button class="hbtn on" id="bsel" onclick="setTool('select')" title="V">▷</button>
+  <button class="hbtn"    id="bcon" onclick="setTool('connect')" title="C">→</button>
+  <button class="hbtn"    id="bgrp" onclick="setTool('group')"   title="G">⬜</button>
+  <button class="hbtn"    id="bstk" onclick="setTool('sticky')"  title="N">📝</button>
+
   <div class="hsep"></div>
-  <button class="hbtn" id="bfs"  onclick="toggleFS()"       title="Future State режим">◈ Future State</button>
-  <button class="hbtn" id="btl"  onclick="toggleTimeline()" title="Timeline на карті">⏱ Timeline</button>
-  <button class="hbtn" id="bkbn" onclick="toggleKanban()"   title="Kanban-розрахунок">🎴 Kanban</button>
-  <button class="hbtn" id="bops" onclick="toggleOpsCalc()"  title="Розрахунок операторів">👷 Оператори</button>
+
+  <!-- Undo/Redo -->
+  <button class="hbtn" id="bundo" onclick="undo()" title="Ctrl+Z" style="opacity:.35">↩</button>
+  <button class="hbtn" id="bredo" onclick="redo()" title="Ctrl+Y" style="opacity:.35">↪</button>
+
   <div class="hsep"></div>
-  <button class="hbtn" id="bundo" onclick="undo()" title="Ctrl+Z" style="opacity:.35">↩ Undo</button>
-  <button class="hbtn" id="bredo" onclick="redo()" title="Ctrl+Y" style="opacity:.35">↪ Redo</button>
-  <div class="hsep"></div>
-  <button class="hbtn" onclick="saveMap()">💾 Зберегти</button>
-  <button class="hbtn" onclick="saveToSheets()" title="Зберегти в Google Sheets">📊 Sheets</button>
-  <button class="hbtn" onclick="exportJSON()">↗ JSON</button>
-  <button class="hbtn" onclick="exportSVG()" title="Експорт SVG">SVG</button>
-  <button class="hbtn" onclick="exportPNG()" title="Експорт PNG">PNG</button>
-  <button class="hbtn" onclick="exportPDF()" title="PDF звіт">PDF</button>
-  <button class="hbtn" onclick="document.getElementById('impF').click()">↙ Імпорт</button>
-  <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
-  <div class="hsep"></div>
-  <button class="hbtn" onclick="loadDemo()">▦ Приклад</button>
-  <button class="hbtn" onclick="showTemplates()">📋 Шаблони</button>
-  <button class="hbtn" onclick="printMap()" title="Друк / PDF">🖨 Друк</button>
-  <button class="hbtn" onclick="clearAll()">✕ Очистити</button>
-  <button class="hbtn" onclick="showSettings()">⚙</button>
+
+  <!-- Overlay dropdown -->
+  <div class="hdd" id="dd-overlay">
+    <button class="hdd-btn" id="dd-overlay-btn" onclick="toggleDD('overlay')" title="Overlays">
+      Огляд <span class="arr">▾</span>
+    </button>
+    <div class="hdd-menu" id="dd-overlay-menu">
+      <button class="hdd-item" id="di-fs"  onclick="toggleFS();closeDD()">
+        <span class="ick">◈</span><span class="iname">Future State</span>
+      </button>
+      <button class="hdd-item" id="di-tl"  onclick="toggleTimeline();closeDD()">
+        <span class="ick">⏱</span><span class="iname">Timeline на карті</span>
+      </button>
+      <button class="hdd-item" id="di-kbn" onclick="toggleKanban();closeDD()">
+        <span class="ick">🎴</span><span class="iname">Kanban-розрахунок</span>
+      </button>
+      <button class="hdd-item" id="di-ops" onclick="toggleOpsCalc();closeDD()">
+        <span class="ick">👷</span><span class="iname">Розрахунок операторів</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- File dropdown -->
+  <div class="hdd" id="dd-file">
+    <button class="hdd-btn" onclick="toggleDD('file')">
+      Файл <span class="arr">▾</span>
+    </button>
+    <div class="hdd-menu" id="dd-file-menu">
+      <button class="hdd-item" onclick="saveMap();closeDD()">
+        <span class="ick">💾</span><span class="iname">Зберегти</span><span class="ikbd">Ctrl+S</span>
+      </button>
+      <button class="hdd-item" onclick="saveToSheets();closeDD()">
+        <span class="ick">📊</span><span class="iname">Зберегти в Sheets</span>
+      </button>
+      <div class="hdd-sep"></div>
+      <button class="hdd-item" onclick="exportJSON();closeDD()">
+        <span class="ick">↗</span><span class="iname">Експорт JSON</span>
+      </button>
+      <button class="hdd-item" onclick="exportSVG();closeDD()">
+        <span class="ick">◻</span><span class="iname">Експорт SVG</span>
+      </button>
+      <button class="hdd-item" onclick="exportPNG();closeDD()">
+        <span class="ick">🖼</span><span class="iname">Експорт PNG</span>
+      </button>
+      <button class="hdd-item" onclick="exportPDF();closeDD()">
+        <span class="ick">📄</span><span class="iname">PDF звіт</span>
+      </button>
+      <button class="hdd-item" onclick="printMap();closeDD()">
+        <span class="ick">🖨</span><span class="iname">Друк</span>
+      </button>
+      <div class="hdd-sep"></div>
+      <button class="hdd-item" onclick="document.getElementById('impF').click();closeDD()">
+        <span class="ick">↙</span><span class="iname">Імпорт JSON</span>
+      </button>
+      <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </div>
+
+  <!-- Map dropdown -->
+  <div class="hdd" id="dd-map">
+    <button class="hdd-btn" onclick="toggleDD('map')">
+      Карта <span class="arr">▾</span>
+    </button>
+    <div class="hdd-menu" id="dd-map-menu">
+      <button class="hdd-item" onclick="loadDemo();closeDD()">
+        <span class="ick">▦</span><span class="iname">Завантажити приклад</span>
+      </button>
+      <button class="hdd-item" onclick="showTemplates();closeDD()">
+        <span class="ick">📋</span><span class="iname">Шаблони</span>
+      </button>
+      <button class="hdd-item" onclick="fitView();closeDD()">
+        <span class="ick">⊡</span><span class="iname">Вписати в екран</span><span class="ikbd">F</span>
+      </button>
+      <div class="hdd-sep"></div>
+      <button class="hdd-item" onclick="clearAll();closeDD()" style="color:var(--err)">
+        <span class="ick">✕</span><span class="iname">Очистити карту</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="hbtn" onclick="showSettings()" title="Налаштування">⚙</button>
 </div>
 
 <!-- MAIN -->
@@ -478,7 +561,6 @@ function updUndoBtn(){
   if(u)u.style.opacity=HISTORY.length>1?'1':'0.35';
   if(r)r.style.opacity=FUTURE.length?'1':'0.35';
 }
-
 /* ═══ COPY / PASTE ═══ */
 function copySel(){
   if(!selId)return;
@@ -787,23 +869,21 @@ function renderAll(){
 ══════════════════════════════════════ */
 function toggleTimeline(){
   showTL=!showTL;
-  document.getElementById('btl').classList.toggle('on',showTL);
-  renderAll();
+  const b=document.getElementById('btl');if(b)b.classList.toggle('on',showTL);
+  updOverlayBtn();renderAll();
 }
-
 function toggleKanban(){
   showKanban=!showKanban;
-  document.getElementById('bkbn').classList.toggle('on',showKanban);
-  if(showKanban&&!ELS.find(e=>e.type==='customer'))
-    toast('Додайте елемент «Клієнт» для розрахунку Kanban','');
+  const b=document.getElementById('bkbn');if(b)b.classList.toggle('on',showKanban);
+  updOverlayBtn();
+  if(showKanban&&!ELS.find(e=>e.type==='customer'))toast('Додайте «Клієнт» для розрахунку Kanban','');
   renderAll();
 }
-
 function toggleOpsCalc(){
   showOpsCalc=!showOpsCalc;
-  document.getElementById('bops').classList.toggle('on',showOpsCalc);
-  if(showOpsCalc&&!getTakt())
-    toast('Додайте «Клієнт» з попитом для розрахунку такту','');
+  const b=document.getElementById('bops');if(b)b.classList.toggle('on',showOpsCalc);
+  updOverlayBtn();
+  if(showOpsCalc&&!getTakt())toast('Додайте «Клієнт» з попитом для розрахунку такту','');
   renderAll();
 }
 
@@ -1041,8 +1121,8 @@ function renderTimelineLayer(){
 function toggleFS(){
   fsMode=!fsMode;
   const btn=document.getElementById('bfs');
-  btn.classList.toggle('on',fsMode);
-  btn.textContent=fsMode?'◈ Current State':'◈ Future State';
+  if(btn){btn.classList.toggle('on',fsMode);btn.textContent=fsMode?'◈ CS':'◈ FS';}
+  updOverlayBtn();
   renderAll();
   if(atab==='f')renderFSPanel();
   toast(fsMode?'Future State режим увімкнено':'Повернуто до Current State');
@@ -1415,9 +1495,47 @@ function printMap(){
 }
 
 /* ══════════════════════════════════════
-   MULTISELECT PROPS & ALIGNMENT
+   DROPDOWN MENUS
 ══════════════════════════════════════ */
-function showMultiSelProps(){
+let _openDD=null;
+function toggleDD(name){
+  const menu=document.getElementById('dd-'+name+'-menu');
+  const btn=document.getElementById('dd-'+name+'-btn')||document.querySelector('#dd-'+name+' .hdd-btn');
+  if(_openDD&&_openDD!==name)closeDD();
+  const isOpen=menu.classList.contains('open');
+  menu.classList.toggle('open',!isOpen);
+  if(btn)btn.classList.toggle('open',!isOpen);
+  _openDD=isOpen?null:name;
+}
+function closeDD(){
+  if(!_openDD)return;
+  const menu=document.getElementById('dd-'+_openDD+'-menu');
+  const btn=document.getElementById('dd-'+_openDD+'-btn')||document.querySelector('#dd-'+_openDD+' .hdd-btn');
+  if(menu)menu.classList.remove('open');
+  if(btn)btn.classList.remove('open');
+  _openDD=null;
+}
+// Close dropdown on outside click
+document.addEventListener('click',e=>{
+  if(_openDD&&!e.target.closest('.hdd'))closeDD();
+},{capture:true});
+
+function updOverlayBtn(){
+  const hasActive=fsMode||showTL||showKanban||showOpsCalc;
+  const btn=document.querySelector('#dd-overlay .hdd-btn');
+  if(btn)btn.classList.toggle('has-active',hasActive);
+  // Mark active items
+  const marks={
+    'di-fs':fsMode,'di-tl':showTL,'di-kbn':showKanban,'di-ops':showOpsCalc
+  };
+  Object.entries(marks).forEach(([id,active])=>{
+    const el=document.getElementById(id);
+    if(el)el.classList.toggle('active',active);
+  });
+}
+
+/* ══════════════════════════════════════
+   MULTISELECT PROPS & ALIGNMENT
   rtab('p');
   const ns=document.getElementById('nosel'),f=document.getElementById('pf');
   ns.style.display='none';f.style.display='';
@@ -2731,7 +2849,7 @@ function omod(h){document.getElementById('mod').innerHTML=h;document.getElementB
 function cmod(){document.getElementById('movbg').style.display='none'}
 function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
-renderAll();showProps();vx=40;vy=40;applyVP();snapshot();updUndoBtn();
+renderAll();showProps();vx=40;vy=40;applyVP();snapshot();updUndoBtn();updOverlayBtn();
 </script>
 </body>
 </html>
