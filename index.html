@@ -2988,42 +2988,130 @@ async function runAi(){
    DEMO
 ══════════════════════════════════════ */
 function loadDemo(){
+  // Automotive body panel production — 20 operations across 5 sections
+  // Layout: 2 rows × 10 processes, X step=180, Y row1=300 row2=520
+  const S=180; // x step between processes
+  const X0=60; // first process x
+
   ELS=[
-    {id:'d_sup',type:'supplier',x:20,y:80,label:'ТОВ Металопрокат',lead:5},
-    {id:'d_pc', type:'production_control',x:260,y:20,label:'MRP система'},
-    {id:'d_cus',type:'customer',x:600,y:80,label:'ОЕМ Замовник',demand:480},
-    {id:'d_i1', type:'inventory',x:195,y:245,label:'',qty:2400,days:5},
-    {id:'d_p1', type:'process',x:20,y:285,label:'Штампування',ct:45,co:240,uptime:72,operators:2,shifts:2,inv_out:50},
-    {id:'d_i2', type:'inventory',x:340,y:245,label:'',qty:960,days:2},
-    {id:'d_p2', type:'process',x:185,y:285,label:'Зварювання',ct:92,co:60,uptime:65,operators:3,shifts:1,inv_out:20},
-    {id:'d_i3', type:'inventory',x:480,y:245,label:'',qty:480,days:1},
-    {id:'d_p3', type:'process',x:350,y:285,label:'Складання',ct:55,co:30,uptime:90,operators:4,shifts:2,inv_out:30},
-    {id:'d_i4', type:'inventory',x:615,y:245,label:'',qty:240,days:0.5},
-    {id:'d_p4', type:'process',x:510,y:285,label:'Контроль ВТК',ct:22,co:0,uptime:98,operators:1,shifts:2,inv_out:0},
-    {id:'d_tr', type:'truck',x:510,y:80,label:'Щоденно'},
-    {id:'d_k1', type:'kaizen',x:218,y:410,label:'SMED',note:'C/O→30хв'},
-    {id:'d_k2', type:'kaizen',x:395,y:410,label:'TPM',note:'Up→85%'},
-    {id:'d_op1',type:'operator',x:60,y:405,label:'2 оп.'},
-    {id:'d_op2',type:'operator',x:240,y:405,label:'3 оп.'},
+    // ── Постачальники ──
+    {id:'sup1',type:'supplier',x:20,  y:80, label:'Металопрокат',lead:10},
+    {id:'sup2',type:'supplier',x:20,  y:180,label:'Кріплення',lead:5},
+    {id:'sup3',type:'supplier',x:20,  y:280,label:'Покриття/фарба',lead:7},
+
+    // ── Production Control ──
+    {id:'pc',type:'production_control',x:900,y:20,label:'MRP / ERP система'},
+
+    // ── Клієнт ──
+    {id:'cus',type:'customer',x:1920,y:100,label:'Автозавод OEM',demand:360},
+    {id:'tr', type:'truck',   x:1820,y:100,label:'Щодня JIT'},
+
+    // ════ РЯД 1: Заготівельна → Зварювальна дільниця ════
+    // WIP перед кожним процесом
+    {id:'i01',type:'inventory',x:X0+  0,y:240,label:'',qty:4320,days:12},
+    {id:'i02',type:'inventory',x:X0+180,y:240,label:'',qty:2160,days:6},
+    {id:'i03',type:'inventory',x:X0+360,y:240,label:'',qty:1440,days:4},
+    {id:'i04',type:'inventory',x:X0+540,y:240,label:'',qty:720, days:2},
+    {id:'i05',type:'inventory',x:X0+720,y:240,label:'',qty:540, days:1.5},
+    {id:'i06',type:'inventory',x:X0+900,y:240,label:'',qty:360, days:1},
+    {id:'i07',type:'inventory',x:X0+1080,y:240,label:'',qty:240, days:0.7},
+    {id:'i08',type:'inventory',x:X0+1260,y:240,label:'',qty:180, days:0.5},
+    {id:'i09',type:'inventory',x:X0+1440,y:240,label:'',qty:120, days:0.3},
+    {id:'i10',type:'inventory',x:X0+1620,y:240,label:'',qty:90,  days:0.25},
+
+    // Процеси ряд 1
+    {id:'p01',type:'process',x:X0+  0,y:290,label:'Різання листа',      ct:38, co:120,uptime:85,operators:2,shifts:3,inv_out:0},
+    {id:'p02',type:'process',x:X0+180,y:290,label:'Штампування панелей', ct:52, co:360,uptime:68,operators:2,shifts:3,inv_out:0},
+    {id:'p03',type:'process',x:X0+360,y:290,label:'Вирубка отворів',     ct:28, co:180,uptime:80,operators:1,shifts:2,inv_out:0},
+    {id:'p04',type:'process',x:X0+540,y:290,label:'Гнуття профілів',     ct:45, co:90, uptime:78,operators:2,shifts:2,inv_out:0},
+    {id:'p05',type:'process',x:X0+720,y:290,label:'Зварювання MIG',      ct:95, co:60, uptime:65,operators:4,shifts:2,inv_out:0},
+    {id:'p06',type:'process',x:X0+900,y:290,label:'Зварювання точкове',  ct:72, co:45, uptime:70,operators:3,shifts:2,inv_out:0},
+    {id:'p07',type:'process',x:X0+1080,y:290,label:'Зачистка швів',      ct:55, co:20, uptime:88,operators:2,shifts:2,inv_out:0},
+    {id:'p08',type:'process',x:X0+1260,y:290,label:'Контроль геометрії', ct:30, co:10, uptime:96,operators:1,shifts:2,inv_out:0},
+    {id:'p09',type:'process',x:X0+1440,y:290,label:'Дробеструминна обр.',ct:65, co:30, uptime:82,operators:2,shifts:2,inv_out:0},
+    {id:'p10',type:'process',x:X0+1620,y:290,label:'Ґрунтування',        ct:80, co:60, uptime:76,operators:3,shifts:2,inv_out:0},
+
+    // ════ РЯД 2: Фарбувальна → Складальна → Відвантаження ════
+    {id:'i11',type:'inventory',x:X0+  0,y:470,label:'',qty:72,  days:0.2},
+    {id:'i12',type:'inventory',x:X0+180,y:470,label:'',qty:54,  days:0.15},
+    {id:'i13',type:'inventory',x:X0+360,y:470,label:'',qty:36,  days:0.1},
+    {id:'i14',type:'inventory',x:X0+540,y:470,label:'',qty:100, days:0.3},
+    {id:'i15',type:'inventory',x:X0+720,y:470,label:'',qty:80,  days:0.2},
+    {id:'i16',type:'inventory',x:X0+900,y:470,label:'',qty:60,  days:0.2},
+    {id:'i17',type:'inventory',x:X0+1080,y:470,label:'',qty:45, days:0.1},
+    {id:'i18',type:'inventory',x:X0+1260,y:470,label:'',qty:30, days:0.1},
+    {id:'i19',type:'inventory',x:X0+1440,y:470,label:'',qty:20, days:0.05},
+    {id:'i20',type:'inventory',x:X0+1620,y:470,label:'',qty:15, days:0.04},
+
+    // Процеси ряд 2
+    {id:'p11',type:'process',x:X0+  0,y:515,label:'Катафорез (KTL)',     ct:180,co:240,uptime:74,operators:3,shifts:2,inv_out:0},
+    {id:'p12',type:'process',x:X0+180,y:515,label:'Шпаклювання',         ct:120,co:60, uptime:80,operators:4,shifts:2,inv_out:0},
+    {id:'p13',type:'process',x:X0+360,y:515,label:'Фарбування базою',    ct:95, co:90, uptime:78,operators:3,shifts:2,inv_out:0},
+    {id:'p14',type:'process',x:X0+540,y:515,label:'Нанесення лаку',      ct:75, co:60, uptime:82,operators:2,shifts:2,inv_out:0},
+    {id:'p15',type:'process',x:X0+720,y:515,label:'Поліровка',           ct:55, co:15, uptime:90,operators:3,shifts:2,inv_out:0},
+    {id:'p16',type:'process',x:X0+900,y:515,label:'Збірка вузлів',       ct:88, co:30, uptime:86,operators:5,shifts:2,inv_out:0},
+    {id:'p17',type:'process',x:X0+1080,y:515,label:'Монтаж ущільнень',   ct:42, co:10, uptime:94,operators:2,shifts:2,inv_out:0},
+    {id:'p18',type:'process',x:X0+1260,y:515,label:'Фінальний контроль', ct:35, co:0,  uptime:98,operators:2,shifts:2,inv_out:0},
+    {id:'p19',type:'process',x:X0+1440,y:515,label:'Упаковка / маркув.', ct:20, co:5,  uptime:99,operators:2,shifts:2,inv_out:0},
+    {id:'p20',type:'process',x:X0+1620,y:515,label:'Відвантаження',      ct:25, co:0,  uptime:99,operators:3,shifts:2,inv_out:0},
+
+    // Kaizen bursts
+    {id:'k1',type:'kaizen',x:X0+175,y:430,label:'SMED',note:'C/O 360→60хв'},
+    {id:'k2',type:'kaizen',x:X0+715,y:430,label:'TPM',note:'Up 65→82%'},
+    {id:'k3',type:'kaizen',x:X0+540,y:695,label:'Lean Paint',note:'Дефекти→0.5%'},
+    {id:'k4',type:'kaizen',x:X0+900,y:695,label:'Pull/Kanban',note:'WIP -60%'},
+    {id:'k5',type:'kaizen',x:X0+1260,y:695,label:'Poka-yoke',note:'0 дефектів'},
+
+    // Supermarket готової продукції
+    {id:'sm1',type:'supermarket',x:1780,y:430,label:'Готова продукція',qty:120,days:0.3},
   ];
+
+  // Connections — Row 1 push chain
   CONNS=[
-    {from:'d_sup',to:'d_p1',type:'transport'},
-    {from:'d_p1',to:'d_p2',type:'push'},
-    {from:'d_p2',to:'d_p3',type:'push'},
-    {from:'d_p3',to:'d_p4',type:'push'},
-    {from:'d_p4',to:'d_cus',type:'push'},
-    {from:'d_tr',to:'d_cus',type:'transport'},
-    {from:'d_cus',to:'d_pc',type:'info'},
-    {from:'d_pc',to:'d_p1',type:'info-e'},
-    {from:'d_pc',to:'d_sup',type:'info-e'},
+    {from:'sup1',to:'p01',type:'transport',note:'Щотижня'},
+    {from:'sup2',to:'p16',type:'transport',note:'2×/тиж'},
+    {from:'sup3',to:'p11',type:'transport',note:'Щотижня'},
   ];
+  // Row 1 push
+  for(let i=1;i<=9;i++){
+    CONNS.push({from:`p0${i}`,to:i<9?`p0${i+1}`:`p10`,type:'push'});
+  }
+  // Row 1→2 (p10→p11)
+  CONNS.push({from:'p10',to:'p11',type:'push'});
+  // Row 2 push, last 5 pull
+  CONNS.push({from:'p11',to:'p12',type:'push'});
+  CONNS.push({from:'p12',to:'p13',type:'push'});
+  CONNS.push({from:'p13',to:'p14',type:'push'});
+  CONNS.push({from:'p14',to:'p15',type:'push'});
+  CONNS.push({from:'p15',to:'p16',type:'pull',note:'Kanban'});
+  CONNS.push({from:'p16',to:'p17',type:'push'});
+  CONNS.push({from:'p17',to:'p18',type:'push'});
+  CONNS.push({from:'p18',to:'p19',type:'push'});
+  CONNS.push({from:'p19',to:'p20',type:'push'});
+  CONNS.push({from:'p20',to:'cus', type:'push'});
+  CONNS.push({from:'tr', to:'cus', type:'transport'});
+  // Info flows
+  CONNS.push({from:'cus',to:'pc',  type:'info',  note:'EDI тижневий'});
+  CONNS.push({from:'pc', to:'p01', type:'info-e', note:'Місячний план'});
+  CONNS.push({from:'pc', to:'p16', type:'info-e', note:'Добовий план'});
+  CONNS.push({from:'pc', to:'sup1',type:'info-e', note:'Замовлення'});
+
+  // Groups / sections
   GROUPS=[
-    {id:'g1',kind:'section',    label:'Дільниця пресування', x:10, y:230,w:310,h:220,collapsed:false,childIds:[]},
-    {id:'g2',kind:'section',    label:'Дільниця зварювання',  x:175,y:230,w:310,h:220,collapsed:false,childIds:[]},
-    {id:'g3',kind:'workstation',label:'Роб. місце складання', x:340,y:265,w:180,h:125,collapsed:false,childIds:[]},
+    {id:'g_cut',  kind:'section',    label:'Дільниця різання та штампування', x:50,  y:220,w:580, h:280,collapsed:false,childIds:[],mode:'sequential',operators:null},
+    {id:'g_weld', kind:'section',    label:'Зварювальна дільниця',            x:610, y:220,w:760, h:280,collapsed:false,childIds:[],mode:'sequential',operators:null},
+    {id:'g_paint',kind:'section',    label:'Фарбувальна дільниця',            x:50,  y:450,w:1200,h:280,collapsed:false,childIds:[],mode:'sequential',operators:null},
+    {id:'g_asm',  kind:'section',    label:'Складальна та контрольна',        x:1230,y:450,w:600, h:280,collapsed:false,childIds:[],mode:'sequential',operators:null},
+    {id:'g_weld2',kind:'workstation',label:'Роб. місце MIG зварювання',       x:620, y:270,w:310, h:200,collapsed:false,childIds:[],mode:'parallel',  operators:5},
+    {id:'g_qc',   kind:'workstation',label:'Роб. місце контролю якості',      x:1370,y:270,w:160, h:200,collapsed:false,childIds:[],mode:'sequential',operators:null},
   ];
-  document.getElementById('mapName').value='Виробнича лінія (Current State)';
-  IDC=50;selId=null;selGid=null;renderAll();showProps();setTimeout(fitView,50);toast('Приклад завантажено','ok');
+
+  document.getElementById('mapName').value='Кузовне виробництво — 20 операцій (Current State)';
+  IDC=300;selId=null;selGid=null;
+  syncGrpChildren();
+  renderAll();showProps();
+  setTimeout(fitView,80);
+  toast('Приклад з 20 операціями завантажено','ok');
 }
 
 /* ══════════════════════════════════════
