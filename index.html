@@ -60,9 +60,10 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .cv.cm{cursor:crosshair}
 .cv.gm{cursor:crosshair}
 /* right panel */
-.rp{width:240px;flex-shrink:0;background:var(--bg2);border-left:.5px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
-.rtabs{display:flex;border-bottom:.5px solid var(--border2);flex-shrink:0}
-.rtab{flex:1;padding:8px 2px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text3);letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid transparent;font-family:var(--f)}
+.rp{width:300px;flex-shrink:0;background:var(--bg2);border-left:.5px solid var(--border2);display:flex;flex-direction:column;overflow:hidden}
+.rtabs{display:flex;border-bottom:.5px solid var(--border2);flex-shrink:0;overflow-x:auto}
+.rtabs::-webkit-scrollbar{height:0}
+.rtab{flex:0 0 auto;padding:8px 10px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text3);letter-spacing:.02em;text-transform:uppercase;border-bottom:2px solid transparent;font-family:var(--f);white-space:nowrap}
 .rtab.on{color:var(--text);border-bottom-color:var(--accent)}
 .rpb{flex:1;overflow-y:auto;padding:10px}
 .pg{margin-bottom:8px}
@@ -163,6 +164,36 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   line-height:1.5;color:#422006;
 }
 #sticky-edit:focus{outline:none}
+/* SOP Module */
+.sop-modal{position:fixed;inset:0;background:var(--bg2);z-index:500;display:flex;flex-direction:column;overflow:hidden}
+.sop-hdr{display:flex;align-items:center;gap:10px;padding:0 16px;height:46px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0}
+.sop-title{font-size:14px;font-weight:700;flex:1}
+.sop-tabs{display:flex;gap:1px;padding:0 12px;background:var(--bg3);border-bottom:.5px solid var(--border2);flex-shrink:0;overflow-x:auto}
+.sop-tab{padding:8px 14px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--f);white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}
+.sop-tab.on{color:var(--text);border-bottom-color:var(--accent)}
+.sop-body{flex:1;overflow:auto;padding:14px}
+.sop-toolbar{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.sop-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.sop-tbl th{text-align:left;padding:7px 9px;background:var(--bg3);border:.5px solid var(--border2);font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap;position:sticky;top:0;z-index:2;letter-spacing:.03em;text-transform:uppercase}
+.sop-tbl td{padding:5px 9px;border:.5px solid var(--border);vertical-align:middle}
+.sop-tbl tr:hover td{background:var(--bg3)}
+.sop-inp{font-size:11px;padding:3px 6px;border:.5px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text);font-family:var(--f);width:100%;box-sizing:border-box}
+.sop-inp:focus{outline:none;border-color:var(--accent)}
+.sop-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;white-space:nowrap}
+.badge-va{background:var(--ok-bg);color:var(--ok)}
+.badge-nva{background:var(--err-bg);color:var(--err)}
+.badge-nnva{background:var(--warn-bg);color:var(--warn)}
+.badge-act{background:var(--ok-bg);color:var(--ok)}
+.badge-dft{background:var(--warn-bg);color:var(--warn)}
+.badge-obs{background:var(--err-bg);color:var(--err)}
+.sop-link{color:var(--accent);text-decoration:none;font-size:11px;cursor:pointer}
+.sop-link:hover{text-decoration:underline}
+.mc-cell{padding:3px 5px;text-align:center;border:.5px solid var(--border);font-size:10px;min-width:44px}
+.mc-cell.yes{background:var(--accent-bg);color:var(--accent);font-weight:700;cursor:pointer}
+.mc-cell.no{color:var(--text3);cursor:pointer}
+.ps-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--accent-bg);border-radius:var(--r);margin-bottom:5px;cursor:pointer;border:.5px solid rgba(26,95,168,.2)}
+.ps-hdr:hover{background:rgba(26,95,168,.15)}
+.ps-title{font-size:12px;font-weight:700;color:var(--accent);flex:1}
 </style>
 </head>
 <body>
@@ -270,6 +301,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     </div>
   </div>
 
+  <button class="hbtn" onclick="showSOPModule()" title="СОП та реєстр операцій">📄 СОП</button>
   <button class="hbtn" onclick="showSettings()" title="Налаштування">⚙</button>
 </div>
 
@@ -377,22 +409,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   </svg>
   <!-- zoom controls -->
   <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:4px;z-index:10">
-    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,-1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">+</button>
-    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">−</button>
-    <button onclick="fitView()" title="Вписати все в екран" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⊡</button>
-    <button onclick="vx=40;vy=40;vz=1;applyVP()" title="100%" style="width:28px;height:20px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--text2)"><span id="zind">100%</span></button>
+    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,-1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)" title="Збільшити (Ctrl++)">+</button>
+    <button onclick="zoomAt(document.getElementById('cvwrap').clientWidth/2,document.getElementById('cvwrap').clientHeight/2,1)" style="width:28px;height:28px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)" title="Зменшити (Ctrl+-)">−</button>
+    <button onclick="fitView()" style="width:28px;height:28px;border:.5px solid var(--accent);border-radius:var(--r);background:var(--accent-bg);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--accent)" title="Вписати все в екран (F)">⊡</button>
+    <button onclick="vx=40;vy=40;vz=1;applyVP()" style="width:28px;height:20px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);cursor:pointer;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--text2)" title="100%"><span id="zind">100%</span></button>
   </div>
 </div>
 
 <!-- RIGHT PANEL -->
 <div class="rp">
   <div class="rtabs">
-    <button class="rtab on" id="rt-p" onclick="rtab('p')">Параметри</button>
-    <button class="rtab"    id="rt-m" onclick="rtab('m')">Метрики</button>
-    <button class="rtab"    id="rt-y" onclick="rtab('y')">Ямадзумі</button>
-    <button class="rtab"    id="rt-f" onclick="rtab('f')">FS</button>
-    <button class="rtab"    id="rt-s" onclick="rtab('s')">Карти</button>
-    <button class="rtab"    id="rt-a" onclick="rtab('a')">AI</button>
+    <button class="rtab on" id="rt-p" onclick="rtab('p')" title="Параметри">Параметри</button>
+    <button class="rtab"    id="rt-m" onclick="rtab('m')" title="Метрики">Метрики</button>
+    <button class="rtab"    id="rt-y" onclick="rtab('y')" title="Ямадзумі">Яма</button>
+    <button class="rtab"    id="rt-f" onclick="rtab('f')" title="Future State / Цілі">FS / Цілі</button>
+    <button class="rtab"    id="rt-s" onclick="rtab('s')" title="Збережені карти">Карти</button>
+    <button class="rtab"    id="rt-a" onclick="rtab('a')" title="AI-аналіз">AI</button>
   </div>
   <div class="rpb" id="rp-p">
     <div class="nosel" id="nosel">Виберіть елемент<br>або групу для<br>редагування</div>
@@ -426,6 +458,24 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <div id="mod" class="mod"></div>
 </div>
 <div class="ta" id="ta"></div>
+
+<!-- SOP MODULE MODAL -->
+<div id="sop-modal" class="sop-modal" style="display:none">
+  <div class="sop-hdr">
+    <span class="sop-title">📄 Модуль СОП — Стандартні операційні процедури</span>
+    <span style="font-size:11px;color:var(--text3)" id="sop-map-name"></span>
+    <button class="hbtn" onclick="exportSOPRegistry()" title="Експорт реєстру">↗ Реєстр (HTML)</button>
+    <button class="hbtn" onclick="exportOpsRegistry()" title="Експорт операцій">↗ Операції (HTML)</button>
+    <button class="hbtn" onclick="document.getElementById('sop-modal').style.display='none'">✕ Закрити</button>
+  </div>
+  <div class="sop-tabs">
+    <button class="sop-tab on" id="st-ops"    onclick="sopTab('ops')">📋 Реєстр операцій</button>
+    <button class="sop-tab"    id="st-sops"   onclick="sopTab('sops')">📄 Реєстр СОП</button>
+    <button class="sop-tab"    id="st-matrix" onclick="sopTab('matrix')">🔗 Матриця СОП</button>
+    <button class="sop-tab"    id="st-gaps"   onclick="sopTab('gaps')">⚠ Аналіз покриття</button>
+  </div>
+  <div class="sop-body" id="sop-body"></div>
+</div>
 
 <script>
 'use strict';
@@ -461,6 +511,13 @@ let snapLines=[];
 let fsMode=false;
 let showTL=false;
 let FS_ELS=[], FS_CONNS=[];
+
+/* Target state (Future State targets overlaid on Current State) */
+let TARGET={
+  takt:0,        // target takt time (s) — 0 = not set
+  demand:0,      // target demand (pcs/shift) — drives target takt
+  showGaps:true, // show gap badges on canvas
+};
 
 /* Kanban & Operators */
 let showKanban=false;   // show kanban card counts on pull arrows
@@ -525,12 +582,19 @@ function fitView(){
   if(!ELS.length&&!GROUPS.length){vx=40;vy=40;vz=1;applyVP();return}
   const all=[...ELS.filter(e=>!e._hid).map(e=>{const b=bb(e);return{x1:e.x,y1:e.y,x2:e.x+b.w,y2:e.y+b.h}}),
     ...GROUPS.map(g=>({x1:g.x,y1:g.y,x2:g.x+(g.collapsed?170:g.w),y2:g.y+(g.collapsed?78:g.h)}))];
-  const minX=Math.min(...all.map(r=>r.x1))-30,minY=Math.min(...all.map(r=>r.y1))-30;
-  const maxX=Math.max(...all.map(r=>r.x2))+30,maxY=Math.max(...all.map(r=>r.y2))+30;
+  const PAD=60;
+  const minX=Math.min(...all.map(r=>r.x1))-PAD;
+  const minY=Math.min(...all.map(r=>r.y1))-PAD;
+  const maxX=Math.max(...all.map(r=>r.x2))+PAD;
+  const maxY=Math.max(...all.map(r=>r.y2))+PAD;
   const cvwrap=document.getElementById('cvwrap');
-  const cw=cvwrap.clientWidth,ch=cvwrap.clientHeight;
-  const nz=Math.min(ZMAX,Math.max(ZMIN,Math.min(cw/(maxX-minX),ch/(maxY-minY))));
-  vz=nz;vx=-minX*nz+(cw-(maxX-minX)*nz)/2;vy=-minY*nz+(ch-(maxY-minY)*nz)/2;
+  const cw=cvwrap.clientWidth||800, ch=cvwrap.clientHeight||500;
+  const scaleX=cw/(maxX-minX);
+  const scaleY=ch/(maxY-minY);
+  const nz=Math.min(ZMAX, Math.max(ZMIN, Math.min(scaleX, scaleY)));
+  vz=nz;
+  vx=-minX*nz+(cw-(maxX-minX)*nz)/2;
+  vy=-minY*nz+(ch-(maxY-minY)*nz)/2;
   applyVP();
 }
 
@@ -687,7 +751,7 @@ function exportPNG(){
 const DEFS={
   supplier:{label:'Постачальник',lead:5},
   customer:{label:'Клієнт',demand:500},
-  process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inv_out:0},
+  process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inv_out:0,tct:0,tco:0,top:0},
   inventory:{label:'',qty:500,days:2},
   supermarket:{label:'Супермаркет',qty:200,days:1},
   kaizen:{label:'Kaizen',note:''},
@@ -703,6 +767,11 @@ const DEFS={
 function getProcs(){return ELS.filter(e=>e.type==='process'&&!e._hid)}
 function getInvs(){return ELS.filter(e=>(e.type==='inventory'||e.type==='supermarket')&&!e._hid)}
 function getTakt(){const c=ELS.find(e=>e.type==='customer');return(c&&c.demand)?Math.round(28800/c.demand):0}
+function getTargetTakt(){
+  if(TARGET.takt>0)return TARGET.takt;
+  if(TARGET.demand>0)return Math.round(28800/TARGET.demand);
+  return 0;
+}
 function isBN(el){if(el.type!=='process')return false;const p=getProcs();return p.length>1&&el.ct===Math.max(...p.map(x=>x.ct))}
 
 /* ══════════════════════════════════════
@@ -727,32 +796,74 @@ const SYM={
 
   process(el,s){
     const{x,y}=el,w=150,h=88;
-    const bn=isBN(el),tk=getTakt();
+    const bn=isBN(el),tk=getTakt(),ttk=getTargetTakt();
+    const taktRef=ttk||tk;
     const sc=bn?'#a02d2d':'#111',sw=bn?2.5:2;
-    // Operator need calculation
-    const opsNeeded=tk>0?Math.ceil(el.ct/tk):null;
+    const tct=el.tct||0; // target CT
+    // Gap analysis
+    const ctGap=tct>0?el.ct-tct:0;          // how much CT needs to drop
+    const taktGap=taktRef>0?el.ct-taktRef:0; // CT vs target takt
+    const hasGap=TARGET.showGaps&&(ctGap>0||taktGap>0);
+    // Operator need vs target takt
+    const opsNeeded=taktRef>0?Math.ceil(el.ct/taktRef):null;
     const opsDelta=opsNeeded!==null?opsNeeded-el.operators:null;
+    // Mini target-CT side bar (right of block)
+    const tctBarH=tct>0?Math.min(h-4,Math.round((tct/Math.max(el.ct,tct))*h)):0;
+    const tctBar=tct>0?`
+      <rect x="${x+w+4}" y="${y}" width="14" height="${h}" rx="2"
+        fill="${tct<=taktRef?'rgba(29,158,117,.1)':'rgba(229,75,74,.1)'}"
+        stroke="${tct<=taktRef?'#1d9e75':'#e24b4a'}" stroke-width="1"/>
+      <rect x="${x+w+4}" y="${y+h-tctBarH}" width="14" height="${tctBarH}" rx="2"
+        fill="${tct<=taktRef?'rgba(29,158,117,.5)':'rgba(229,75,74,.5)'}"/>
+      <text x="${x+w+11}" y="${y+h/2}" text-anchor="middle" dominant-baseline="central"
+        font-size="7" fill="${tct<=taktRef?'#0c6b4e':'#a02d2d'}"
+        font-family="Arial,sans-serif" font-weight="700"
+        transform="rotate(-90,${x+w+11},${y+h/2})">${tct}s</text>
+      <text x="${x+w+11}" y="${y-7}" text-anchor="middle"
+        font-size="6.5" fill="#999" font-family="Arial,sans-serif">ціль</text>`:
+    '';
+    // Gap warning badge above block
+    const gapText=tct>0?`▼ CT: ${el.ct}→${tct}s (-${ctGap}s)`:
+                  taktRef>0&&taktGap>0?`▲ CT ${el.ct}s > TaktFS ${taktRef}s (+${taktGap}s)`:'';
+    const gapBadge=hasGap&&gapText?`
+      <rect x="${x}" y="${y-18}" width="${Math.min(w+18,gapText.length*5+10)}" height="14"
+        rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+      <text x="${x+4}" y="${y-11}" dominant-baseline="central"
+        font-size="7.5" fill="#92400e" font-family="Arial,sans-serif" font-weight="700">${gapText}</text>`:
+    '';
+    // Ops badge (right side, only if showOpsCalc)
     const opsBadge=showOpsCalc&&opsNeeded!==null?
-      `<rect x="${x+w+3}" y="${y+28}" width="32" height="18" rx="3" fill="${opsDelta>0?'#fbebeb':opsDelta<0?'#e0f4ec':'#f0f0ee'}" stroke="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#999'}" stroke-width="1"/>
-       <text x="${x+w+19}" y="${y+37}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#666'}" font-family="Arial,sans-serif" font-weight="700">${opsDelta>0?'+':''}${opsDelta}</text>
-       <text x="${x+w+19}" y="${y+27}" text-anchor="middle" dominant-baseline="central" font-size="6.5" fill="#888" font-family="Arial,sans-serif">потр:${opsNeeded}</text>`:'';
+      `<rect x="${x+w+(tct>0?22:3)}" y="${y+28}" width="32" height="18" rx="3"
+        fill="${opsDelta>0?'#fbebeb':opsDelta<0?'#e0f4ec':'#f0f0ee'}"
+        stroke="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#999'}" stroke-width="1"/>
+       <text x="${x+w+(tct>0?38:19)}" y="${y+37}" text-anchor="middle" dominant-baseline="central"
+        font-size="8" fill="${opsDelta>0?'#a02d2d':opsDelta<0?'#0c6b4e':'#666'}"
+        font-family="Arial,sans-serif" font-weight="700">${opsDelta>0?'+':''}${opsDelta}</text>
+       <text x="${x+w+(tct>0?38:19)}" y="${y+27}" text-anchor="middle" dominant-baseline="central"
+        font-size="6.5" fill="#888" font-family="Arial,sans-serif">→${opsNeeded}</text>`:'';
     return`${s?sRing(el):''}
+    ${gapBadge}
     <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${sc}" stroke-width="${sw}"/>
     ${bn?`<rect x="${x}" y="${y}" width="${w}" height="5" fill="#e24b4a"/>
     <rect x="${x+w-50}" y="${y+h-16}" width="48" height="14" rx="2" fill="#e24b4a"/>
-    <text x="${x+w-26}" y="${y+h-9}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">BOTTLENECK</text>`:''}
-    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
+    <text x="${x+w-26}" y="${y+h-9}" text-anchor="middle" dominant-baseline="central"
+      font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">BOTTLENECK</text>`:''}
+    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central"
+      font-size="11" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
     <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#111" stroke-width="1.5"/>
     <line x1="${x+w/2}" y1="${y+24}" x2="${x+w/2}" y2="${y+64}" stroke="#111" stroke-width="1"/>
-    <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan></text>
-    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">C/O: <tspan font-weight="700">${el.co}s</tspan></text>
+    <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan>${tct>0?` <tspan fill="${tct<=taktRef?'#0c6b4e':'#a02d2d'}" font-size="8" font-weight="700">→${tct}s</tspan>`:''}</text>
+    <text x="${x+6}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">C/O: <tspan font-weight="700">${el.co}s</tspan>${el.tco>0?` <tspan fill="#1a5fa8" font-size="8">→${el.tco}s</tspan>`:''}</text>
     <text x="${x+6}" y="${y+58}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Up: <tspan font-weight="700">${el.uptime}%</tspan></text>
-    <text x="${x+w/2+5}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${el.operators}</tspan></text>
+    <text x="${x+w/2+5}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Op: <tspan font-weight="700">${el.operators}</tspan>${el.top>0?` <tspan fill="#1a5fa8" font-size="8">→${el.top}</tspan>`:''}</text>
     <text x="${x+w/2+5}" y="${y+46}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">Зм: <tspan font-weight="700">${el.shifts}</tspan></text>
     <line x1="${x}" y1="${y+64}" x2="${x+w}" y2="${y+64}" stroke="#111" stroke-width="1"/>
-    <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inv_out||0} шт</text>
-    ${tk&&el.ct>tk&&!bn?`<text x="${x+w-3}" y="${y+h-5}" text-anchor="end" font-size="7" fill="#b87316" font-family="Arial,sans-serif" font-weight="700">▲CT&gt;Takt</text>`:''}
-    ${opsBadge}`},
+    <text x="${x+w/2}" y="${y+76}" text-anchor="middle" dominant-baseline="central"
+      font-size="8" fill="#666" font-family="Arial,sans-serif">I: ${el.inv_out||0} шт</text>
+    ${taktRef>0&&el.ct>taktRef&&!bn?`<text x="${x+w-3}" y="${y+h-5}" text-anchor="end"
+      font-size="7" fill="#b87316" font-family="Arial,sans-serif" font-weight="700"
+      >▲CT&gt;${ttk?'TaktFS':'Takt'}</text>`:''}
+    ${tctBar}${opsBadge}`},
 
   inventory(el,s){const{x,y}=el;return`${s?sRing(el):''}
     <polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#111" stroke-width="2"/>
@@ -1102,9 +1213,8 @@ function renderTimelineLayer(){
   sumT.textContent=`VA: ${fmtT(vaTime)}  |  NVA: ${nvaTime}дн  |  Ефективність: ${eff}%${tk?' | Takt:'+tk+'s':''}`;
   L.appendChild(sumT);
 
-  // Takt line over VA bars
+  // Takt line
   if(tk){
-    // draw takt threshold indicator
     procs.forEach(p=>{
       if(p.ct>tk){
         const over=document.createElementNS('http://www.w3.org/2000/svg','rect');
@@ -1114,6 +1224,21 @@ function renderTimelineLayer(){
         over.setAttribute('stroke-width','1.5');over.setAttribute('rx','2');
         L.appendChild(over);
       }
+    });
+  }
+  // Target Takt line (if set) — separate dashed green line below current takt
+  const ttk=getTargetTakt();
+  if(ttk>0&&ttk!==tk){
+    const ttaky=TL_Y;
+    procs.forEach(p=>{
+      // draw target takt bar overlay (translucent green fill to target level)
+      const barH=Math.max(2,Math.round((ttk/Math.max(p.ct,1))*(ROW_H-4)));
+      const tg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      tg.setAttribute('x',p.x);tg.setAttribute('y',TL_Y+ROW_H-2-Math.min(barH,ROW_H-4));
+      tg.setAttribute('width',150);tg.setAttribute('height',Math.min(barH,ROW_H-4));
+      tg.setAttribute('fill','rgba(29,158,117,0.15)');tg.setAttribute('stroke','#1d9e75');
+      tg.setAttribute('stroke-width','1');tg.setAttribute('stroke-dasharray','4 2');
+      L.appendChild(tg);
     });
   }
 }
@@ -1210,65 +1335,57 @@ function renderFSDelta(L, x, y){
 function renderFSPanel(){
   const p=document.getElementById('fspanel');if(!p)return;
   const hasFS=FS_ELS.length>0;
-  const curProcs=getProcs(),curInvs=getInvs(),tk=getTakt();
+  const curProcs=getProcs(),curInvs=getInvs(),tk=getTakt(),ttk=getTargetTakt();
   const curVAT=curProcs.reduce((s,x)=>s+x.ct,0);
   const curNVA=curInvs.reduce((s,i)=>s+i.days,0);
   const curEff=curVAT>0?Math.round(curVAT/(curVAT+curNVA*28800)*100):0;
   const curBN=curProcs.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
 
-  let compareHTML='';
-  if(hasFS){
-    const fsProcs=FS_ELS.filter(e=>e.type==='process');
-    const fsInvs=FS_ELS.filter(e=>e.type==='inventory'||e.type==='supermarket');
-    const fsVAT=fsProcs.reduce((s,x)=>s+x.ct,0);
-    const fsNVA=fsInvs.reduce((s,i)=>s+i.days,0);
-    const fsEff=fsVAT>0?Math.round(fsVAT/(fsVAT+fsNVA*28800)*100):0;
-    const fsBN=fsProcs.reduce((b,x)=>(!b||x.ct>b.ct)?x:b,null);
-    const mkDelta=(cur,fs,unit='',reverse=false)=>{
-      const d=fs-cur;const pct=cur?Math.round(Math.abs(d)/cur*100):0;
-      const good=reverse?d>0:d<0;
-      const col=d===0?'var(--text3)':good?'var(--ok)':'var(--err)';
-      const sign=d>0?'+':'';
-      return`<span style="color:${col};font-weight:700">${sign}${d}${unit} (${pct}%)</span>`;
-    };
-    compareHTML=`
-      <div class="fs-compare">
-        <div style="font-size:10px;font-weight:700;color:var(--ok);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Current → Future State</div>
-        <div class="fs-compare-row"><span>VA Time</span><span>${fmtT(curVAT)} → <b>${fmtT(fsVAT)}</b> ${mkDelta(curVAT,fsVAT,'s')}</span></div>
-        <div class="fs-compare-row"><span>Запаси</span><span>${curNVA}дн → <b>${fsNVA}дн</b> ${mkDelta(curNVA,fsNVA,'дн')}</span></div>
-        <div class="fs-compare-row"><span>Ефективність</span><span>${curEff}% → <b>${fsEff}%</b> ${mkDelta(curEff,fsEff,'%',true)}</span></div>
-        <div class="fs-compare-row"><span>Процесів</span><span>${curProcs.length} → <b>${fsProcs.length}</b></span></div>
-        ${fsBN?`<div class="fs-compare-row"><span>Вузьке місце</span><span style="font-size:10px">${curBN?.label||'—'} → <b>${fsBN.label}</b></span></div>`:''}
-      </div>
-      <button class="abtn" onclick="clearFS()" style="margin-bottom:0">✕ Очистити Future State</button>`;
-  }
+  // Gaps summary
+  const gaps=curProcs.filter(p=>p.tct>0&&p.ct>p.tct||ttk>0&&p.ct>ttk);
+  const totalCtReduction=curProcs.reduce((s,p)=>{
+    if(p.tct>0&&p.ct>p.tct)return s+(p.ct-p.tct);
+    if(ttk>0&&p.ct>ttk&&!p.tct)return s+(p.ct-ttk);
+    return s;
+  },0);
 
-  p.innerHTML=`
-    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:10px">Future State</div>
-    <div class="pg"><p style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">
-      Збережи поточний стан як Current State, потім редагуй карту для Future State і порівняй метрики.
-    </p></div>
+}
 
-    <!-- Current State snapshot -->
-    <div class="mc" style="margin-bottom:8px">
-      <div class="ml">Current State (зараз)</div>
-      <div style="font-size:11px;margin-top:4px">VA: <b>${fmtT(curVAT)}</b> · NVA: <b>${curNVA}дн</b> · Eff: <b>${curEff}%</b></div>
-      ${curBN?`<div style="font-size:10px;color:var(--err);margin-top:2px">Bottleneck: ${curBN.label} CT=${curBN.ct}s</div>`:''}
-    </div>
+/* ══════════════════════════════════════
+   TARGET HELPERS
+══════════════════════════════════════ */
+function setTarget(k,v){
+  TARGET[k]=v;
+  snapDebounced();
+  renderAll();
+  if(atab==='f')renderFSPanel();
+}
 
-    <button class="abtn" onclick="snapshotFS()" style="margin-bottom:8px">
-      📸 Зберегти як Future State
-    </button>
+function autoFillTargets(){
+  // Set target CT = takt for all processes that exceed it
+  const ttk=getTargetTakt()||getTakt();
+  if(!ttk){toast('Спочатку задайте цільовий такт або попит','err');return}
+  snapshot();
+  ELS.forEach(el=>{
+    if(el.type==='process'){
+      // Target CT = min(current CT, takt) — only set if process exceeds takt
+      el.tct=el.ct>ttk?ttk:0;
+      // Target C/O: suggest 10 min if currently high
+      if(el.co>600)el.tco=Math.round(el.co*0.5);
+    }
+  });
+  renderAll();
+  if(atab==='f')renderFSPanel();
+  toast('Цілі заповнено автоматично','ok');
+}
 
-    ${hasFS?compareHTML:`<div style="font-size:11px;color:var(--text3);text-align:center;padding:16px 0">
-      <div style="font-size:24px;margin-bottom:6px;opacity:.3">◈</div>
-      Future State ще не збережено.<br>Внеси зміни в карту → натисни кнопку вище.
-    </div>`}
-
-    <div class="sh">Режим на карті</div>
-    <button class="abtn" id="fsModeBtn" onclick="toggleFS()" style="margin-bottom:0">
-      ${fsMode?'◈ Вимкнути FS overlay':'◈ Увімкнути FS overlay'}
-    </button>`;
+function clearTargets(){
+  snapshot();
+  TARGET.takt=0;TARGET.demand=0;
+  ELS.forEach(el=>{if(el.type==='process'){el.tct=0;el.tco=0;el.top=0;}});
+  renderAll();
+  if(atab==='f')renderFSPanel();
+  toast('Цілі скинуто');
 }
 
 function snapshotFS(){
@@ -2745,7 +2862,14 @@ function rtab(t){
 const FLDS={
   supplier:[{k:'label',l:'Назва',t:'text'},{k:'lead',l:'Плече поставки (дні)',t:'number'}],
   customer:[{k:'label',l:'Назва',t:'text'},{k:'demand',l:'Попит (шт/зміна)',t:'number'}],
-  process:[{k:'label',l:'Назва процесу',t:'text'},{k:'ct',l:'CT (сек)',t:'number',r:1},{k:'co',l:'C/O (сек)',t:'number',r:1},{k:'uptime',l:'Uptime (%)',t:'number',r:1},{k:'operators',l:'Операторів',t:'number',r:1},{k:'shifts',l:'Змін',t:'number',r:1},{k:'inv_out',l:'Запас на виході',t:'number',r:1}],
+  process:[
+    {k:'label',l:'Назва процесу',t:'text'},
+    {k:'ct',l:'CT поточний (сек)',t:'number',r:1},{k:'tct',l:'CT цільовий (сек)',t:'number',r:1},
+    {k:'co',l:'C/O поточний (сек)',t:'number',r:1},{k:'tco',l:'C/O цільовий (сек)',t:'number',r:1},
+    {k:'uptime',l:'Uptime (%)',t:'number',r:1},{k:'operators',l:'Операторів',t:'number',r:1},
+    {k:'shifts',l:'Змін',t:'number',r:1},{k:'top',l:'Операторів цільо.',t:'number',r:1},
+    {k:'inv_out',l:'Запас на виході',t:'number'},
+  ],
   inventory:[{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
   supermarket:[{k:'label',l:'Назва',t:'text'},{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
   kaizen:[{k:'label',l:'Назва',t:'text'},{k:'note',l:'Примітка',t:'text'}],
@@ -2913,15 +3037,17 @@ function updMetrics(){
       }).join('')}
     <\/svg></div>`:'';
 
+  const ttk=getTargetTakt();
   document.getElementById('mc').innerHTML=
     `<div class="mc"><div class="ml">VA Time</div><div class="mv">${fmtT(vat)}</div><div class="ms">${p.length} процес(ів)</div></div>
-    <div class="mc"><div class="ml">Час такту</div><div class="mv" style="color:${tk?'var(--ok)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div></div>
+    <div class="mc"><div class="ml">Час такту (поточний)</div><div class="mv" style="color:${tk?'var(--ok)':'var(--text3)'}">${tk?tk+'s':'—'}</div><div class="ms">Попит: ${ELS.find(e=>e.type==='customer')?.demand||'?'} шт/зм</div></div>
+    ${ttk>0?`<div class="mc" style="border-left:3px solid var(--accent)"><div class="ml" style="color:var(--accent)">🎯 Такт цільовий (FS)</div><div class="mv" style="color:var(--accent)">${ttk}s</div><div class="ms">${TARGET.demand>0?'Попит: '+TARGET.demand+' шт/зм':TARGET.takt>0?'Задано вручну':''}</div></div>`:''}
     <div class="mc"><div class="ml">NVA (запаси)</div><div class="mv">${invd} дн</div><div class="ms">${fmtT(nva)}</div></div>
     <div class="mc" style="background:${ebg};border-color:${ec}"><div class="ml" style="color:${ec}">Ефективність потоку</div><div class="mv" style="color:${ec}">${eff}%</div><div class="ms" style="color:${ec}">${eff<10?'⚠ Критично':eff<30?'⚠ Низька':eff<60?'✓ Прийнятна':'✓ Висока'}</div></div>
     ${bn?`<div class="mc" style="background:var(--err-bg);border-color:var(--err)"><div class="ml" style="color:var(--err)">Вузьке місце</div><div class="mv" style="font-size:14px;color:var(--err)">${bn.label}</div><div class="ms" style="color:var(--err)">CT=${bn.ct}s${tk?' '+(bn.ct>tk?'▲>такту':'✓≤такту'):''} · Up=${bn.uptime}%</div></div>`:''}
     ${chartSVG}
     <div class="sh" style="${p.length?'':'border-top:none;padding-top:0'}">Процеси</div>
-    ${p.map(x=>{const ib=bn&&x.id===bn.id;const col=ib?'var(--err)':tk&&x.ct>tk?'var(--warn)':'var(--ok)';return`<div class="pr2"><div class="dot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${ib?'<span class="bdg bd">BN</span>':''}</div>`}).join('')}`;
+    ${p.map(x=>{const ib=bn&&x.id===bn.id;const tref=ttk||tk;const col=ib?'var(--err)':tref&&x.ct>tref?'var(--warn)':'var(--ok)';const tct=x.tct||0;return`<div class="pr2"><div class="dot" style="background:${col}"></div><span style="flex:1;font-size:10px">${x.label}</span><span style="font-size:11px;color:${col};font-weight:700">${x.ct}s</span>${tct>0?`<span style="font-size:10px;color:var(--accent)">→${tct}s</span>`:''}${ib?'<span class="bdg bd">BN</span>':''}</div>`}).join('')}`;
 }
 
 function updTL(){
@@ -3039,16 +3165,22 @@ function renderYamazumi(){
 
   // Takt line
   const taktY=tk?PAD_TOP+CHART_H-(tk/maxCT)*CHART_H:null;
-  const taktLine=taktY!=null?`
+  const ttk2=getTargetTakt();
+  const taktLine=(taktY!=null?`
     <line x1="0" y1="${taktY}" x2="${totalW}" y2="${taktY}"
-      stroke="#1a5fa8" stroke-width="1.5" stroke-dasharray="6 3"/>
-    <rect x="${totalW-52}" y="${taktY-9}" width="52" height="14" rx="3" fill="#1a5fa8"/>
-    <text x="${totalW-26}" y="${taktY}"
+      stroke="#b87316" stroke-width="1.5" stroke-dasharray="6 3"/>
+    <rect x="${totalW-62}" y="${taktY-9}" width="62" height="14" rx="3" fill="#b87316"/>
+    <text x="${totalW-31}" y="${taktY}"
       text-anchor="middle" dominant-baseline="central"
-      font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">Takt ${tk}s</text>`:
-    `<text x="${totalW/2}" y="${PAD_TOP+CHART_H/2}" text-anchor="middle" font-size="11"
-      fill="var(--text3)" font-family="Arial,sans-serif">Додайте Клієнта з попитом</text>`;
-
+      font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">Takt CS ${tk}s</text>`:'')+
+  (ttk2>0?`
+    <line x1="0" y1="${PAD_TOP+CHART_H-(ttk2/maxCT)*CHART_H}" x2="${totalW}" y2="${PAD_TOP+CHART_H-(ttk2/maxCT)*CHART_H}"
+      stroke="#1a5fa8" stroke-width="2" stroke-dasharray="8 3"/>
+    <rect x="${totalW-65}" y="${PAD_TOP+CHART_H-(ttk2/maxCT)*CHART_H-9}" width="65" height="14" rx="3" fill="#1a5fa8"/>
+    <text x="${totalW-32}" y="${PAD_TOP+CHART_H-(ttk2/maxCT)*CHART_H}"
+      text-anchor="middle" dominant-baseline="central"
+      font-size="8" fill="#fff" font-family="Arial,sans-serif" font-weight="700">🎯 Takt FS ${ttk2}s</text>`:'');
+  const noTaktMsg=(!tk&&!ttk2)?`<text x="${totalW/2}" y="${PAD_TOP+CHART_H/2}" text-anchor="middle" font-size="11" fill="var(--text3)" font-family="Arial,sans-serif">Додайте Клієнта або задайте цільовий такт</text>`:'';
   // Y axis
   const nTicks=5;
   let yAxis='';
@@ -3064,6 +3196,7 @@ function renderYamazumi(){
     ${yAxis}
     ${bars}
     ${taktLine}
+    ${noTaktMsg}
     <rect x="0" y="${PAD_TOP+CHART_H}" width="${totalW}" height="1" fill="rgba(0,0,0,.15)"/>
   <\/svg>`;
 
@@ -3212,16 +3345,18 @@ function exportYamazumi(){
 }
 
 /* Make YZ_COLS part of saved state */
-function getState(){return{v:5,name:document.getElementById('mapName').value,ts:Date.now(),ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS,FS_ELS,FS_CONNS,YZ_COLS}}
+function getState(){return{v:5,name:document.getElementById('mapName').value,ts:Date.now(),ELS:ELS.map(e=>{const x={...e};delete x._hid;return x}),CONNS,GROUPS,FS_ELS,FS_CONNS,YZ_COLS,TARGET,SOP_OPS,SOP_DOCS}}
 function loadState(s){
   ELS=s.ELS||[];CONNS=s.CONNS||[];GROUPS=s.GROUPS||[];
   FS_ELS=s.FS_ELS||[];FS_CONNS=s.FS_CONNS||[];
   YZ_COLS=s.YZ_COLS||[];
+  SOP_OPS=s.SOP_OPS||[];SOP_DOCS=s.SOP_DOCS||[];
+  if(s.TARGET)Object.assign(TARGET,s.TARGET);
   GROUPS.forEach(g=>{if(g.collapsed)(g.childIds||[]).forEach(cid=>{const el=ELS.find(e=>e.id===cid);if(el)el._hid=true})});
   document.getElementById('mapName').value=s.name||'VSM';
   IDC=Math.max(ELS.length,GROUPS.length)+10;selId=null;selGid=null;renderAll();showProps();
-  setTimeout(fitView,50);
-  setTimeout(snapshot,100);
+  setTimeout(()=>{fitView();}, 150);
+  setTimeout(snapshot,200);
 }
 function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
 function saveMap(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
@@ -3243,7 +3378,12 @@ function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileRe
 window.addEventListener('load',()=>{
   const k=localStorage.getItem('vsm_api_key')||'';if(k)document.getElementById('aik').value=k;
   const m=allMaps(),ks=Object.keys(m);
-  if(ks.length)loadState(m[ks[ks.length-1]]);else{renderAll();showProps()}
+  if(ks.length){
+    loadState(m[ks[ks.length-1]]);
+  } else {
+    renderAll();showProps();
+    setTimeout(fitView,200);
+  }
 });
 function saveKey(){const k=document.getElementById('aik').value.trim();localStorage.setItem('vsm_api_key',k);toast(k?'Ключ збережено':'Ключ очищено',k?'ok':'')}
 async function runAi(){
@@ -3419,12 +3559,417 @@ function showSettings(){
     <div class="pg"><div class="pl">Версія</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.5 · BPI Group · LEI/Toyota Standard</p></div>
     <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
 }
-function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];FS_ELS=[];FS_CONNS=[];YZ_COLS=[];selId=null;selGid=null;renderAll();showProps()}
+function clearAll(){if(ELS.length>0&&!confirm('Очистити всю карту?'))return;ELS=[];CONNS=[];GROUPS=[];FS_ELS=[];FS_CONNS=[];YZ_COLS=[];SOP_OPS=[];SOP_DOCS=[];TARGET={takt:0,demand:0,showGaps:true};selId=null;selGid=null;renderAll();showProps()}
+
+renderAll();showProps();vx=40;vy=40;applyVP();snapshot();updUndoBtn();updOverlayBtn();
 function omod(h){document.getElementById('mod').innerHTML=h;document.getElementById('movbg').style.display='flex'}
 function cmod(){document.getElementById('movbg').style.display='none'}
 function toast(msg,type=''){const a=document.getElementById('ta'),t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;a.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
-renderAll();showProps();vx=40;vy=40;applyVP();snapshot();updUndoBtn();updOverlayBtn();
+/* ══════════════════════════════════════
+   SOP MODULE
+══════════════════════════════════════ */
+
+// SOP Data structures (persisted with map)
+// SOP_OPS: array of operation records
+// {id, procId, num, name, type:'va'|'nnva'|'nva', ct, role, equipment, freq, sopIds:[]}
+let SOP_OPS = [];
+
+// SOP_DOCS: array of SOP documents
+// {id, num, name, version, status:'act'|'dft'|'obs', scope, owner, opIds:[], url}
+let SOP_DOCS = [];
+
+let sopCurrentTab = 'ops';
+
+/* ── Open modal ── */
+function showSOPModule(){
+  sopAutoSync();
+  document.getElementById('sop-map-name').textContent =
+    document.getElementById('mapName').value;
+  document.getElementById('sop-modal').style.display = 'flex';
+  sopTab('ops');
+}
+
+/* Auto-sync: add missing OPS rows for new processes */
+function sopAutoSync(){
+  const procs = getProcs();
+  procs.forEach(p => {
+    const existing = SOP_OPS.filter(o => o.procId === p.id);
+    if(existing.length === 0){
+      // Create one default operation row per process
+      SOP_OPS.push({
+        id: 'op_'+newId(''),
+        procId: p.id,
+        num: p.label.slice(0,4).toUpperCase()+'-001',
+        name: p.label,
+        type: 'va',
+        ct: p.ct,
+        role: '',
+        equipment: '',
+        freq: '1/деталь',
+        sopIds: [],
+      });
+    }
+  });
+  // Remove ops for deleted processes
+  const procIds = procs.map(p => p.id);
+  SOP_OPS = SOP_OPS.filter(o => procIds.includes(o.procId));
+}
+
+/* ── Tab switching ── */
+function sopTab(tab){
+  sopCurrentTab = tab;
+  ['ops','sops','matrix','gaps'].forEach(t => {
+    document.getElementById('st-'+t).classList.toggle('on', t===tab);
+  });
+  renderSOPBody();
+}
+
+function renderSOPBody(){
+  const body = document.getElementById('sop-body');
+  if(!body) return;
+  if(sopCurrentTab === 'ops')    body.innerHTML = renderOpsTab();
+  if(sopCurrentTab === 'sops')   body.innerHTML = renderSOPsTab();
+  if(sopCurrentTab === 'matrix') body.innerHTML = renderMatrixTab();
+  if(sopCurrentTab === 'gaps')   body.innerHTML = renderGapsTab();
+}
+
+/* ════ TAB 1: Operations Registry ════ */
+function renderOpsTab(){
+  const procs = getProcs();
+  if(!procs.length) return `<div style="text-align:center;padding:40px;color:var(--text3)">Немає процесів на карті. Додайте процеси та поверніться сюди.</div>`;
+
+  let html = `<div class="sop-toolbar">
+    <button class="abtn" style="margin:0;padding:5px 10px;font-size:11px" onclick="sopAddOp()">+ Додати операцію</button>
+    <button class="abtn" style="margin:0;padding:5px 10px;font-size:11px" onclick="sopAutoSync();renderSOPBody()">↺ Синхронізувати з картою</button>
+    <span style="font-size:11px;color:var(--text3)">${SOP_OPS.length} операцій · ${getProcs().length} процесів</span>
+  </div>`;
+
+  // Group by process
+  procs.forEach(proc => {
+    const ops = SOP_OPS.filter(o => o.procId === proc.id);
+    const totalCT = ops.reduce((s,o)=>s+o.ct,0);
+    html += `<div class="proc-section">
+      <div class="ps-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+        <span style="font-size:13px">▼</span>
+        <span class="ps-title">${proc.label}</span>
+        <span style="font-size:11px;color:var(--text2)">${ops.length} операц. · ${totalCT}s CT</span>
+        <button class="hbtn" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation();sopAddOp('${proc.id}')">+ Операція</button>
+      </div>
+      <div>
+        <table class="sop-tbl">
+          <thead><tr>
+            <th style="width:90px">Номер</th>
+            <th>Назва операції</th>
+            <th style="width:70px">Тип</th>
+            <th style="width:55px">CT (сек)</th>
+            <th style="width:110px">Посада</th>
+            <th style="width:110px">Обладнання</th>
+            <th style="width:80px">Частота</th>
+            <th style="width:100px">СОП</th>
+            <th style="width:30px"></th>
+          </tr></thead>
+          <tbody>
+          ${ops.map((op,i) => `<tr>
+            <td><input class="sop-inp" value="${op.num}" onchange="sopSetOp('${op.id}','num',this.value)"></td>
+            <td><input class="sop-inp" value="${op.name}" onchange="sopSetOp('${op.id}','name',this.value)"></td>
+            <td>
+              <select class="sop-inp" onchange="sopSetOp('${op.id}','type',this.value)">
+                <option value="va"   ${op.type==='va'?'selected':''}>VA</option>
+                <option value="nnva" ${op.type==='nnva'?'selected':''}>NNVA</option>
+                <option value="nva"  ${op.type==='nva'?'selected':''}>NVA</option>
+              </select>
+            </td>
+            <td><input class="sop-inp" type="number" value="${op.ct}" onchange="sopSetOp('${op.id}','ct',+this.value)"></td>
+            <td><input class="sop-inp" value="${op.role}" placeholder="Оператор" onchange="sopSetOp('${op.id}','role',this.value)"></td>
+            <td><input class="sop-inp" value="${op.equipment}" placeholder="—" onchange="sopSetOp('${op.id}','equipment',this.value)"></td>
+            <td><input class="sop-inp" value="${op.freq}" placeholder="1/деталь" onchange="sopSetOp('${op.id}','freq',this.value)"></td>
+            <td style="font-size:10px">
+              ${op.sopIds.map(sid=>{const s=SOP_DOCS.find(d=>d.id===sid);return s?`<span class="sop-badge badge-act" title="${s.name}" style="cursor:pointer" onclick="sopTab('sops')">${s.num}</span> `:''}).join('')}
+              <span class="sop-link" onclick="sopLinkOp('${op.id}')">+СОП</span>
+            </td>
+            <td><button onclick="sopDelOp('${op.id}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--err)">✕</button></td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+/* ════ TAB 2: SOP Documents Registry ════ */
+function renderSOPsTab(){
+  let html = `<div class="sop-toolbar">
+    <button class="abtn" style="margin:0;padding:5px 10px;font-size:11px" onclick="sopAddDoc()">+ Новий СОП</button>
+    <button class="abtn" style="margin:0;padding:5px 10px;font-size:11px" onclick="sopAutoCreateDocs()">✨ Авто-створення СОП</button>
+    <span style="font-size:11px;color:var(--text3)">${SOP_DOCS.length} документів</span>
+  </div>
+  <table class="sop-tbl">
+    <thead><tr>
+      <th style="width:100px">Номер</th>
+      <th>Назва СОП</th>
+      <th style="width:60px">Версія</th>
+      <th style="width:80px">Статус</th>
+      <th style="width:120px">Відповідальний</th>
+      <th>Область застосування</th>
+      <th style="width:120px">Операції</th>
+      <th style="width:120px">Посилання</th>
+      <th style="width:30px"></th>
+    </tr></thead>
+    <tbody>
+    ${SOP_DOCS.map(doc => {
+      const linkedOps = SOP_OPS.filter(o=>o.sopIds.includes(doc.id));
+      const stBadge = {act:'badge-act',dft:'badge-dft',obs:'badge-obs'}[doc.status]||'badge-dft';
+      const stLabel = {act:'Діє',dft:'Розробка',obs:'Застарілий'}[doc.status]||'—';
+      return`<tr>
+        <td><input class="sop-inp" value="${doc.num}" onchange="sopSetDoc('${doc.id}','num',this.value)"></td>
+        <td><input class="sop-inp" value="${doc.name}" onchange="sopSetDoc('${doc.id}','name',this.value)"></td>
+        <td><input class="sop-inp" value="${doc.version}" placeholder="1.0" onchange="sopSetDoc('${doc.id}','version',this.value)"></td>
+        <td>
+          <select class="sop-inp" onchange="sopSetDoc('${doc.id}','status',this.value)">
+            <option value="act" ${doc.status==='act'?'selected':''}>Діє</option>
+            <option value="dft" ${doc.status==='dft'?'selected':''}>Розробка</option>
+            <option value="obs" ${doc.status==='obs'?'selected':''}>Застарілий</option>
+          </select>
+        </td>
+        <td><input class="sop-inp" value="${doc.owner}" placeholder="—" onchange="sopSetDoc('${doc.id}','owner',this.value)"></td>
+        <td><input class="sop-inp" value="${doc.scope}" placeholder="Область застосування" onchange="sopSetDoc('${doc.id}','scope',this.value)"></td>
+        <td style="font-size:10px">${linkedOps.length?linkedOps.map(o=>`<div style="white-space:nowrap">${o.num}</div>`).join(''):'<span style="color:var(--text3)">—</span>'}</td>
+        <td><input class="sop-inp" value="${doc.url||''}" placeholder="https://..." onchange="sopSetDoc('${doc.id}','url',this.value)">${doc.url?`<a href="${doc.url}" target="_blank" class="sop-link" style="display:block;margin-top:2px">↗ Відкрити</a>`:''}</td>
+        <td><button onclick="sopDelDoc('${doc.id}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--err)">✕</button></td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+  return html;
+}
+
+/* ════ TAB 3: SOP Matrix ════ */
+function renderMatrixTab(){
+  if(!SOP_OPS.length || !SOP_DOCS.length)
+    return `<div style="text-align:center;padding:40px;color:var(--text3)">Додайте операції та СОП-документи щоб побачити матрицю прив'язок.</div>`;
+
+  const procs = getProcs();
+  let html = `<div style="margin-bottom:10px;font-size:12px;color:var(--text2)">
+    Клацни на клітинку щоб додати/видалити прив'язку. <b>Синя</b> = СОП покриває операцію.
+  </div>
+  <div style="overflow:auto">
+  <table class="sop-tbl" style="min-width:max-content">
+    <thead><tr>
+      <th style="min-width:160px;position:sticky;left:0;z-index:3;background:var(--bg3)">Операція / Процес</th>
+      <th style="width:60px;text-align:center">Тип</th>
+      ${SOP_DOCS.map(d=>`<th style="text-align:center;min-width:80px;max-width:80px;font-size:9px" title="${d.name}">
+        <div>${d.num}</div>
+        <div style="font-weight:400;color:var(--text3);overflow:hidden;text-overflow:ellipsis;max-width:78px;white-space:nowrap">${d.name.slice(0,10)}</div>
+      </th>`).join('')}
+    </tr></thead>
+    <tbody>`;
+
+  procs.forEach(proc => {
+    const ops = SOP_OPS.filter(o => o.procId === proc.id);
+    if(!ops.length) return;
+    html += `<tr><td colspan="${2+SOP_DOCS.length}" style="background:var(--accent-bg);padding:5px 9px;font-size:11px;font-weight:700;color:var(--accent);position:sticky;left:0">${proc.label}</td></tr>`;
+    ops.forEach(op => {
+      html += `<tr>
+        <td style="position:sticky;left:0;background:var(--bg2);z-index:1;min-width:160px">
+          <div style="font-size:11px;font-weight:500">${op.name}</div>
+          <div style="font-size:9px;color:var(--text3)">${op.num}</div>
+        </td>
+        <td class="mc-cell"><span class="sop-badge badge-${op.type}">${op.type.toUpperCase()}</span></td>
+        ${SOP_DOCS.map(doc => {
+          const linked = op.sopIds.includes(doc.id);
+          return`<td class="mc-cell ${linked?'yes':'no'}"
+            onclick="sopToggleLink('${op.id}','${doc.id}')"
+            title="${linked?'Видалити прив\'язку':'Додати прив\'язку'}"
+          >${linked?'✓':'·'}</td>`;
+        }).join('')}
+      </tr>`;
+    });
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+/* ════ TAB 4: Coverage Analysis ════ */
+function renderGapsTab(){
+  const procs = getProcs();
+  const totalOps = SOP_OPS.length;
+  const coveredOps = SOP_OPS.filter(o=>o.sopIds.length>0).length;
+  const uncoveredOps = SOP_OPS.filter(o=>o.sopIds.length===0);
+  const vaUncovered = uncoveredOps.filter(o=>o.type==='va');
+  const coverage = totalOps?Math.round(coveredOps/totalOps*100):0;
+
+  // SOP without operations
+  const emptySops = SOP_DOCS.filter(d=>!SOP_OPS.some(o=>o.sopIds.includes(d.id)));
+  // Operations without role
+  const noRole = SOP_OPS.filter(o=>!o.role);
+  // Draft SOPs
+  const draftSops = SOP_DOCS.filter(d=>d.status==='dft');
+  const obsSops = SOP_DOCS.filter(d=>d.status==='obs');
+
+  return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+    <div class="mc"><div class="ml">Покриття СОП</div>
+      <div class="mv" style="color:${coverage>80?'var(--ok)':coverage>50?'var(--warn)':'var(--err)'}">${coverage}%</div>
+      <div class="ms">${coveredOps} / ${totalOps} операцій</div>
+    </div>
+    <div class="mc"><div class="ml">Без СОП (VA)</div>
+      <div class="mv" style="color:${vaUncovered.length?'var(--err)':'var(--ok)'}">${vaUncovered.length}</div>
+      <div class="ms">критичних операцій</div>
+    </div>
+    <div class="mc"><div class="ml">На розробці</div>
+      <div class="mv" style="color:${draftSops.length?'var(--warn)':'var(--ok)'}">${draftSops.length}</div>
+      <div class="ms">СОП документів</div>
+    </div>
+    <div class="mc"><div class="ml">Застарілих</div>
+      <div class="mv" style="color:${obsSops.length?'var(--err)':'var(--ok)'}">${obsSops.length}</div>
+      <div class="ms">потребують оновлення</div>
+    </div>
+  </div>
+
+  ${vaUncovered.length?`
+  <div style="background:var(--err-bg);border:.5px solid var(--err);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;color:var(--err);margin-bottom:8px">🔴 VA-операції без СОП — критичний пріоритет!</div>
+    <table class="sop-tbl">
+      <thead><tr><th>Операція</th><th>Процес</th><th>CT</th><th>Посада</th><th></th></tr></thead>
+      <tbody>${vaUncovered.map(op=>{
+        const proc=ELS.find(e=>e.id===op.procId);
+        return`<tr>
+          <td><b>${op.name}</b> <span style="font-size:10px;color:var(--text3)">${op.num}</span></td>
+          <td style="font-size:11px">${proc?proc.label:'—'}</td>
+          <td>${op.ct}s</td>
+          <td style="font-size:11px;color:${op.role?'var(--text)':'var(--err)'}">${op.role||'❌ Не вказана'}</td>
+          <td><button class="hbtn" style="font-size:10px;padding:2px 7px" onclick="sopAutoLinkToNew('${op.id}')">Створити СОП</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`:'<div style="background:var(--ok-bg);border:.5px solid var(--ok);border-radius:var(--r);padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--ok);font-weight:600">✓ Всі VA-операції мають СОП</div>'}
+
+  ${uncoveredOps.filter(o=>o.type!=='va').length?`
+  <div style="background:var(--warn-bg);border:.5px solid var(--warn);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;color:var(--warn);margin-bottom:6px">⚠ NNVA/NVA операції без СОП</div>
+    ${uncoveredOps.filter(o=>o.type!=='va').map(op=>{
+      const proc=ELS.find(e=>e.id===op.procId);
+      return`<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border)">${op.name} <span style="color:var(--text3)">(${proc?proc.label:'—'})</span></div>`;
+    }).join('')}
+  </div>`:''}
+
+  ${emptySops.length?`
+  <div style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;margin-bottom:6px">📄 СОП без прив'язаних операцій</div>
+    ${emptySops.map(d=>`<div style="font-size:11px;padding:3px 0">${d.num} — ${d.name}</div>`).join('')}
+  </div>`:''}
+
+  ${noRole.length?`
+  <div style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;margin-bottom:6px">👤 Операції без відповідальної посади</div>
+    ${noRole.map(op=>`<div style="font-size:11px;padding:2px 0">${op.num} — ${op.name}</div>`).join('')}
+  </div>`:''}`;
+}
+
+/* ════ SOP DATA OPERATIONS ════ */
+function sopSetOp(id,k,v){
+  const op=SOP_OPS.find(o=>o.id===id);if(!op)return;
+  op[k]=v;snapDebounced();renderSOPBody();
+}
+function sopSetDoc(id,k,v){
+  const doc=SOP_DOCS.find(d=>d.id===id);if(!doc)return;
+  doc[k]=v;snapDebounced();renderSOPBody();
+}
+function sopAddOp(procId){
+  const procs=getProcs();
+  const pid=procId||procs[0]?.id||'';
+  const proc=ELS.find(e=>e.id===pid);
+  const num=proc?proc.label.slice(0,3).toUpperCase()+'-'+(SOP_OPS.filter(o=>o.procId===pid).length+1).toString().padStart(3,'0'):'OP-001';
+  SOP_OPS.push({id:'op_'+newId(''),procId:pid,num,name:'Нова операція',type:'va',ct:60,role:'',equipment:'',freq:'1/деталь',sopIds:[]});
+  snapDebounced();renderSOPBody();
+}
+function sopDelOp(id){SOP_OPS=SOP_OPS.filter(o=>o.id!==id);snapDebounced();renderSOPBody()}
+function sopAddDoc(){
+  const n=SOP_DOCS.length+1;
+  SOP_DOCS.push({id:'sop_'+newId(''),num:'СОП-'+n.toString().padStart(3,'0'),name:'Новий СОП',version:'1.0',status:'dft',scope:'',owner:'',url:'',opIds:[]});
+  snapDebounced();renderSOPBody();
+}
+function sopDelDoc(id){
+  SOP_DOCS=SOP_DOCS.filter(d=>d.id!==id);
+  SOP_OPS.forEach(o=>{o.sopIds=o.sopIds.filter(s=>s!==id)});
+  snapDebounced();renderSOPBody();
+}
+function sopToggleLink(opId,docId){
+  const op=SOP_OPS.find(o=>o.id===opId);if(!op)return;
+  if(op.sopIds.includes(docId))op.sopIds=op.sopIds.filter(s=>s!==docId);
+  else op.sopIds.push(docId);
+  snapDebounced();renderSOPBody();
+}
+function sopLinkOp(opId){
+  // Simple prompt to pick SOP
+  if(!SOP_DOCS.length){if(confirm('Немає СОП документів. Створити новий?')){sopAddDoc();sopTab('sops');}return}
+  const list=SOP_DOCS.map((d,i)=>`${i+1}. ${d.num} — ${d.name}`).join('\n');
+  const ans=prompt('Виберіть номер СОП для прив\'язки:\n'+list);
+  const idx=parseInt(ans)-1;
+  if(idx>=0&&idx<SOP_DOCS.length)sopToggleLink(opId,SOP_DOCS[idx].id);
+}
+function sopAutoLinkToNew(opId){
+  const op=SOP_OPS.find(o=>o.id===opId);if(!op)return;
+  const proc=ELS.find(e=>e.id===op.procId);
+  const num='СОП-'+(SOP_DOCS.length+1).toString().padStart(3,'0');
+  const doc={id:'sop_'+newId(''),num,name:op.name,version:'1.0',status:'dft',scope:proc?proc.label:'',owner:op.role||'',url:'',opIds:[]};
+  SOP_DOCS.push(doc);
+  op.sopIds.push(doc.id);
+  snapDebounced();renderSOPBody();toast('СОП '+num+' створено та прив\'язано','ok');
+}
+function sopAutoCreateDocs(){
+  // Create SOP for each VA op without one
+  let created=0;
+  SOP_OPS.filter(o=>o.type==='va'&&!o.sopIds.length).forEach(op=>{
+    sopAutoLinkToNew(op.id);created++;
+  });
+  toast(created?`Створено ${created} СОП`:'Всі VA-операції вже мають СОП','ok');
+}
+
+/* ════ EXPORT ════ */
+function exportOpsRegistry(){
+  const procs=getProcs();
+  const rows=procs.flatMap(proc=>{
+    const ops=SOP_OPS.filter(o=>o.procId===proc.id);
+    return ops.map((op,i)=>`<tr>
+      <td>${i===0?proc.label:''}</td>
+      <td>${op.num}</td><td>${op.name}</td>
+      <td><b>${op.type.toUpperCase()}</b></td>
+      <td>${op.ct}s</td><td>${op.role||'—'}</td>
+      <td>${op.equipment||'—'}</td><td>${op.freq||'—'}</td>
+      <td>${op.sopIds.map(sid=>{const d=SOP_DOCS.find(x=>x.id===sid);return d?d.num:'?'}).join(', ')||'—'}</td>
+    </tr>`);
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><title>Реєстр операцій</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}h2{margin-bottom:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f0f4fb;font-size:11px}tr:nth-child(even){background:#fafafa}@media print{@page{size:A4 landscape}}<\/style>
+  </head><body><h2>Реєстр операцій — ${document.getElementById('mapName').value}</h2>
+  <p style="font-size:11px;color:#666">Дата: ${new Date().toLocaleDateString('uk-UA')} · Операцій: ${SOP_OPS.length}</p>
+  <table><thead><tr><th>Процес</th><th>Номер</th><th>Назва операції</th><th>Тип</th><th>CT</th><th>Посада</th><th>Обладнання</th><th>Частота</th><th>СОП</th></tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+}
+function exportSOPRegistry(){
+  const rows=SOP_DOCS.map(doc=>{
+    const ops=SOP_OPS.filter(o=>o.sopIds.includes(doc.id));
+    const st={act:'Діє',dft:'Розробка',obs:'Застарілий'}[doc.status]||'—';
+    return`<tr>
+      <td>${doc.num}</td><td><b>${doc.name}</b></td><td>${doc.version||'—'}</td>
+      <td style="color:${doc.status==='act'?'green':doc.status==='obs'?'red':'orange'}">${st}</td>
+      <td>${doc.owner||'—'}</td><td>${doc.scope||'—'}</td>
+      <td>${ops.map(o=>o.num).join(', ')||'—'}</td>
+      <td>${doc.url?`<a href="${doc.url}">${doc.url}</a>`:'—'}</td>
+    </tr>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><title>Реєстр СОП</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}h2{margin-bottom:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px 8px}th{background:#f0f4fb;font-size:11px}tr:nth-child(even){background:#fafafa}@media print{@page{size:A4 landscape}}<\/style>
+  </head><body><h2>Реєстр СОП — ${document.getElementById('mapName').value}</h2>
+  <p style="font-size:11px;color:#666">Дата: ${new Date().toLocaleDateString('uk-UA')} · СОП: ${SOP_DOCS.length}</p>
+  <table><thead><tr><th>Номер</th><th>Назва</th><th>Версія</th><th>Статус</th><th>Відповідальний</th><th>Область</th><th>Операції</th><th>Посилання</th></tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+}
 </script>
 </body>
 </html>
