@@ -1291,15 +1291,17 @@ function clearFS(){
 ══════════════════════════════════════ */
 function showTemplates(){
   const templates=[
-    {id:'mfg_simple',  icon:'🏭', title:'Машинобудування',    sub:'Постачальник → 3 процеси → Клієнт'},
-    {id:'food',        icon:'🍕', title:'Харчова промисловість',sub:'Сировина → обробка → пакування → збут'},
-    {id:'assembly',    icon:'🔧', title:'Складальне виробництво',sub:'Компоненти → складання → контроль'},
-    {id:'service',     icon:'📋', title:'Сервісний процес',    sub:'Заявка → обробка → виконання → закриття'},
-    {id:'office',      icon:'💼', title:'Офісний процес',      sub:'Вхідний документ → погодження → видача'},
-    {id:'warehouse',   icon:'📦', title:'Складська логістика', sub:'Прийом → зберігання → відвантаження'},
+    {id:'mfg_simple',  icon:'🏭', title:'Машинобудування',        sub:'Постачальник → штампування → зварювання → складання → контроль → клієнт з дільницями'},
+    {id:'food',        icon:'🍕', title:'Харчова промисловість',   sub:'Сировина → переробка → пакування → відвантаження, 3 постачальники'},
+    {id:'assembly',    icon:'🔧', title:'Складальне виробництво',  sub:'2 лінії подачі → складання → тест → пакування, Pull+Kanban'},
+    {id:'service',     icon:'📋', title:'Сервісний процес',        sub:'Заявка → тріаж → обробка → погодження → виконання → закриття'},
+    {id:'auto',        icon:'🚗', title:'Автомобільні компоненти', sub:'Штампування → зварювання → фарбування → складання, MRP+Pull'},
+    {id:'pharma',      icon:'💊', title:'Фармацевтика',           sub:'Синтез → очистка → таблетування → пакування → контроль якості'},
+    {id:'office',      icon:'💼', title:'Офісний процес',         sub:'Заявка → перевірка → погодження → підпис → реєстрація'},
+    {id:'warehouse',   icon:'📦', title:'Складська логістика',    sub:'Прийом → зберігання → комплектація → відвантаження'},
   ];
   omod(`<div class="modt">📋 Шаблони VSM карт</div>
-    <div class="tpl-grid">
+    <div class="tpl-grid" style="grid-template-columns:1fr 1fr">
       ${templates.map(t=>`
         <div class="tpl-card" onclick="loadTemplate('${t.id}');cmod()">
           <div style="font-size:20px;margin-bottom:4px">${t.icon}</div>
@@ -1314,175 +1316,291 @@ function loadTemplate(id){
   const T={
     mfg_simple:()=>{
       ELS=[
-        {id:'ts1',type:'supplier',x:20,y:80,label:'Постачальник',lead:5},
-        {id:'tpc',type:'production_control',x:280,y:20,label:'Планування'},
-        {id:'tc1',type:'customer',x:620,y:80,label:'Замовник',demand:400},
-        {id:'ti1',type:'inventory',x:205,y:240,label:'',qty:1000,days:3},
-        {id:'tp1',type:'process',x:60,y:280,label:'Заготівля',ct:55,co:120,uptime:80,operators:2,shifts:1,inv_out:0},
-        {id:'ti2',type:'inventory',x:345,y:240,label:'',qty:500,days:1},
-        {id:'tp2',type:'process',x:210,y:280,label:'Обробка',ct:80,co:60,uptime:75,operators:3,shifts:2,inv_out:0},
-        {id:'ti3',type:'inventory',x:490,y:240,label:'',qty:300,days:1},
-        {id:'tp3',type:'process',x:360,y:280,label:'Складання',ct:45,co:30,uptime:90,operators:2,shifts:2,inv_out:0},
-        {id:'ti4',type:'inventory',x:630,y:240,label:'',qty:150,days:0.5},
-        {id:'tp4',type:'process',x:510,y:280,label:'Контроль',ct:20,co:0,uptime:98,operators:1,shifts:2,inv_out:0},
-        {id:'tt1',type:'truck',x:530,y:80,label:'Щотижня'},
-        {id:'tk1',type:'kaizen',x:245,y:395,label:'SMED',note:''},
+        {id:'ts1',type:'supplier',x:20,y:80,label:'ТОВ Металопрокат',lead:5},
+        {id:'tpc',type:'production_control',x:310,y:20,label:'MRP система'},
+        {id:'tc1',type:'customer',x:700,y:80,label:'OEM Замовник',demand:480},
+        {id:'ti1',type:'inventory',x:215,y:250,label:'',qty:2400,days:5},
+        {id:'tp1',type:'process',x:40,y:290,label:'Штампування',ct:45,co:240,uptime:72,operators:2,shifts:2,inv_out:50},
+        {id:'ti2',type:'inventory',x:365,y:250,label:'',qty:960,days:2},
+        {id:'tp2',type:'process',x:210,y:290,label:'Зварювання',ct:92,co:60,uptime:65,operators:3,shifts:1,inv_out:20},
+        {id:'ti3',type:'inventory',x:510,y:250,label:'',qty:480,days:1},
+        {id:'tp3',type:'process',x:375,y:290,label:'Складання',ct:55,co:30,uptime:90,operators:4,shifts:2,inv_out:30},
+        {id:'ti4',type:'inventory',x:650,y:250,label:'',qty:240,days:0.5},
+        {id:'tp4',type:'process',x:520,y:290,label:'Контроль ВТК',ct:22,co:0,uptime:98,operators:1,shifts:2,inv_out:0},
+        {id:'ttr',type:'truck',x:610,y:80,label:'Щодня'},
+        {id:'tk1',type:'kaizen',x:250,y:410,label:'SMED',note:'C/O 240→30хв'},
+        {id:'tk2',type:'kaizen',x:390,y:410,label:'TPM',note:'Uptime 65→85%'},
+        {id:'top1',type:'operator',x:60,y:415,label:'2 оп.'},
+        {id:'top2',type:'operator',x:260,y:415,label:'3 оп.'},
       ];
       CONNS=[
-        {from:'ts1',to:'tp1',type:'transport'},
-        {from:'tp1',to:'tp2',type:'push'},
-        {from:'tp2',to:'tp3',type:'push'},
-        {from:'tp3',to:'tp4',type:'push'},
-        {from:'tp4',to:'tc1',type:'push'},
-        {from:'tt1',to:'tc1',type:'transport'},
-        {from:'tc1',to:'tpc',type:'info'},
-        {from:'tpc',to:'tp1',type:'info-e',note:'Місячний план'},
+        {from:'ts1',to:'tp1',type:'transport',note:'Щотижня'},
+        {from:'tp1',to:'tp2',type:'push'},{from:'tp2',to:'tp3',type:'push'},
+        {from:'tp3',to:'tp4',type:'push'},{from:'tp4',to:'tc1',type:'push'},
+        {from:'ttr',to:'tc1',type:'transport'},
+        {from:'tc1',to:'tpc',type:'info',note:'Місячне замовлення'},
+        {from:'tpc',to:'tp1',type:'info-e',note:'Тижневий план'},
         {from:'tpc',to:'ts1',type:'info-e',note:'Замовлення'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Дільниця пресування',x:20,y:265,w:315,h:175,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Дільниця зварювання',x:200,y:265,w:290,h:175,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g3',kind:'workstation',label:'Роб. місце складання',x:365,y:275,w:200,h:130,collapsed:false,childIds:[],mode:'sequential',operators:null},
       ];
       document.getElementById('mapName').value='Машинобудування — Current State';
     },
+
     food:()=>{
       ELS=[
-        {id:'fs1',type:'supplier',x:20,y:80,label:'Сировина',lead:2},
-        {id:'fc1',type:'customer',x:620,y:80,label:'Торгова мережа',demand:800},
-        {id:'fpc',type:'production_control',x:280,y:20,label:'Диспетчер'},
-        {id:'fi1',type:'inventory',x:195,y:240,label:'',qty:3000,days:4},
-        {id:'fp1',type:'process',x:40,y:280,label:'Приймання',ct:30,co:0,uptime:99,operators:2,shifts:3,inv_out:0},
-        {id:'fi2',type:'inventory',x:330,y:240,label:'',qty:1500,days:2},
-        {id:'fp2',type:'process',x:195,y:280,label:'Переробка',ct:120,co:90,uptime:72,operators:6,shifts:3,inv_out:0},
-        {id:'fi3',type:'inventory',x:470,y:240,label:'',qty:800,days:1},
-        {id:'fp3',type:'process',x:345,y:280,label:'Пакування',ct:40,co:45,uptime:85,operators:4,shifts:2,inv_out:0},
-        {id:'fi4',type:'inventory',x:605,y:240,label:'',qty:400,days:0.5},
-        {id:'fp4',type:'process',x:490,y:280,label:'Відвантаження',ct:25,co:0,uptime:95,operators:2,shifts:2,inv_out:0},
-        {id:'ft1',type:'truck',x:530,y:80,label:'Щодня'},
-        {id:'fk1',type:'kaizen',x:230,y:390,label:'TPM',note:'Uptime→85%'},
+        {id:'fs1',type:'supplier',x:20,y:40,label:'Зерно/Борошно',lead:2},
+        {id:'fs2',type:'supplier',x:20,y:140,label:'Упаковка',lead:7},
+        {id:'fs3',type:'supplier',x:20,y:240,label:'Добавки',lead:3},
+        {id:'fpc',type:'production_control',x:320,y:-10,label:'ERP система'},
+        {id:'fc1',type:'customer',x:700,y:120,label:'Торгова мережа',demand:1200},
+        {id:'fi1',type:'inventory',x:210,y:310,label:'',qty:5000,days:4},
+        {id:'fp1',type:'process',x:40,y:350,label:'Приймання',ct:30,co:0,uptime:99,operators:3,shifts:3,inv_out:0},
+        {id:'fi2',type:'inventory',x:355,y:310,label:'',qty:3000,days:2},
+        {id:'fp2',type:'process',x:210,y:350,label:'Переробка',ct:180,co:120,uptime:72,operators:8,shifts:3,inv_out:0},
+        {id:'fi3',type:'inventory',x:495,y:310,label:'',qty:1500,days:1},
+        {id:'fp3',type:'process',x:365,y:350,label:'Пакування',ct:45,co:60,uptime:82,operators:6,shifts:2,inv_out:0},
+        {id:'fi4',type:'inventory',x:625,y:310,label:'',qty:800,days:0.5},
+        {id:'fp4',type:'process',x:510,y:350,label:'Відвантаження',ct:25,co:0,uptime:96,operators:4,shifts:2,inv_out:0},
+        {id:'ft1',type:'truck',x:610,y:120,label:'Щодня'},
+        {id:'fk1',type:'kaizen',x:250,y:470,label:'TPM',note:'Up 72→88%'},
+        {id:'fk2',type:'kaizen',x:400,y:470,label:'SMED',note:'C/O→30хв'},
+        {id:'fsm',type:'supermarket',x:540,y:430,label:'Буфер',qty:500,days:0.5},
       ];
       CONNS=[
-        {from:'fs1',to:'fp1',type:'transport',note:'Щодня'},
-        {from:'fp1',to:'fp2',type:'push'},
-        {from:'fp2',to:'fp3',type:'push'},
-        {from:'fp3',to:'fp4',type:'push'},
-        {from:'fp4',to:'fc1',type:'push'},
-        {from:'ft1',to:'fc1',type:'transport'},
-        {from:'fc1',to:'fpc',type:'info',note:'Замовлення'},
-        {from:'fpc',to:'fp1',type:'info-e'},
-        {from:'fpc',to:'fs1',type:'info-e'},
+        {from:'fs1',to:'fp1',type:'transport',note:'Щодня'},{from:'fs2',to:'fp3',type:'transport',note:'2×/тиж'},{from:'fs3',to:'fp2',type:'transport',note:'Щотижня'},
+        {from:'fp1',to:'fp2',type:'push'},{from:'fp2',to:'fp3',type:'push'},{from:'fp3',to:'fp4',type:'push'},{from:'fp4',to:'fc1',type:'push'},
+        {from:'ft1',to:'fc1',type:'transport'},{from:'fc1',to:'fpc',type:'info',note:'EDI замовлення'},
+        {from:'fpc',to:'fp1',type:'info-e'},{from:'fpc',to:'fp2',type:'info-e',note:'Виробничий план'},{from:'fpc',to:'fs1',type:'info-e'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Виробничий цех',x:30,y:330,w:560,h:200,collapsed:false,childIds:[],mode:'sequential',operators:null},
       ];
       document.getElementById('mapName').value='Харчова промисловість — Current State';
     },
+
     assembly:()=>{
       ELS=[
-        {id:'as1',type:'supplier',x:20,y:40,label:'Деталі A',lead:3},
-        {id:'as2',type:'supplier',x:20,y:140,label:'Деталі B',lead:7},
-        {id:'ac1',type:'customer',x:600,y:90,label:'OEM Клієнт',demand:300},
-        {id:'apc',type:'production_control',x:280,y:-20,label:'Виробничий план'},
-        {id:'ai1',type:'inventory',x:195,y:240,label:'',qty:800,days:3},
-        {id:'ap1',type:'process',x:60,y:280,label:'Підготовка',ct:35,co:20,uptime:92,operators:1,shifts:2,inv_out:0},
-        {id:'ai2',type:'inventory',x:345,y:240,label:'',qty:400,days:1},
-        {id:'ap2',type:'process',x:210,y:280,label:'Складання',ct:75,co:45,uptime:85,operators:4,shifts:2,inv_out:0},
-        {id:'ai3',type:'inventory',x:480,y:240,label:'',qty:200,days:0.5},
-        {id:'ap3',type:'process',x:360,y:280,label:'Тестування',ct:30,co:10,uptime:96,operators:2,shifts:2,inv_out:0},
-        {id:'ai4',type:'inventory',x:600,y:240,label:'',qty:100,days:0.25},
-        {id:'ap4',type:'process',x:490,y:280,label:'Пакування',ct:15,co:5,uptime:99,operators:1,shifts:2,inv_out:0},
-        {id:'at1',type:'truck',x:510,y:90,label:'2×/тиждень'},
+        {id:'as1',type:'supplier',x:20,y:40,label:'Постачальник A (деталі)',lead:3},
+        {id:'as2',type:'supplier',x:20,y:160,label:'Постачальник B (корпус)',lead:7},
+        {id:'apc',type:'production_control',x:340,y:-10,label:'Планування (ERP)'},
+        {id:'ac1',type:'customer',x:700,y:100,label:'Дилерська мережа',demand:300},
+        {id:'ai1',type:'inventory',x:215,y:280,label:'',qty:600,days:3},
+        {id:'ap1',type:'process',x:60,y:320,label:'Підготовка A',ct:35,co:20,uptime:94,operators:1,shifts:2,inv_out:0},
+        {id:'ai1b',type:'inventory',x:215,y:400,label:'',qty:400,days:2},
+        {id:'ap1b',type:'process',x:60,y:440,label:'Підготовка B',ct:50,co:30,uptime:88,operators:2,shifts:2,inv_out:0},
+        {id:'ai2',type:'inventory',x:380,y:340,label:'',qty:300,days:1},
+        {id:'ap2',type:'process',x:230,y:370,label:'Складання',ct:95,co:45,uptime:84,operators:5,shifts:2,inv_out:0},
+        {id:'asm1',type:'supermarket',x:495,y:280,label:'Буфер готових',qty:80,days:0.5},
+        {id:'ai3',type:'inventory',x:560,y:340,label:'',qty:120,days:0.5},
+        {id:'ap3',type:'process',x:420,y:370,label:'Тестування',ct:40,co:10,uptime:96,operators:2,shifts:2,inv_out:0},
+        {id:'ai4',type:'inventory',x:680,y:340,label:'',qty:60,days:0.25},
+        {id:'ap4',type:'process',x:565,y:370,label:'Пакування',ct:18,co:5,uptime:99,operators:1,shifts:2,inv_out:0},
+        {id:'atr',type:'truck',x:610,y:100,label:'2×/тиждень'},
+        {id:'ak1',type:'kaizen',x:270,y:490,label:'Pull',note:'Впровадити Kanban'},
+        {id:'ak2',type:'kaizen',x:430,y:490,label:'Автом.',note:'Auto-тест'},
       ];
       CONNS=[
-        {from:'as1',to:'ap1',type:'transport'},{from:'as2',to:'ap1',type:'transport'},
-        {from:'ap1',to:'ap2',type:'push'},{from:'ap2',to:'ap3',type:'push'},
-        {from:'ap3',to:'ap4',type:'push'},{from:'ap4',to:'ac1',type:'push'},
-        {from:'at1',to:'ac1',type:'transport'},
-        {from:'ac1',to:'apc',type:'info',note:'Щотижневе замовлення'},
-        {from:'apc',to:'ap1',type:'info-e'},{from:'apc',to:'as1',type:'info-e'},{from:'apc',to:'as2',type:'info-e'},
+        {from:'as1',to:'ap1',type:'transport'},{from:'as2',to:'ap1b',type:'transport'},
+        {from:'ap1',to:'ap2',type:'push'},{from:'ap1b',to:'ap2',type:'push'},
+        {from:'ap2',to:'ap3',type:'pull',note:'Kanban'},{from:'ap3',to:'ap4',type:'push'},{from:'ap4',to:'ac1',type:'push'},
+        {from:'atr',to:'ac1',type:'transport'},
+        {from:'ac1',to:'apc',type:'info',note:'Щотижнева програма'},
+        {from:'apc',to:'ap1',type:'info-e'},{from:'apc',to:'ap1b',type:'info-e'},{from:'apc',to:'as1',type:'info-e'},{from:'apc',to:'as2',type:'info-e'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Дільниця підготовки',x:40,y:300,w:240,h:230,collapsed:false,childIds:[],mode:'parallel',operators:3},
+        {id:'g2',kind:'workstation',label:'Роб. місце складання',x:220,y:350,w:220,h:130,collapsed:false,childIds:[],mode:'sequential',operators:null},
       ];
       document.getElementById('mapName').value='Складальне виробництво — Current State';
     },
+
     service:()=>{
       ELS=[
-        {id:'sv1',type:'supplier',x:20,y:80,label:'Клієнт (вхід)',lead:0},
-        {id:'sc1',type:'customer',x:600,y:80,label:'Клієнт (вихід)',demand:50},
-        {id:'spc',type:'production_control',x:280,y:20,label:'Диспетчер'},
-        {id:'si1',type:'inventory',x:190,y:240,label:'',qty:25,days:2},
-        {id:'sp1',type:'process',x:40,y:280,label:'Реєстрація',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
-        {id:'si2',type:'inventory',x:330,y:240,label:'',qty:15,days:3},
-        {id:'sp2',type:'process',x:195,y:280,label:'Розгляд',ct:1800,co:0,uptime:80,operators:2,shifts:1,inv_out:0},
-        {id:'si3',type:'inventory',x:465,y:240,label:'',qty:8,days:1},
-        {id:'sp3',type:'process',x:345,y:280,label:'Погодження',ct:900,co:0,uptime:90,operators:1,shifts:1,inv_out:0},
-        {id:'si4',type:'inventory',x:595,y:240,label:'',qty:5,days:0.5},
-        {id:'sp4',type:'process',x:490,y:280,label:'Виконання',ct:600,co:0,uptime:95,operators:2,shifts:1,inv_out:0},
-        {id:'sk1',type:'kaizen',x:240,y:390,label:'Автоматизація',note:''},
+        {id:'sv1',type:'supplier',x:20,y:100,label:'Клієнт (вхідна заявка)',lead:0},
+        {id:'spc',type:'production_control',x:320,y:20,label:'CRM система'},
+        {id:'sc1',type:'customer',x:720,y:100,label:'Клієнт (результат)',demand:50},
+        {id:'si1',type:'inventory',x:215,y:250,label:'',qty:30,days:2},
+        {id:'sp1',type:'process',x:40,y:290,label:'Реєстрація',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
+        {id:'si2',type:'inventory',x:365,y:250,label:'',qty:20,days:3},
+        {id:'sp2',type:'process',x:215,y:290,label:'Тріаж / класифікація',ct:600,co:0,uptime:85,operators:1,shifts:1,inv_out:0},
+        {id:'si3',type:'inventory',x:505,y:250,label:'',qty:12,days:2},
+        {id:'sp3',type:'process',x:375,y:290,label:'Опрацювання',ct:2400,co:0,uptime:78,operators:3,shifts:1,inv_out:0},
+        {id:'si4',type:'inventory',x:635,y:250,label:'',qty:8,days:1},
+        {id:'sp4',type:'process',x:510,y:290,label:'Погодження',ct:1800,co:0,uptime:70,operators:1,shifts:1,inv_out:0},
+        {id:'si5',type:'inventory',x:745,y:250,label:'',qty:4,days:0.5},
+        {id:'sp5',type:'process',x:655,y:290,label:'Виконання',ct:900,co:0,uptime:92,operators:2,shifts:1,inv_out:0},
+        {id:'sk1',type:'kaizen',x:230,y:400,label:'Автоматизація',note:'Авто-тріаж'},
+        {id:'sk2',type:'kaizen',x:510,y:400,label:'Делегування',note:'Online погодження'},
+        {id:'sk3',type:'kaizen',x:660,y:400,label:'Стандарт.',note:'Чеклист виконання'},
       ];
       CONNS=[
-        {from:'sv1',to:'sp1',type:'push'},{from:'sp1',to:'sp2',type:'push'},
-        {from:'sp2',to:'sp3',type:'push'},{from:'sp3',to:'sp4',type:'push'},
-        {from:'sp4',to:'sc1',type:'push'},
-        {from:'sc1',to:'spc',type:'info'},{from:'spc',to:'sp1',type:'info-e'},
+        {from:'sv1',to:'sp1',type:'push'},{from:'sp1',to:'sp2',type:'push'},{from:'sp2',to:'sp3',type:'push'},
+        {from:'sp3',to:'sp4',type:'push'},{from:'sp4',to:'sp5',type:'push'},{from:'sp5',to:'sc1',type:'push'},
+        {from:'sc1',to:'spc',type:'info',note:'Звіт/фідбек'},{from:'spc',to:'sp1',type:'info-e'},{from:'spc',to:'sp3',type:'info-e',note:'Пріоритети'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Фронт-офіс',x:30,y:270,w:360,h:155,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Бек-офіс',x:365,y:270,w:430,h:155,collapsed:false,childIds:[],mode:'sequential',operators:null},
       ];
       document.getElementById('mapName').value='Сервісний процес — Current State';
     },
-    office:()=>{
+
+    auto:()=>{
       ELS=[
-        {id:'ov1',type:'supplier',x:20,y:80,label:'Відділ-ініціатор',lead:0},
-        {id:'oc1',type:'customer',x:600,y:80,label:'Одержувач',demand:30},
-        {id:'opc',type:'production_control',x:280,y:20,label:'Керівник'},
-        {id:'oi1',type:'inventory',x:190,y:240,label:'',qty:20,days:2},
-        {id:'op1',type:'process',x:40,y:280,label:'Підготовка',ct:600,co:0,uptime:95,operators:1,shifts:1,inv_out:0},
-        {id:'oi2',type:'inventory',x:330,y:240,label:'',qty:12,days:3},
-        {id:'op2',type:'process',x:195,y:280,label:'Перевірка',ct:1200,co:0,uptime:85,operators:1,shifts:1,inv_out:0},
-        {id:'oi3',type:'inventory',x:465,y:240,label:'',qty:6,days:2},
-        {id:'op3',type:'process',x:345,y:280,label:'Підпис',ct:900,co:0,uptime:70,operators:1,shifts:1,inv_out:0},
-        {id:'oi4',type:'inventory',x:595,y:240,label:'',qty:3,days:0.5},
-        {id:'op4',type:'process',x:490,y:280,label:'Реєстрація',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
-        {id:'ok1',type:'kaizen',x:240,y:390,label:'Цифровізація',note:''},
+        {id:'au1',type:'supplier',x:20,y:60,label:'Сталевий прокат',lead:10},
+        {id:'au2',type:'supplier',x:20,y:180,label:'Комплектуючі',lead:5},
+        {id:'apc',type:'production_control',x:340,y:-10,label:'MRP / виробн. план'},
+        {id:'ac1',type:'customer',x:740,y:120,label:'Автозавод (OEM)',demand:360},
+        {id:'aui1',type:'inventory',x:215,y:300,label:'',qty:3600,days:10},
+        {id:'aup1',type:'process',x:40,y:340,label:'Штампування',ct:38,co:360,uptime:68,operators:2,shifts:3,inv_out:80},
+        {id:'aui2',type:'inventory',x:365,y:300,label:'',qty:1440,days:4},
+        {id:'aup2',type:'process',x:215,y:340,label:'Зварювання',ct:75,co:90,uptime:62,operators:4,shifts:2,inv_out:30},
+        {id:'aui3',type:'inventory',x:510,y:300,label:'',qty:720,days:2},
+        {id:'aup3',type:'process',x:380,y:340,label:'Фарбування',ct:120,co:180,uptime:74,operators:3,shifts:2,inv_out:20},
+        {id:'aui4',type:'inventory',x:640,y:300,label:'',qty:360,days:1},
+        {id:'aup4',type:'process',x:520,y:340,label:'Складання',ct:55,co:45,uptime:88,operators:6,shifts:2,inv_out:15},
+        {id:'aui5',type:'inventory',x:760,y:300,label:'',qty:120,days:0.3},
+        {id:'aup5',type:'process',x:665,y:340,label:'Контроль ВТК',ct:20,co:0,uptime:99,operators:1,shifts:2,inv_out:0},
+        {id:'autr',type:'truck',x:650,y:120,label:'Щодня'},
+        {id:'ak1',type:'kaizen',x:60,y:460,label:'SMED',note:'C/O 360→60хв'},
+        {id:'ak2',type:'kaizen',x:220,y:460,label:'TPM',note:'Up 62→80%'},
+        {id:'ak3',type:'kaizen',x:395,y:460,label:'Paint line',note:'C/O→45хв'},
+        {id:'asm1',type:'supermarket',x:570,y:430,label:'Готова продукція',qty:200,days:0.5},
       ];
       CONNS=[
-        {from:'ov1',to:'op1',type:'push'},{from:'op1',to:'op2',type:'push'},
-        {from:'op2',to:'op3',type:'push'},{from:'op3',to:'op4',type:'push'},
-        {from:'op4',to:'oc1',type:'push'},
-        {from:'oc1',to:'opc',type:'info'},{from:'opc',to:'op1',type:'info-e'},
+        {from:'au1',to:'aup1',type:'transport',note:'Щотижня'},{from:'au2',to:'aup4',type:'transport',note:'Щодня'},
+        {from:'aup1',to:'aup2',type:'push'},{from:'aup2',to:'aup3',type:'push'},{from:'aup3',to:'aup4',type:'push'},
+        {from:'aup4',to:'aup5',type:'pull',note:'Kanban'},{from:'aup5',to:'ac1',type:'push'},
+        {from:'autr',to:'ac1',type:'transport'},
+        {from:'ac1',to:'apc',type:'info',note:'EDI тижневий'},
+        {from:'apc',to:'aup1',type:'info-e',note:'Місячний план'},{from:'apc',to:'aup4',type:'info-e',note:'Денний план'},{from:'apc',to:'au1',type:'info-e'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Заготівельна дільниця',x:30,y:318,w:355,h:190,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Складально-контрольна',x:370,y:318,w:380,h:190,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g3',kind:'workstation',label:'Фарбування',x:378,y:325,w:140,h:140,collapsed:false,childIds:[],mode:'sequential',operators:null},
+      ];
+      document.getElementById('mapName').value='Автомобільні компоненти — Current State';
+    },
+
+    pharma:()=>{
+      ELS=[
+        {id:'ph1',type:'supplier',x:20,y:80,label:'Сировина (АФІ)',lead:21},
+        {id:'ph2',type:'supplier',x:20,y:200,label:'Допоміжні речовини',lead:14},
+        {id:'phpc',type:'production_control',x:340,y:0,label:'QA / Виробн. план'},
+        {id:'phc',type:'customer',x:760,y:140,label:'Дистрибутор',demand:150},
+        {id:'phi1',type:'inventory',x:215,y:320,label:'',qty:300,days:14},
+        {id:'php1',type:'process',x:40,y:360,label:'Синтез / змішування',ct:480,co:240,uptime:80,operators:4,shifts:3,inv_out:0},
+        {id:'phi2',type:'inventory',x:375,y:320,label:'',qty:150,days:7},
+        {id:'php2',type:'process',x:220,y:360,label:'Очистка / фільтрація',ct:360,co:120,uptime:85,operators:3,shifts:2,inv_out:0},
+        {id:'phi3',type:'inventory',x:525,y:320,label:'',qty:80,days:5},
+        {id:'php3',type:'process',x:390,y:360,label:'Таблетування',ct:60,co:180,uptime:75,operators:3,shifts:2,inv_out:0},
+        {id:'phi4',type:'inventory',x:655,y:320,label:'',qty:50,days:3},
+        {id:'php4',type:'process',x:540,y:360,label:'Пакування',ct:30,co:90,uptime:90,operators:4,shifts:2,inv_out:0},
+        {id:'phi5',type:'inventory',x:775,y:320,label:'',qty:30,days:2},
+        {id:'php5',type:'process',x:670,y:360,label:'Контроль якості',ct:240,co:0,uptime:98,operators:2,shifts:1,inv_out:0},
+        {id:'phtr',type:'truck',x:670,y:140,label:'Замов.'},
+        {id:'phk1',type:'kaizen',x:230,y:480,label:'Yield',note:'Втрати→3%'},
+        {id:'phk2',type:'kaizen',x:400,y:480,label:'SMED',note:'C/O→60хв'},
+        {id:'phk3',type:'kaizen',x:545,y:480,label:'Lean QC',note:'Час→120хв'},
+      ];
+      CONNS=[
+        {from:'ph1',to:'php1',type:'transport',note:'Щомісяця'},{from:'ph2',to:'php1',type:'transport',note:'Щотижня'},
+        {from:'php1',to:'php2',type:'push'},{from:'php2',to:'php3',type:'push'},{from:'php3',to:'php4',type:'push'},{from:'php4',to:'php5',type:'push'},{from:'php5',to:'phc',type:'push'},
+        {from:'phtr',to:'phc',type:'transport'},
+        {from:'phc',to:'phpc',type:'info',note:'Квартальний прогноз'},
+        {from:'phpc',to:'php1',type:'info-e',note:'Виробн. замовлення'},{from:'phpc',to:'ph1',type:'info-e'},{from:'phpc',to:'php3',type:'info-e'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Виробництво субстанції',x:30,y:338,w:380,h:200,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Виробництво ГЛФ',x:380,y:338,w:440,h:200,collapsed:false,childIds:[],mode:'sequential',operators:null},
+      ];
+      document.getElementById('mapName').value='Фармацевтика — Current State';
+    },
+
+    office:()=>{
+      ELS=[
+        {id:'ov1',type:'supplier',x:20,y:100,label:'Відділ-ініціатор',lead:0},
+        {id:'opc',type:'production_control',x:320,y:20,label:'Керівник підрозділу'},
+        {id:'oc1',type:'customer',x:720,y:100,label:'Одержувач послуги',demand:30},
+        {id:'oi1',type:'inventory',x:215,y:250,label:'',qty:25,days:2},
+        {id:'op1',type:'process',x:40,y:290,label:'Підготовка документа',ct:600,co:0,uptime:90,operators:1,shifts:1,inv_out:0},
+        {id:'oi2',type:'inventory',x:365,y:250,label:'',qty:15,days:3},
+        {id:'op2',type:'process',x:215,y:290,label:'Перевірка (юрист)',ct:1800,co:0,uptime:75,operators:1,shifts:1,inv_out:0},
+        {id:'oi3',type:'inventory',x:505,y:250,label:'',qty:8,days:2},
+        {id:'op3',type:'process',x:375,y:290,label:'Погодження (фін.)',ct:900,co:0,uptime:80,operators:1,shifts:1,inv_out:0},
+        {id:'oi4',type:'inventory',x:635,y:250,label:'',qty:5,days:1},
+        {id:'op4',type:'process',x:510,y:290,label:'Підпис керівника',ct:1200,co:0,uptime:65,operators:1,shifts:1,inv_out:0},
+        {id:'oi5',type:'inventory',x:750,y:250,label:'',qty:3,days:0.5},
+        {id:'op5',type:'process',x:655,y:290,label:'Реєстрація / видача',ct:300,co:0,uptime:99,operators:1,shifts:1,inv_out:0},
+        {id:'ok1',type:'kaizen',x:230,y:400,label:'Цифровізація',note:'e-підпис'},
+        {id:'ok2',type:'kaizen',x:390,y:400,label:'Паралельне погодження',note:''},
+        {id:'ok3',type:'kaizen',x:520,y:400,label:'Делегування',note:'Ліміт підпису'},
+      ];
+      CONNS=[
+        {from:'ov1',to:'op1',type:'push'},{from:'op1',to:'op2',type:'push'},{from:'op2',to:'op3',type:'push'},
+        {from:'op3',to:'op4',type:'push'},{from:'op4',to:'op5',type:'push'},{from:'op5',to:'oc1',type:'push'},
+        {from:'oc1',to:'opc',type:'info'},{from:'opc',to:'op1',type:'info-e',note:'Пріоритети тижня'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Фронт-офіс (підготовка)',x:30,y:268,w:350,h:155,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Погодження (бек-офіс)',x:365,y:268,w:430,h:155,collapsed:false,childIds:[],mode:'parallel',operators:2},
       ];
       document.getElementById('mapName').value='Офісний процес — Current State';
     },
+
     warehouse:()=>{
       ELS=[
         {id:'wv1',type:'supplier',x:20,y:80,label:'Постачальник',lead:3},
-        {id:'wc1',type:'customer',x:600,y:80,label:'Виробництво',demand:600},
-        {id:'wpc',type:'production_control',x:280,y:20,label:'WMS система'},
-        {id:'wi1',type:'inventory',x:190,y:240,label:'',qty:5000,days:7},
-        {id:'wp1',type:'process',x:40,y:280,label:'Приймання',ct:40,co:0,uptime:96,operators:3,shifts:1,inv_out:0},
-        {id:'wi2',type:'inventory',x:330,y:240,label:'',qty:3000,days:5},
-        {id:'wp2',type:'process',x:195,y:280,label:'Розміщення',ct:25,co:0,uptime:98,operators:4,shifts:1,inv_out:0},
-        {id:'wi3',type:'inventory',x:465,y:240,label:'',qty:1500,days:3},
-        {id:'wp3',type:'process',x:345,y:280,label:'Комплектація',ct:35,co:10,uptime:90,operators:5,shifts:2,inv_out:0},
-        {id:'wi4',type:'inventory',x:595,y:240,label:'',qty:500,days:1},
-        {id:'wp4',type:'process',x:490,y:280,label:'Відвантаження',ct:20,co:0,uptime:97,operators:2,shifts:2,inv_out:0},
-        {id:'wt1',type:'truck',x:510,y:80,label:'Щодня'},
-        {id:'wsm',type:'supermarket',x:180,y:380,label:'Буферний склад',qty:1000,days:2},
-        {id:'wk1',type:'kaizen',x:230,y:475,label:'5S',note:''},
+        {id:'wpc',type:'production_control',x:340,y:-10,label:'WMS система'},
+        {id:'wc1',type:'customer',x:760,y:80,label:'Виробничі дільниці',demand:800},
+        {id:'wi1',type:'inventory',x:215,y:280,label:'',qty:8000,days:10},
+        {id:'wp1',type:'process',x:40,y:320,label:'Приймання та контроль',ct:45,co:0,uptime:97,operators:4,shifts:1,inv_out:0},
+        {id:'wi2',type:'inventory',x:365,y:280,label:'',qty:5000,days:7},
+        {id:'wp2',type:'process',x:215,y:320,label:'Ідентифікація / маркування',ct:20,co:0,uptime:99,operators:2,shifts:1,inv_out:0},
+        {id:'wi3',type:'inventory',x:510,y:280,label:'',qty:3000,days:5},
+        {id:'wp3',type:'process',x:380,y:320,label:'Розміщення на стелажах',ct:25,co:0,uptime:96,operators:5,shifts:1,inv_out:0},
+        {id:'wi4',type:'inventory',x:645,y:280,label:'',qty:1500,days:2},
+        {id:'wp4',type:'process',x:520,y:320,label:'Комплектація (pick)',ct:35,co:10,uptime:90,operators:8,shifts:2,inv_out:0},
+        {id:'wi5',type:'inventory',x:775,y:280,label:'',qty:400,days:0.5},
+        {id:'wp5',type:'process',x:665,y:320,label:'Відвантаження',ct:20,co:0,uptime:98,operators:3,shifts:2,inv_out:0},
+        {id:'wtr',type:'truck',x:670,y:80,label:'Щодня'},
+        {id:'wk1',type:'kaizen',x:230,y:440,label:'5S',note:'Зони зберігання'},
+        {id:'wk2',type:'kaizen',x:390,y:440,label:'ABC-аналіз',note:'Топ-товари ближче'},
+        {id:'wk3',type:'kaizen',x:540,y:440,label:'Pick-by-light',note:'Помилки→0%'},
+        {id:'wsm',type:'supermarket',x:530,y:400,label:'Буфер відвантаження',qty:300,days:0.3},
       ];
       CONNS=[
-        {from:'wv1',to:'wp1',type:'transport',note:'Щодня'},{from:'wp1',to:'wp2',type:'push'},
-        {from:'wp2',to:'wp3',type:'push'},{from:'wp3',to:'wp4',type:'push'},
-        {from:'wp4',to:'wc1',type:'push'},{from:'wt1',to:'wc1',type:'transport'},
-        {from:'wc1',to:'wpc',type:'info',note:'Замовлення'},{from:'wpc',to:'wp1',type:'info-e'},
-        {from:'wpc',to:'wp3',type:'info-e',note:'Pick list'},{from:'wpc',to:'wv1',type:'info-e'},
+        {from:'wv1',to:'wp1',type:'transport',note:'Щодня'},{from:'wp1',to:'wp2',type:'push'},{from:'wp2',to:'wp3',type:'push'},
+        {from:'wp3',to:'wp4',type:'pull',note:'Kanban-картки'},{from:'wp4',to:'wp5',type:'push'},{from:'wp5',to:'wc1',type:'push'},
+        {from:'wtr',to:'wc1',type:'transport'},
+        {from:'wc1',to:'wpc',type:'info',note:'Заявка (EDI)'},{from:'wpc',to:'wp4',type:'info-e',note:'Pick list'},{from:'wpc',to:'wp1',type:'info-e'},{from:'wpc',to:'wv1',type:'info-e',note:'Замовлення на поповнення'},
+      ];
+      GROUPS=[
+        {id:'g1',kind:'section',label:'Зона приймання',x:30,y:300,w:365,h:190,collapsed:false,childIds:[],mode:'sequential',operators:null},
+        {id:'g2',kind:'section',label:'Зона відбору та відвантаження',x:370,y:300,w:430,h:190,collapsed:false,childIds:[],mode:'sequential',operators:null},
       ];
       document.getElementById('mapName').value='Складська логістика — Current State';
     },
   };
+
   if(T[id]){
     snapshot();
     GROUPS=[];FS_ELS=[];FS_CONNS=[];selId=null;selGid=null;
     T[id]();
-    IDC=200;
+    IDC=300;
+    syncGrpChildren();
     renderAll();showProps();
     setTimeout(fitView,50);
     toast('Шаблон завантажено','ok');
   }
 }
 
-/* ══════════════════════════════════════
-   PRINT
-══════════════════════════════════════ */
+
 function printMap(){
   // Before print: fit everything, then call print
   const prevVx=vx,prevVy=vy,prevVz=vz;
@@ -1937,29 +2055,51 @@ function renderConns(){
     const fc=resolveCenter(c.from), tc=resolveCenter(c.to);
     if(!fc||!tc)return;
     const cfg=CC[c.type]||CC.push;
+
+    // Calculate edge intersection points so arrows don't overlap elements
+    const fromEl=ELS.find(e=>e.id===c.from);
+    const toEl=ELS.find(e=>e.id===c.to);
+    const fromGrp=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(c.from));
+    const toGrp=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(c.to));
+
+    let fp=fc,tp=tc;
+    // From edge
+    if(fromEl&&!fromEl._hid){
+      const b=bb(fromEl);
+      fp=rectEdge(tc.x,tc.y,fc.x,fc.y,fromEl.x,fromEl.y,b.w,b.h);
+    } else if(fromGrp){
+      fp=rectEdge(tc.x,tc.y,fc.x,fc.y,fromGrp.x,fromGrp.y,180,82);
+    }
+    // To edge
+    if(toEl&&!toEl._hid){
+      const b=bb(toEl);
+      tp=rectEdge(fc.x,fc.y,tc.x,tc.y,toEl.x,toEl.y,b.w,b.h);
+    } else if(toGrp){
+      tp=rectEdge(fc.x,fc.y,tc.x,tc.y,toGrp.x,toGrp.y,180,82);
+    }
     const G=document.createElementNS('http://www.w3.org/2000/svg','g');
     if(cfg.cv){
-      const mx=(fc.x+tc.x)/2,my=Math.min(fc.y,tc.y)-40;
+      const mx=(fp.x+tp.x)/2,my=Math.min(fp.y,tp.y)-40;
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-      p.setAttribute('d',`M${fc.x} ${fc.y} Q${mx} ${my} ${tc.x} ${tc.y}`);
+      p.setAttribute('d',`M${fp.x} ${fp.y} Q${mx} ${my} ${tp.x} ${tp.y}`);
       p.setAttribute('fill','none');p.setAttribute('stroke',cfg.c);p.setAttribute('stroke-width','2');
       p.setAttribute('stroke-dasharray',cfg.d==='0'?'':cfg.d);
       p.setAttribute('marker-end',`url(#${cfg.m})`);
       G.appendChild(p);
-      const lx=fc.x*.25+mx*.5+tc.x*.25,ly=fc.y*.25+my*.5+tc.y*.25;
+      const lx=fp.x*.25+mx*.5+tp.x*.25,ly=fp.y*.25+my*.5+tp.y*.25;
       const em=document.createElementNS('http://www.w3.org/2000/svg','text');
       em.setAttribute('x',lx);em.setAttribute('y',ly);em.setAttribute('text-anchor','middle');
       em.setAttribute('font-size','11');em.setAttribute('fill',cfg.c);em.textContent='✉';
       G.appendChild(em);
     } else {
       const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-      l.setAttribute('x1',fc.x);l.setAttribute('y1',fc.y);l.setAttribute('x2',tc.x);l.setAttribute('y2',tc.y);
+      l.setAttribute('x1',fp.x);l.setAttribute('y1',fp.y);l.setAttribute('x2',tp.x);l.setAttribute('y2',tp.y);
       l.setAttribute('stroke',cfg.c);l.setAttribute('stroke-width','2.5');
       l.setAttribute('stroke-dasharray',cfg.d==='0'?'':cfg.d);
       l.setAttribute('marker-end',`url(#${cfg.m})`);
       G.appendChild(l);
     }
-    const lx=(fc.x+tc.x)/2,ly=(fc.y+tc.y)/2-(cfg.cv?26:9);
+    const lx=(fp.x+tp.x)/2,ly=(fp.y+tp.y)/2-(cfg.cv?26:12);
     const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
     lt.setAttribute('x',lx);lt.setAttribute('y',ly);lt.setAttribute('text-anchor','middle');
     lt.setAttribute('font-size','8');lt.setAttribute('fill',cfg.c);lt.setAttribute('font-weight','700');
@@ -1968,15 +2108,14 @@ function renderConns(){
 
     // Kanban card count on pull connections
     if(showKanban && c.type==='pull'){
-      const fromEl=ELS.find(e=>e.id===c.from), toEl=ELS.find(e=>e.id===c.to);
-      if(fromEl&&fromEl.type==='process'&&toEl&&toEl.type==='process'){
+      const fromEl2=ELS.find(e=>e.id===c.from), toEl2=ELS.find(e=>e.id===c.to);
+      if(fromEl2&&fromEl2.type==='process'&&toEl2&&toEl2.type==='process'){
         const tk2=getTakt();
         if(tk2>0){
-          // Kanban formula: K = (CT_from * demand_daily + safety) / container
           const dem=ELS.find(e=>e.type==='customer')?.demand||0;
-          const safetyFactor=1.1; // 10% safety stock
+          const safetyFactor=1.1;
           const container=Math.max(1,c.kanban_container||10);
-          const replenishTime=(fromEl.ct+fromEl.co/100)/3600; // hours
+          const replenishTime=(fromEl2.ct+fromEl2.co/100)/3600;
           const k=Math.ceil((dem/8*replenishTime*safetyFactor)/container);
           const kbx=lx-18,kby=ly+8;
           const kbg=document.createElementNS('http://www.w3.org/2000/svg','rect');
@@ -2020,9 +2159,34 @@ function renderConns(){
   });
 }
 
-/* ══════════════════════════════════════
-   GROUP HELPERS — PARENT-CHILD BINDING
-══════════════════════════════════════ */
+/* Intersect line from (x1,y1) to (x2,y2) with rectangle — returns point on rect edge */
+function rectEdge(x1,y1,x2,y2,rx,ry,rw,rh){
+  // Direction from source to target
+  const dx=x2-x1,dy=y2-y1;
+  if(Math.abs(dx)<0.01&&Math.abs(dy)<0.01)return{x:x2,y:y2};
+  // Clamp to box edges
+  const cx=rx+rw/2,cy=ry+rh/2;
+  const hw=rw/2+2,hh=rh/2+2; // small inset so arrow tip is visible
+  // Parametric: x=x1+t*dx, y=y1+t*dy at box edges
+  const ts=[];
+  if(Math.abs(dx)>0.01){
+    ts.push((rx-hw-x1)/dx,(rx+hw+rw-x1)/dx);
+  }
+  if(Math.abs(dy)>0.01){
+    ts.push((ry-hh-y1)/dy,(ry+hh+rh-y1)/dy);
+  }
+  // Find smallest t>0 that puts point inside perpendicular bounds
+  let best=1;
+  for(const t of ts){
+    if(t>0.01&&t<best){
+      const px=x1+t*dx,py=y1+t*dy;
+      if(px>=rx-hw&&px<=rx+rw+hw&&py>=ry-hh&&py<=ry+rh+hh)best=t;
+    }
+  }
+  return{x:x1+best*dx,y:y1+best*dy};
+}
+
+/* ══════════════════════════════════════ */
 
 /* Returns all ELS whose center is inside group bbox */
 function elInsideGrp(g){
@@ -2396,7 +2560,18 @@ document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;docum
 document.getElementById('cvwrap').addEventListener('wheel',e=>{
   e.preventDefault();
   const r=document.getElementById('cv').getBoundingClientRect();
-  zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY);
+  if(e.ctrlKey||e.metaKey){
+    // Ctrl+scroll = zoom toward cursor
+    zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY);
+  } else if(e.shiftKey){
+    // Shift+scroll = pan horizontal
+    vx-=e.deltaY*0.8;applyVP();
+  } else {
+    // Plain scroll = pan vertical + horizontal
+    vx-=e.deltaX*0.8;
+    vy-=e.deltaY*0.8;
+    applyVP();
+  }
 },{passive:false});
 
 /* prevent middle-mouse autoscroll */
@@ -2839,7 +3014,7 @@ function showSettings(){
     <div class="pg"><div class="pl">Клавіші</div><p style="font-size:10px;color:var(--text2);line-height:1.8">
     <b>V</b> вибір · <b>C</b> з'єднати · <b>G</b> група · <b>F</b> вписати<br>
     <b>Ctrl+Z/Y</b> undo/redo · <b>Ctrl+C/V/D</b> копія/вставка/дублювання<br>
-    <b>Scroll</b> масштаб · <b>Space+drag</b> переміщення · <b>Del</b> видалити<br>
+    <b>Scroll</b> переміщення · <b>Ctrl+Scroll</b> масштаб · <b>Space+drag</b> пан · <b>Del</b> видалити<br>
     <b>Timeline</b> — кнопка ⏱ · <b>Future State</b> — кнопка ◈</p></div>
     <div class="pg"><div class="pl">Версія</div><p style="font-size:11px;color:var(--text2)">VSM Constructor v1.5 · BPI Group · LEI/Toyota Standard</p></div>
     <div class="modbts"><button class="mbtn" onclick="cmod()">Закрити</button></div>`);
