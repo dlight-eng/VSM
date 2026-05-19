@@ -434,7 +434,7 @@ let ELS=[], CONNS=[], GROUPS=[];
 let selId=null, selGid=null;
 let tool='select', gkind='section';
 let drag=null, dragG=null, dragOff={x:0,y:0};
-let resizeG=null, resizeOff={x:0,y:0};
+let resizeG=null, resizeOff={x:0,y:0}, resizeEdge='se', resizeOrig=null;
 let connFrom=null;
 let drawing=false, drawSt={x:0,y:0};
 let IDC=1, atab='p';
@@ -2004,12 +2004,17 @@ function renderGroupExpanded(G,g,cfg,isSel){
     <!-- collapse btn -->
     <rect x="${x+3}" y="${y+5}" width="18" height="13" rx="3" fill="${cfg.stroke}" style="cursor:pointer" onclick="toggleGrp('${g.id}')"/>
     <text x="${x+12}" y="${y+11}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Arial,sans-serif" font-weight="700" style="cursor:pointer;pointer-events:none">▼</text>
-    <!-- resize corner -->
-    <rect x="${x+w-10}" y="${y+h-10}" width="10" height="10" rx="2" fill="${cfg.stroke}" style="cursor:se-resize" onmousedown="gResizeMD(event,'${g.id}')"/>
     <!-- drag area (header) -->
     <rect x="${x+23}" y="${y}" width="${w-35}" height="${H}" fill="transparent" style="cursor:move" onmousedown="gDragMD(event,'${g.id}')"/>
-    <!-- click for select -->
-    <rect x="${x}" y="${y+H}" width="${w}" height="${h-H}" fill="transparent" onclick="gClick(event,'${g.id}')"/>`;
+    <!-- click for select (body) -->
+    <rect x="${x}" y="${y+H}" width="${w}" height="${h-H}" fill="transparent" onclick="gClick(event,'${g.id}')"/>
+    <!-- resize edges (8px hit zones) -->
+    <rect x="${x+8}" y="${y+h-6}" width="${w-16}" height="10" fill="transparent" style="cursor:s-resize" onmousedown="gEdgeMD(event,'${g.id}','s')"/>
+    <rect x="${x-4}" y="${y+H}" width="10" height="${h-H-4}" fill="transparent" style="cursor:w-resize" onmousedown="gEdgeMD(event,'${g.id}','w')"/>
+    <rect x="${x+w-6}" y="${y+H}" width="10" height="${h-H-4}" fill="transparent" style="cursor:e-resize" onmousedown="gEdgeMD(event,'${g.id}','e')"/>
+    <!-- SE corner -->
+    <rect x="${x+w-10}" y="${y+h-10}" width="12" height="12" rx="2" fill="${cfg.stroke}" style="cursor:se-resize" onmousedown="gEdgeMD(event,'${g.id}','se')"/>
+    <text x="${x+w-4}" y="${y+h-4}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#fff" font-family="Arial,sans-serif" style="pointer-events:none">↘</text>`;
 }
 
 function renderGroupCollapsed(G,g,cfg,isSel){
@@ -2063,14 +2068,14 @@ function renderConns(){
     const toGrp=GROUPS.find(g=>g.collapsed&&(g.childIds||[]).includes(c.to));
 
     let fp=fc,tp=tc;
-    // From edge
+    // From edge: ray from toCenter toward fromCenter, intersect fromEl bbox
     if(fromEl&&!fromEl._hid){
       const b=bb(fromEl);
       fp=rectEdge(tc.x,tc.y,fc.x,fc.y,fromEl.x,fromEl.y,b.w,b.h);
     } else if(fromGrp){
       fp=rectEdge(tc.x,tc.y,fc.x,fc.y,fromGrp.x,fromGrp.y,180,82);
     }
-    // To edge
+    // To edge: ray from fromCenter toward toCenter, intersect toEl bbox
     if(toEl&&!toEl._hid){
       const b=bb(toEl);
       tp=rectEdge(fc.x,fc.y,tc.x,tc.y,toEl.x,toEl.y,b.w,b.h);
@@ -2159,31 +2164,32 @@ function renderConns(){
   });
 }
 
-/* Intersect line from (x1,y1) to (x2,y2) with rectangle — returns point on rect edge */
-function rectEdge(x1,y1,x2,y2,rx,ry,rw,rh){
-  // Direction from source to target
-  const dx=x2-x1,dy=y2-y1;
-  if(Math.abs(dx)<0.01&&Math.abs(dy)<0.01)return{x:x2,y:y2};
-  // Clamp to box edges
-  const cx=rx+rw/2,cy=ry+rh/2;
-  const hw=rw/2+2,hh=rh/2+2; // small inset so arrow tip is visible
-  // Parametric: x=x1+t*dx, y=y1+t*dy at box edges
-  const ts=[];
-  if(Math.abs(dx)>0.01){
-    ts.push((rx-hw-x1)/dx,(rx+hw+rw-x1)/dx);
+/* Intersect ray from (ox,oy) toward (tx,ty) with rect (rx,ry,rw,rh).
+   Returns the point on the rect boundary closest to (ox,oy). */
+function rectEdge(ox,oy,tx,ty,rx,ry,rw,rh){
+  const PAD=6; // pull back from edge so arrowhead is visible
+  const cx=rx+rw/2, cy=ry+rh/2;
+  const dx=tx-ox, dy=ty-oy;
+  if(Math.abs(dx)<0.5&&Math.abs(dy)<0.5) return {x:tx,y:ty};
+  // Normalised direction
+  const len=Math.hypot(dx,dy);
+  const nx=dx/len, ny=dy/len;
+  // Find t for each of 4 edges: top, bottom, left, right
+  // Ray: P = (cx,cy) - t*(nx,ny)  [going from center outward toward source]
+  // We want intersection with the boundary going from center outward
+  let tMin=Infinity;
+  if(Math.abs(nx)>1e-6){
+    const tR=(rw/2-PAD)/Math.abs(nx);
+    tMin=Math.min(tMin,tR);
   }
-  if(Math.abs(dy)>0.01){
-    ts.push((ry-hh-y1)/dy,(ry+hh+rh-y1)/dy);
+  if(Math.abs(ny)>1e-6){
+    const tT=(rh/2-PAD)/Math.abs(ny);
+    tMin=Math.min(tMin,tT);
   }
-  // Find smallest t>0 that puts point inside perpendicular bounds
-  let best=1;
-  for(const t of ts){
-    if(t>0.01&&t<best){
-      const px=x1+t*dx,py=y1+t*dy;
-      if(px>=rx-hw&&px<=rx+rw+hw&&py>=ry-hh&&py<=ry+rh+hh)best=t;
-    }
-  }
-  return{x:x1+best*dx,y:y1+best*dy};
+  // Edge point: center + direction toward source * tMin
+  const ex=cx-nx*tMin;
+  const ey=cy-ny*tMin;
+  return{x:ex,y:ey};
 }
 
 /* ══════════════════════════════════════ */
@@ -2360,11 +2366,17 @@ function gDragMD(e,id){
   renderAll();showGrpProps();
 }
 function gResizeMD(e,id){
+  // Legacy — redirect to SE corner
+  gEdgeMD(e,id,'se');
+}
+function gEdgeMD(e,id,edge){
   e.stopPropagation();
   resizeG=id;
+  resizeEdge=edge;
   const g=GROUPS.find(x=>x.id===id);
   const{x,y}=svgXY(e);
-  resizeOff={x:x-(g.x+g.w),y:y-(g.y+g.h)};
+  // Store original bbox
+  resizeOrig={x:g.x,y:g.y,w:g.w,h:g.h,mx:x,my:y};
 }
 function cvMD(e){
   const t=e.target;
@@ -2480,9 +2492,24 @@ function cvMM(e){
       g.x=nx;g.y=ny;renderAll();
     }
   }
-  if(resizeG){
+  if(resizeG&&resizeOrig){
     const g=GROUPS.find(g=>g.id===resizeG);
-    if(g){g.w=Math.max(100,snap(x-resizeOff.x-g.x));g.h=Math.max(60,snap(y-resizeOff.y-g.y));renderAll()}
+    if(g){
+      const dx=x-resizeOrig.mx, dy=y-resizeOrig.my;
+      const MIN_W=80, MIN_H=50;
+      const e=resizeEdge;
+      if(e==='se'||e==='e'){
+        g.w=Math.max(MIN_W,snap(resizeOrig.w+dx));
+      }
+      if(e==='se'||e==='s'){
+        g.h=Math.max(MIN_H,snap(resizeOrig.h+dy));
+      }
+      if(e==='w'){
+        const nw=Math.max(MIN_W,snap(resizeOrig.w-dx));
+        g.x=resizeOrig.x+resizeOrig.w-nw;g.w=nw;
+      }
+      renderAll();
+    }
   }
 }
 
@@ -2546,6 +2573,7 @@ function cvMU(e){
         syncGrpChildren();
       }
     }
+    resizeOrig=null;
     renderSnapLines([]);
     snapshot();
   }
