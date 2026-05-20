@@ -4114,12 +4114,106 @@ function sopToggleLink(opId,docId){
   snapDebounced();renderSOPBody();
 }
 function sopLinkOp(opId){
-  // Simple prompt to pick SOP
-  if(!SOP_DOCS.length){if(confirm('Немає СОП документів. Створити новий?')){sopAddDoc();sopTab('sops');}return}
-  const list=SOP_DOCS.map((d,i)=>`${i+1}. ${d.num} — ${d.name}`).join('\n');
-  const ans=prompt('Виберіть номер СОП для прив\'язки:\n'+list);
-  const idx=parseInt(ans)-1;
-  if(idx>=0&&idx<SOP_DOCS.length)sopToggleLink(opId,SOP_DOCS[idx].id);
+  const op = SOP_OPS.find(o=>o.id===opId);
+  if(!op) return;
+
+  // Merge SOP_ARCH + SOP_DOCS into one picker list (deduplicated by num)
+  let archList = [];
+  try { archList = JSON.parse(localStorage.getItem('vsm_sop_arch')||'[]'); } catch(e){}
+
+  // Build combined list: arch entries first, then SOP_DOCS not already in arch
+  const combined = [];
+  archList.forEach(a => {
+    combined.push({ id: '__arch__'+a.id, num: a.num, name: a.name,
+      version: a.version||'1.0', source: 'arch', archEntry: a });
+  });
+  SOP_DOCS.forEach(d => {
+    if(!combined.find(c=>c.num===d.num))
+      combined.push({ id: d.id, num: d.num, name: d.name,
+        version: d.version||'1.0', source: 'registry' });
+  });
+
+  const linked = op.sopIds || [];
+
+  function doLink(item) {
+    // If from arch — ensure it exists in SOP_DOCS first
+    let docId = item.id;
+    if(item.source === 'arch') {
+      const existing = SOP_DOCS.find(d=>d.num===item.num);
+      if(existing) {
+        docId = existing.id;
+      } else {
+        // Import from arch into SOP_DOCS
+        const a = item.archEntry;
+        const newDoc = {
+          id:'sop_'+newId(''), num:a.num, name:a.name,
+          version:a.version||'1.0', status:'act',
+          scope:a.company||'', owner:a.author||'',
+          url:'', opIds:[], _sopData:a.data
+        };
+        SOP_DOCS.push(newDoc);
+        docId = newDoc.id;
+      }
+    }
+    sopToggleLink(opId, docId);
+    snapDebounced(); renderSOPBody();
+    cmod();
+    const isNowLinked = (SOP_OPS.find(o=>o.id===opId)||{}).sopIds||[];
+    toast(isNowLinked.includes(docId) ? '✅ СОП '+item.num+' прив\'язано' : 'СОП '+item.num+' відв\'язано', 'ok');
+  }
+
+  const isEmpty = combined.length === 0;
+
+  const rows = isEmpty
+    ? `<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;line-height:1.8">
+         📂 Архів СОП порожній<br>
+         Перейдіть у вкладку <strong>SOP → ✨ Генератор</strong><br>та збережіть СОП до архіву
+       </div>`
+    : combined.map(item => {
+        const isOn = item.source==='arch'
+          ? SOP_DOCS.some(d=>d.num===item.num && linked.includes(d.id))
+          : linked.includes(item.id);
+        const srcBadge = item.source==='arch'
+          ? `<span style="font-size:8px;background:rgba(26,158,110,.15);color:var(--accent);padding:1px 5px;border-radius:8px;font-weight:700">АРХІВ</span>`
+          : `<span style="font-size:8px;background:rgba(26,95,168,.12);color:#1a5fa8;padding:1px 5px;border-radius:8px;font-weight:700">РЕЄСТР</span>`;
+        return `<div onclick="window.__sopLinkPick('${item.id}')"
+          style="display:flex;align-items:center;gap:9px;padding:8px 10px;border:.5px solid var(--border);
+                 border-radius:6px;cursor:pointer;margin-bottom:5px;transition:all .12s;
+                 background:${isOn?'rgba(26,158,110,.07)':'var(--bg)'};"
+          onmouseover="this.style.borderColor='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:28px;height:28px;border-radius:6px;background:${isOn?'var(--accent)':'var(--bg3)'};
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                      font-size:14px;transition:background .12s">${isOn?'✅':'📄'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">
+              <span style="color:var(--accent);font-family:monospace">${item.num}</span>
+              ${srcBadge}
+              ${isOn?'<span style="font-size:10px;color:var(--accent)">✓ прив\'язано</span>':''}
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
+            <div style="font-size:10px;color:var(--text3)">v${item.version}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  window.__sopLinkPick = function(itemId) {
+    const item = combined.find(c=>c.id===itemId);
+    if(item) doLink(item);
+  };
+
+  omod(`
+    <div class="modt" style="display:flex;align-items:center;gap:7px">
+      <span>📋</span>
+      <span>Прив'язати СОП до операції</span>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px;padding:6px 9px;background:var(--bg3);border-radius:5px">
+      <strong>Операція:</strong> ${op.num} — ${op.name}
+    </div>
+    <div style="max-height:320px;overflow-y:auto;margin-bottom:8px">${rows}</div>
+    <div class="modbts">
+      <button class="mbtn" onclick="cmod()">Закрити</button>
+    </div>`);
 }
 function sopAutoLinkToNew(opId){
   const op=SOP_OPS.find(o=>o.id===opId);if(!op)return;
