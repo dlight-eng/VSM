@@ -195,6 +195,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .ps-hdr:hover{background:rgba(26,95,168,.15)}
 .ps-title{font-size:12px;font-weight:700;color:var(--accent);flex:1}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <textarea id="sticky-edit" onblur="finishStickyEdit()" onkeydown="if(event.key==='Escape')finishStickyEdit()"></textarea>
@@ -425,6 +426,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     <button class="rtab"    id="rt-f" onclick="rtab('f')" title="Future State / Цілі">FS / Цілі</button>
     <button class="rtab"    id="rt-s" onclick="rtab('s')" title="Збережені карти">Карти</button>
     <button class="rtab"    id="rt-a" onclick="rtab('a')" title="AI-аналіз">AI</button>
+    <button class="rtab"    id="rt-sop" onclick="rtab('sop')" title="SOP Generator — Gemini">SOP</button>
   </div>
   <div class="rpb" id="rp-p">
     <div class="nosel" id="nosel">Виберіть елемент<br>або групу для<br>редагування</div>
@@ -441,7 +443,157 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     <button class="abtn" id="aibtn" onclick="runAi()">✦ Проаналізувати потік</button>
     <div id="aio" style="display:none" class="aout"></div>
   </div>
-</div>
+
+  <!-- ══ SOP GENERATOR TAB ══ -->
+  <div class="rpb" id="rp-sop" style="display:none;padding:0;overflow-y:auto">
+    <style>
+      .sop-section{padding:10px 12px;border-bottom:.5px solid var(--border2)}
+      .sop-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:6px}
+      .sop-inp{width:100%;padding:6px 9px;border:.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--f);font-size:12px;outline:none;box-sizing:border-box}
+      .sop-inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(26,158,110,.12)}
+      .sop-row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .sop-key-row{display:flex;gap:5px}
+      .sop-key-row .sop-inp{flex:1}
+      .sop-kb{padding:6px 9px;border:.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text2);font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--f);flex-shrink:0}
+      .sop-kb:hover{background:var(--bg3)}
+      .sop-hint{font-size:10px;color:var(--text3);margin-top:3px}
+      .sop-uz{border:1.5px dashed var(--border2);border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;background:var(--bg2);position:relative;transition:all .15s}
+      .sop-uz:hover,.sop-uz.drag{border-color:var(--accent);background:rgba(26,158,110,.06)}
+      .sop-uz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+      .sop-fi{display:none;align-items:center;gap:7px;padding:7px 9px;background:rgba(26,158,110,.08);border:.5px solid rgba(26,158,110,.3);border-radius:6px;margin-top:6px}
+      .sop-fi.show{display:flex}
+      .sop-fn{font-size:11px;font-weight:500;color:var(--accent);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .sop-fs-lbl{font-size:10px;color:var(--accent);flex-shrink:0}
+      .sop-frm{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0}
+      .sop-stabs{display:flex;gap:3px;margin-bottom:8px}
+      .sop-stab{flex:1;padding:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border:.5px solid var(--border2);border-radius:5px;cursor:pointer;background:var(--bg2);color:var(--text3);font-family:var(--f)}
+      .sop-stab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+      .sop-gb{width:100%;padding:9px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s}
+      .sop-gb:hover{background:#0e8a62}
+      .sop-gb:disabled{background:var(--border2);color:var(--text3);cursor:not-allowed}
+      .sop-spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp_ .7s linear infinite;display:none;flex-shrink:0}
+      .sop-gb.loading .sop-spin{display:block}
+      @keyframes sp_{to{transform:rotate(360deg)}}
+      .sop-pbw{margin-top:7px;display:none}.sop-pbw.show{display:block}
+      .sop-pb{height:2px;background:var(--border2);border-radius:2px;overflow:hidden}
+      .sop-pf{height:100%;background:var(--accent);border-radius:2px;transition:width .4s;width:0%}
+      .sop-pl{font-size:10px;color:var(--text3);text-align:center;margin-top:3px}
+      .sop-err{display:none;margin-top:6px;padding:8px 10px;background:rgba(163,45,45,.1);border:.5px solid rgba(163,45,45,.3);border-radius:6px;color:#a32d2d;font-size:11px}
+      .sop-err.show{display:block}
+      .sop-res{display:none}.sop-res.show{display:block}
+      .sop-res-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:.5px solid var(--border2);border-bottom:.5px solid var(--border2);background:var(--bg2)}
+      .sop-res-ttl{font-size:11px;font-weight:600}
+      .sop-dlb{padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--f)}
+      .sop-dlb:hover{background:#0e8a62}
+      .sop-tbl{width:100%;border-collapse:collapse;font-size:10px}
+      .sop-tbl th,.sop-tbl td{border:.5px solid var(--border2);padding:4px 5px;vertical-align:top}
+      .sop-tbl thead tr{background:var(--accent);color:#fff}
+      .sop-tbl th{font-weight:600;text-align:center;padding:5px 4px}
+      .sop-sn{text-align:center;font-weight:700;font-size:9px;color:#085041;background:rgba(26,158,110,.1)}
+      .sop-snm{text-align:center;font-size:9px;font-weight:600}
+      .sop-kw{color:#854F0B;font-size:9px;line-height:1.4}
+      .sop-ko{color:#3B6D11;font-size:9px;line-height:1.4}
+      .sop-tc{text-align:center;font-size:9px;font-weight:600;color:#185FA5}
+      .sop-mbar{padding:6px 12px;background:var(--bg2);border-bottom:.5px solid var(--border2);font-size:10px;color:var(--text2)}
+      .sop-mbar strong{color:var(--text)}
+      .sop-pper{padding:5px 12px;border-bottom:.5px solid var(--border2);font-size:10px}
+      .sop-ppelbl{font-weight:600;font-size:10px;margin-bottom:1px}
+      .sop-tbar{padding:6px 12px;background:var(--text);color:var(--bg);font-size:11px;font-weight:600}
+    </style>
+
+    <!-- Gemini KEY -->
+    <div class="sop-section">
+      <div class="sop-lbl">🔑 Gemini API ключ</div>
+      <div class="sop-key-row">
+        <input class="sop-inp" type="password" id="sop-gk" placeholder="AIza..." autocomplete="off" style="font-family:monospace;letter-spacing:1px">
+        <button class="sop-kb" onclick="sopToggleKey(this)">👁</button>
+        <button class="sop-kb" onclick="sopSaveKey()">💾</button>
+      </div>
+      <div class="sop-hint" id="sop-ks">🔒 Зберігається в localStorage</div>
+    </div>
+
+    <!-- VIDEO -->
+    <div class="sop-section">
+      <div class="sop-lbl">🎬 Відео операції</div>
+      <div class="sop-stabs">
+        <button class="sop-stab on" onclick="sopSwitchTab('file',this)">⬆ Файл</button>
+        <button class="sop-stab" onclick="sopSwitchTab('url',this)">▶ YouTube</button>
+      </div>
+      <div id="sop-tp-file">
+        <div class="sop-uz" id="sop-uz">
+          <input type="file" id="sop-vf" accept="video/*">
+          <div style="font-size:20px;margin-bottom:4px">🎥</div>
+          <div style="font-size:11px;color:var(--text2)">Перетягніть або натисніть</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">MP4 · MOV · до 100 МБ</div>
+        </div>
+        <div class="sop-fi" id="sop-fi">
+          <span>🎬</span>
+          <span class="sop-fn" id="sop-fn"></span>
+          <span class="sop-fs-lbl" id="sop-fs"></span>
+          <button class="sop-frm" onclick="sopRmFile()">✕</button>
+        </div>
+      </div>
+      <div id="sop-tp-url" style="display:none">
+        <input class="sop-inp" type="text" id="sop-yu" placeholder="https://youtube.com/watch?v=...">
+        <div class="sop-hint">⚠ Лише публічні відео до 15 хв</div>
+      </div>
+    </div>
+
+    <!-- SOP PARAMS -->
+    <div class="sop-section">
+      <div class="sop-lbl">⚙ Параметри</div>
+      <div style="margin-bottom:6px">
+        <div class="sop-hint" style="margin-bottom:3px">Назва операції</div>
+        <input class="sop-inp" type="text" id="sop-opname" placeholder="Переналадка прес-форм ТПА">
+      </div>
+      <div class="sop-row2" style="margin-bottom:6px">
+        <div>
+          <div class="sop-hint" style="margin-bottom:2px">Склав</div>
+          <input class="sop-inp" type="text" id="sop-author" placeholder="П.І.Б.">
+        </div>
+        <div>
+          <div class="sop-hint" style="margin-bottom:2px">Погодив</div>
+          <input class="sop-inp" type="text" id="sop-approver" placeholder="П.І.Б.">
+        </div>
+      </div>
+      <div style="margin-bottom:6px">
+        <div class="sop-hint" style="margin-bottom:2px">Компанія</div>
+        <input class="sop-inp" type="text" id="sop-company" placeholder="DLight">
+      </div>
+      <div style="margin-bottom:6px">
+        <div class="sop-hint" style="margin-bottom:2px">Мова</div>
+        <select class="sop-inp" id="sop-lang">
+          <option value="uk">Українська</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div>
+        <div class="sop-hint" style="margin-bottom:2px">Додаткові інструкції</div>
+        <textarea class="sop-inp" id="sop-extra" rows="2" placeholder="Наприклад: акцент на LOTO..."></textarea>
+      </div>
+    </div>
+
+    <div style="padding:10px 12px">
+      <button class="sop-gb" id="sop-gb" onclick="sopGenerate()">
+        <div class="sop-spin" id="sop-spin"></div>
+        <span id="sop-gbt">✨ Згенерувати СОП</span>
+      </button>
+      <div class="sop-pbw" id="sop-pw">
+        <div class="sop-pb"><div class="sop-pf" id="sop-pf"></div></div>
+        <div class="sop-pl" id="sop-pl"></div>
+      </div>
+      <div class="sop-err" id="sop-err"></div>
+    </div>
+
+    <!-- RESULT PREVIEW -->
+    <div class="sop-res" id="sop-res">
+      <div class="sop-res-hdr">
+        <span class="sop-res-ttl">✅ СОП готовий</span>
+        <button class="sop-dlb" onclick="sopDownload()">⬇ xlsx</button>
+      </div>
+      <div id="sop-preview-wrap"></div>
+    </div>
+  </div>
 </div>
 
 <!-- TIMELINE -->
@@ -2849,7 +3001,7 @@ function delConn(f,t){snapshot();CONNS=CONNS.filter(c=>!(c.from===f&&c.to===t));
 ══════════════════════════════════════ */
 function rtab(t){
   atab=t;
-  ['p','m','y','f','s','a'].forEach(k=>{
+  ['p','m','y','f','s','a','sop'].forEach(k=>{
     document.getElementById('rp-'+k).style.display=k===t?'':'none';
     document.getElementById('rt-'+k).classList.toggle('on',k===t);
   });
@@ -3970,6 +4122,288 @@ function exportSOPRegistry(){
   </body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 }
+
+/* ══════════════════════════════════════════
+   SOP GENERATOR (Gemini API)
+══════════════════════════════════════════ */
+(function(){
+  let sopFile=null, sopTab='file', sopData=null;
+
+  /* load saved key */
+  window.addEventListener('load',()=>{
+    try{const k=localStorage.getItem('sop_gk');if(k)document.getElementById('sop-gk').value=k;}catch(e){}
+  });
+
+  window.sopToggleKey=function(btn){
+    const i=document.getElementById('sop-gk');
+    i.type=i.type==='password'?'text':'password';
+    btn.textContent=i.type==='password'?'👁':'🙈';
+  };
+  window.sopSaveKey=function(){
+    const k=document.getElementById('sop-gk').value.trim();
+    if(!k)return;
+    try{localStorage.setItem('sop_gk',k);sopKS('Збережено ✓',true);}
+    catch(e){sopKS('Помилка',false);}
+  };
+  function sopKS(m,ok){
+    const el=document.getElementById('sop-ks');
+    el.style.color=ok?'var(--accent)':'#a32d2d';
+    el.textContent=m;
+    setTimeout(()=>el.style.color='var(--text3)',2500);
+  }
+
+  window.sopSwitchTab=function(t,btn){
+    sopTab=t;
+    document.querySelectorAll('.sop-stab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('sop-tp-file').style.display=t==='file'?'':'none';
+    document.getElementById('sop-tp-url').style.display=t==='url'?'':'none';
+  };
+
+  /* drag-drop upload */
+  const vf=document.getElementById('sop-vf');
+  const uz=document.getElementById('sop-uz');
+  if(vf) vf.addEventListener('change',function(){if(this.files[0])sopHFile(this.files[0]);});
+  if(uz){
+    uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+    uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+    uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');if(e.dataTransfer.files[0])sopHFile(e.dataTransfer.files[0]);});
+  }
+  function sopHFile(f){
+    if(!f.type.startsWith('video/')){sopErr('Оберіть відеофайл');return;}
+    if(f.size>100*1024*1024){sopErr('Файл завеликий (макс. 100 МБ)');return;}
+    sopFile=f;
+    document.getElementById('sop-fn').textContent=f.name;
+    document.getElementById('sop-fs').textContent=f.size>1048576?(f.size/1048576).toFixed(1)+' МБ':(f.size/1024).toFixed(0)+' КБ';
+    document.getElementById('sop-fi').classList.add('show');
+    uz.style.display='none';
+    sopHErr();
+  }
+  window.sopRmFile=function(){
+    sopFile=null;
+    if(vf)vf.value='';
+    document.getElementById('sop-fi').classList.remove('show');
+    if(uz)uz.style.display='';
+  };
+
+  function sopSetP(p,l){
+    document.getElementById('sop-pw').classList.add('show');
+    document.getElementById('sop-pf').style.width=p+'%';
+    document.getElementById('sop-pl').textContent=l;
+  }
+  function sopErr(m){const el=document.getElementById('sop-err');el.textContent=m;el.classList.add('show');}
+  function sopHErr(){document.getElementById('sop-err').classList.remove('show');}
+  function sopSetLoad(on){
+    const b=document.getElementById('sop-gb');
+    b.disabled=on;b.classList.toggle('loading',on);
+    document.getElementById('sop-spin').style.display=on?'block':'none';
+    document.getElementById('sop-gbt').textContent=on?'Аналізую відео...':'✨ Згенерувати СОП';
+  }
+
+  function sopBuildPrompt(){
+    const lang=document.getElementById('sop-lang').value;
+    const extra=(document.getElementById('sop-extra').value||'').trim();
+    const opName=(document.getElementById('sop-opname').value||'').trim();
+    const langStr=lang==='uk'?'українською':'in English';
+    const nameStr=opName?`Назва операції: "${opName}".`:'';
+    return `Ти — експерт з Lean-виробництва. Уважно переглянь відео та витягни інформацію про операцію.
+
+${nameStr}
+
+Поверни ВИКЛЮЧНО валідний JSON (без markdown):
+{
+  "operation_name": "Тип роботи — назва",
+  "ppe": "ЗІЗ через кому",
+  "tools": "Інструменти через кому",
+  "materials": "Матеріали через кому",
+  "sections": [
+    {
+      "name": "Назва етапу",
+      "steps": [
+        {
+          "step": "1. Назва кроку",
+          "key_points": "⚠ вимога безпеки\\n✓ вимога якості",
+          "time_sec": 30
+        }
+      ]
+    }
+  ]
+}
+
+Вимоги (${langStr}): 3–6 етапів, 2–8 кроків на етап, ⚠ для безпеки та ✓ для якості через \\n.${extra?'\nДодатково: '+extra:''}
+Тільки JSON.`;
+  }
+
+  window.sopGenerate=async function(){
+    sopHErr();
+    document.getElementById('sop-res').classList.remove('show');
+    document.getElementById('sop-pw').classList.remove('show');
+    const key=document.getElementById('sop-gk').value.trim();
+    if(!key){sopErr('Введіть Gemini API ключ');return;}
+    const yu=(document.getElementById('sop-yu').value||'').trim();
+    if(sopTab==='file'&&!sopFile){sopErr('Оберіть відеофайл');return;}
+    if(sopTab==='url'&&!yu){sopErr('Введіть YouTube посилання');return;}
+    sopSetLoad(true);sopSetP(10,'Підготовка...');
+    try{
+      let parts=[{text:sopBuildPrompt()}];
+      if(sopTab==='file'){
+        sopSetP(25,'Кодування відео...');
+        const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(sopFile);});
+        sopSetP(55,'Надсилання до Gemini...');
+        parts.push({inline_data:{mime_type:sopFile.type||'video/mp4',data:b64}});
+      }else{
+        sopSetP(35,'Передача YouTube...');
+        parts.push({file_data:{mime_type:'video/mp4',file_uri:yu}});
+      }
+      sopSetP(70,'Gemini аналізує...');
+      const resp=await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {method:'POST',headers:{'Content-Type':'application/json'},
+         body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}})}
+      );
+      sopSetP(88,'Обробка відповіді...');
+      const data=await resp.json();
+      if(!resp.ok)throw new Error(data?.error?.message||'HTTP '+resp.status);
+      let raw=(data?.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      let parsed;try{parsed=JSON.parse(raw);}catch(e){throw new Error('Некоректна відповідь. Спробуйте ще раз.');}
+      sopData={...parsed,
+        author:(document.getElementById('sop-author').value||'').trim(),
+        approver:(document.getElementById('sop-approver').value||'').trim(),
+        company:(document.getElementById('sop-company').value||'').trim()||'DLight',
+      };
+      sopSetP(100,'Готово!');
+      sopRender(sopData);
+      document.getElementById('sop-res').classList.add('show');
+    }catch(e){sopErr('Помилка: '+e.message);document.getElementById('sop-pw').classList.remove('show');}
+    finally{sopSetLoad(false);}
+  };
+
+  function sopEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function sopFmtKeys(txt){
+    if(!txt)return '';
+    return txt.split('\n').map(l=>{
+      const e=sopEsc(l);
+      if(l.startsWith('⚠'))return`<span class="sop-kw">${e}</span>`;
+      if(l.startsWith('✓'))return`<span class="sop-ko">${e}</span>`;
+      return e;
+    }).join('<br>');
+  }
+
+  function sopRender(d){
+    const today=new Date().toLocaleDateString('uk-UA');
+    const total=d.sections.flatMap(s=>s.steps).reduce((a,s)=>a+(s.time_sec||0),0);
+    let rows='';
+    d.sections.forEach((sec,si)=>{
+      sec.steps.forEach((step,st)=>{
+        if(st===0){
+          rows+=`<tr>
+            <td class="sop-sn" rowspan="${sec.steps.length}">${si+1}</td>
+            <td class="sop-snm" rowspan="${sec.steps.length}" style="font-size:9px">${sopEsc(sec.name)}</td>
+            <td style="font-size:9px">${sopEsc(step.step)}</td>
+            <td>${sopFmtKeys(step.key_points)}</td>
+            <td class="sop-tc">${step.time_sec||'—'}</td>
+          </tr>`;
+        }else{
+          rows+=`<tr>
+            <td style="font-size:9px">${sopEsc(step.step)}</td>
+            <td>${sopFmtKeys(step.key_points)}</td>
+            <td class="sop-tc">${step.time_sec||'—'}</td>
+          </tr>`;
+        }
+      });
+    });
+    document.getElementById('sop-preview-wrap').innerHTML=`
+      <div class="sop-tbar">${sopEsc(d.company)}</div>
+      <div class="sop-mbar">
+        <div style="font-weight:600;margin-bottom:3px">${sopEsc(d.operation_name||'Операція')}</div>
+        <strong>Склав:</strong> ${sopEsc(d.author||'—')} &nbsp;|&nbsp;
+        <strong>Погодив:</strong> ${sopEsc(d.approver||'—')} &nbsp;|&nbsp;
+        <strong>Дата:</strong> ${today} &nbsp;|&nbsp;
+        <strong>Час:</strong> <span style="color:#185FA5;font-weight:600">${total} сек</span>
+      </div>
+      <div class="sop-pper"><div class="sop-ppelbl">ЗІЗ:</div>${sopEsc(d.ppe||'—')}</div>
+      <div class="sop-pper"><div class="sop-ppelbl">Інструменти:</div>${sopEsc(d.tools||'—')}</div>
+      <div class="sop-pper"><div class="sop-ppelbl">Матеріали:</div>${sopEsc(d.materials||'—')}</div>
+      <table class="sop-tbl">
+        <thead><tr>
+          <th style="width:5%">№</th><th style="width:14%">Етап</th>
+          <th style="width:30%">Крок</th>
+          <th style="width:36%">⚠ Безпека / ✓ Якість</th>
+          <th style="width:15%">Час,сек</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td colspan="4" style="text-align:right;font-weight:600;font-size:10px;padding:4px 8px">Всього:</td>
+          <td class="sop-tc" style="font-weight:700">${total}</td>
+        </tr></tfoot>
+      </table>`;
+  }
+
+  window.sopDownload=function(){
+    if(!sopData)return;
+    /* Build xlsx using SheetJS if available, else CSV fallback */
+    const d=sopData;
+    const today=new Date().toLocaleDateString('uk-UA');
+    const total=d.sections.flatMap(s=>s.steps).reduce((a,s)=>a+(s.time_sec||0),0);
+
+    if(window.XLSX){
+      const wb=XLSX.utils.book_new();
+      const aoa=[];
+      aoa.push([d.company||'DLight','','','','','','Дата створення:','',today,'','П.І.Б.','','Дата друку:','',today]);
+      aoa.push([d.operation_name||'Операція','','','','','','','Склав:','',d.author||'','','','','','']);
+      aoa.push(['','','','','','','','Погодив:','',d.approver||'','','','','','']);
+      aoa.push(['ЗІЗ: '+(d.ppe||''),...Array(14).fill('')]);
+      aoa.push(['Інструменти та пристосування: '+(d.tools||''),...Array(14).fill('')]);
+      aoa.push(['Матеріали та компоненти: '+(d.materials||''),...Array(14).fill('')]);
+      aoa.push(['№','Етап','','','Крок виконання операції','Ключові моменти:\n⚠ безпека        ✓ якість','','','','','Час, сек','','Фотографія','','']);
+      let dr=7;
+      const mg=[
+        {s:{r:0,c:0},e:{r:0,c:4}},{s:{r:1,c:0},e:{r:2,c:4}},
+        {s:{r:1,c:7},e:{r:1,c:8}},{s:{r:2,c:7},e:{r:2,c:8}},
+        {s:{r:3,c:0},e:{r:3,c:13}},{s:{r:4,c:0},e:{r:4,c:13}},{s:{r:5,c:0},e:{r:5,c:13}},
+        {s:{r:6,c:1},e:{r:6,c:3}},{s:{r:6,c:5},e:{r:6,c:9}},{s:{r:6,c:10},e:{r:6,c:11}},{s:{r:6,c:12},e:{r:6,c:14}},
+      ];
+      d.sections.forEach((sec,si)=>{
+        sec.steps.forEach((step,st)=>{
+          const row=Array(15).fill('');
+          if(st===0){row[0]=si+1;row[1]=sec.name;}
+          row[4]=step.step;row[5]=step.key_points||'';row[10]=step.time_sec||'';
+          aoa.push(row);
+          if(sec.steps.length>1&&st===0){
+            mg.push({s:{r:dr,c:0},e:{r:dr+sec.steps.length-1,c:0}});
+            mg.push({s:{r:dr,c:1},e:{r:dr+sec.steps.length-1,c:3}});
+          }
+          mg.push({s:{r:dr,c:5},e:{r:dr,c:9}});
+          mg.push({s:{r:dr,c:10},e:{r:dr,c:11}});
+          mg.push({s:{r:dr,c:12},e:{r:dr,c:14}});
+          dr++;
+        });
+      });
+      const trow=Array(15).fill('');trow[0]='Всього:';trow[10]=total;aoa.push(trow);
+      mg.push({s:{r:dr,c:0},e:{r:dr,c:9}});mg.push({s:{r:dr,c:10},e:{r:dr,c:11}});
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols']=[{wch:6},{wch:14},{wch:5},{wch:1},{wch:36},{wch:30},{wch:4},{wch:4},{wch:5},{wch:4},{wch:8},{wch:8},{wch:20},{wch:5},{wch:4}];
+      const rh=[{hpt:54},{hpt:18},{hpt:18},{hpt:28},{hpt:40},{hpt:40},{hpt:49}];
+      d.sections.forEach(sec=>sec.steps.forEach(()=>rh.push({hpt:55})));rh.push({hpt:22});
+      ws['!rows']=rh;ws['!merges']=mg;
+      XLSX.utils.book_append_sheet(wb,ws,'Лист1');
+      const fname='СОП_'+(d.operation_name||'операція').replace(/[\/\\:*?"<>|]/g,'_').substring(0,40)+'_'+today.replace(/\./g,'-')+'.xlsx';
+      XLSX.writeFile(wb,fname);
+    }else{
+      /* CSV fallback */
+      let csv='№;Етап;Крок;Ключові моменти;Час сек\n';
+      d.sections.forEach((sec,si)=>{
+        sec.steps.forEach((step,st)=>{
+          csv+=`${si+1};${st===0?sec.name:''};${step.step};${(step.key_points||'').replace(/\n/g,' | ')};${step.time_sec||''}\n`;
+        });
+      });
+      csv+=`Всього;;;;;${total}\n`;
+      const a=document.createElement('a');
+      a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+      a.download='SOP_'+today.replace(/\./g,'-')+'.csv';a.click();
+    }
+  };
+})();
 </script>
 </body>
 </html>
