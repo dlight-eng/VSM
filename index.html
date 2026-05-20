@@ -560,6 +560,16 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
         <div class="sop-hint" style="margin-bottom:2px">Компанія</div>
         <input class="sop-inp" type="text" id="sop-company" placeholder="DLight">
       </div>
+      <div class="sop-row2" style="margin-bottom:6px">
+        <div>
+          <div class="sop-hint" style="margin-bottom:2px">Номер СОП</div>
+          <input class="sop-inp" type="text" id="sop-docnum" placeholder="СОП-001">
+        </div>
+        <div>
+          <div class="sop-hint" style="margin-bottom:2px">Версія</div>
+          <input class="sop-inp" type="text" id="sop-version" placeholder="1.0">
+        </div>
+      </div>
       <div style="margin-bottom:6px">
         <div class="sop-hint" style="margin-bottom:2px">Мова</div>
         <select class="sop-inp" id="sop-lang">
@@ -595,6 +605,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     </div>
   </div>
 </div>
+</div><!-- /.main -->
 
 <!-- TIMELINE -->
 <div class="tl">
@@ -603,7 +614,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
   <span style="font-size:11px;white-space:nowrap" id="tllt">—</span>
   <span class="tl-e" id="tlef" style="color:var(--text3)">—</span>
 </div>
-</div>
+</div><!-- /.app -->
 
 <!-- MODAL -->
 <div id="movbg" class="mov" style="display:none" onclick="if(event.target===this)cmod()">
@@ -4129,6 +4140,19 @@ function exportSOPRegistry(){
 (function(){
   let sopFile=null, sopTab='file', sopData=null;
 
+  /* Auto-fill SOP number when tab opens */
+  const origRtab = window.rtab;
+  window.rtab = function(t) {
+    origRtab(t);
+    if(t === 'sop') {
+      const numFld = document.getElementById('sop-docnum');
+      if(numFld && !numFld.value) {
+        const n = (window.SOP_DOCS ? window.SOP_DOCS.length : 0) + 1;
+        numFld.value = 'СОП-' + n.toString().padStart(3,'0');
+      }
+    }
+  };
+
   /* load saved key */
   window.addEventListener('load',()=>{
     try{const k=localStorage.getItem('sop_gk');if(k)document.getElementById('sop-gk').value=k;}catch(e){}
@@ -4274,6 +4298,44 @@ ${nameStr}
       sopSetP(100,'Готово!');
       sopRender(sopData);
       document.getElementById('sop-res').classList.add('show');
+
+      /* ── Автоматично додаємо в реєстр SOP_DOCS ── */
+      if(window.SOP_DOCS !== undefined && window.newId && window.snapDebounced) {
+        const docNum = (document.getElementById('sop-docnum').value||'').trim()
+          || 'СОП-' + (SOP_DOCS.length+1).toString().padStart(3,'0');
+        const version = (document.getElementById('sop-version').value||'').trim() || '1.0';
+        // Check if doc with same num already exists — update it
+        const existing = SOP_DOCS.find(d => d.num === docNum);
+        if(existing) {
+          existing.name    = sopData.operation_name || existing.name;
+          existing.version = version;
+          existing.status  = 'act';
+          existing.owner   = sopData.author || existing.owner;
+          existing.scope   = sopData.company || existing.scope;
+          existing._sopData = sopData;
+          window.snapDebounced();
+          window.toast && window.toast('СОП ' + docNum + ' оновлено в реєстрі', 'ok');
+        } else {
+          const doc = {
+            id: 'sop_' + window.newId(''),
+            num: docNum,
+            name: sopData.operation_name || 'Нова операція',
+            version: version,
+            status: 'act',
+            scope: sopData.company || '',
+            owner: sopData.author || '',
+            url: '',
+            opIds: [],
+            _sopData: sopData,
+          };
+          SOP_DOCS.push(doc);
+          window.snapDebounced();
+          window.toast && window.toast('✅ СОП ' + docNum + ' додано в реєстр', 'ok');
+        }
+        /* оновити номер поля на наступний */
+        const numFld = document.getElementById('sop-docnum');
+        if(numFld) numFld.value = 'СОП-' + (SOP_DOCS.length+1).toString().padStart(3,'0');
+      }
     }catch(e){sopErr('Помилка: '+e.message);document.getElementById('sop-pw').classList.remove('show');}
     finally{sopSetLoad(false);}
   };
