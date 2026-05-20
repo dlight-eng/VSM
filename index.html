@@ -194,6 +194,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .ps-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--accent-bg);border-radius:var(--r);margin-bottom:5px;cursor:pointer;border:.5px solid rgba(26,95,168,.2)}
 .ps-hdr:hover{background:rgba(26,95,168,.15)}
 .ps-title{font-size:12px;font-weight:700;color:var(--accent);flex:1}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -302,6 +303,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     </div>
   </div>
 
+  <button class="hbtn" onclick="openLayoutDesigner()" title="Планування цеху (окреме вікно)">🏭 Цех</button>
   <button class="hbtn" onclick="showSOPModule()" title="СОП та реєстр операцій">📄 СОП</button>
   <button class="hbtn" onclick="showSettings()" title="Налаштування">⚙</button>
 </div>
@@ -2146,7 +2148,9 @@ async function exportPDF(){
   <table><thead><tr style="background:#f0f4fb"><th style="text-align:left;padding:5px 8px;border:1px solid #ddd">Процес</th><th style="padding:5px 8px;border:1px solid #ddd">CT</th><th style="padding:5px 8px;border:1px solid #ddd">C/O</th><th style="padding:5px 8px;border:1px solid #ddd">Uptime</th><th style="padding:5px 8px;border:1px solid #ddd">Op</th><th style="padding:5px 8px;border:1px solid #ddd">Зміни</th><th style="padding:5px 8px;border:1px solid #ddd">vs Takt</th></tr></thead><tbody>${procRows}</tbody></table>
   ${fsHTML}${stickiesHTML}
   <div style="margin-top:24px;padding-top:10px;border-top:1px solid #eee;font-size:10px;color:#aaa">VSM Constructor v1.8 · BPI Group · ${new Date().toISOString().slice(0,19).replace('T',' ')}</div>
-  </body></html>`;
+  
+
+</body></html>`;
 
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -4359,7 +4363,9 @@ function exportOpsRegistry(){
   </head><body><h2>Реєстр операцій — ${document.getElementById('mapName').value}</h2>
   <p style="font-size:11px;color:#666">Дата: ${new Date().toLocaleDateString('uk-UA')} · Операцій: ${SOP_OPS.length}</p>
   <table><thead><tr><th>Процес</th><th>Номер</th><th>Назва операції</th><th>Тип</th><th>CT</th><th>Посада</th><th>Обладнання</th><th>Частота</th><th>СОП</th></tr></thead><tbody>${rows}</tbody></table>
-  </body></html>`;
+  
+
+</body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 }
 function exportSOPRegistry(){
@@ -4379,7 +4385,9 @@ function exportSOPRegistry(){
   </head><body><h2>Реєстр СОП — ${document.getElementById('mapName').value}</h2>
   <p style="font-size:11px;color:#666">Дата: ${new Date().toLocaleDateString('uk-UA')} · СОП: ${SOP_DOCS.length}</p>
   <table><thead><tr><th>Номер</th><th>Назва</th><th>Версія</th><th>Статус</th><th>Відповідальний</th><th>Область</th><th>Операції</th><th>Посилання</th></tr></thead><tbody>${rows}</tbody></table>
-  </body></html>`;
+  
+
+</body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 }
 
@@ -4816,7 +4824,24 @@ ${nameStr}
       a.download='SOP_'+today.replace(/\./g,'-')+'.csv';a.click();
     }
   };
+
+
+
 })();
+/* ── Layout Designer bridge ── */
+function openLayoutDesigner(){
+  try{ localStorage.setItem('vsm_state_for_layout', JSON.stringify(getState())); }catch(e){}
+  const w = window.open('layout-designer.html','layout_designer','width=1440,height=900,menubar=no,toolbar=no,location=no');
+  if(!w) alert('Дозвольте відкриття спливаючих вікон для цього сайту');
+}
+window.addEventListener('storage', function(e){
+  if(e.key==='vsm_layout_ping'){
+    try{ localStorage.setItem('vsm_state_for_layout', JSON.stringify(getState())); }catch(ex){}
+  }
+});
+
 </script>
+
+
 </body>
 </html>
