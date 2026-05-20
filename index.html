@@ -499,110 +499,158 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
       .sop-pper{padding:5px 12px;border-bottom:.5px solid var(--border2);font-size:10px}
       .sop-ppelbl{font-weight:600;font-size:10px;margin-bottom:1px}
       .sop-tbar{padding:6px 12px;background:var(--text);color:var(--bg);font-size:11px;font-weight:600}
+      /* SUB-TABS */
+      .sop-ptabs{display:flex;border-bottom:.5px solid var(--border2);flex-shrink:0;background:var(--bg2)}
+      .sop-ptab{flex:1;padding:9px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border:none;background:none;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--f);transition:all .15s}
+      .sop-ptab.on{color:var(--accent);border-bottom-color:var(--accent);background:var(--bg)}
+      .sop-ptab:hover:not(.on){color:var(--text2)}
+      .sop-pane{display:none}.sop-pane.on{display:block}
+      /* ARCHIVE CARDS */
+      .sopg-card{border:.5px solid var(--border2);border-radius:7px;margin:8px 10px;overflow:hidden}
+      .sopg-hdr{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);cursor:pointer;user-select:none}
+      .sopg-num{font-size:9px;font-weight:700;color:var(--accent);background:rgba(26,158,110,.12);padding:2px 7px;border-radius:10px;flex-shrink:0}
+      .sopg-name{font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .sopg-date{font-size:9px;color:var(--text3);flex-shrink:0}
+      .sopg-body{display:none;border-top:.5px solid var(--border2)}
+      .sopg-body.open{display:block}
+      .sopg-meta{padding:6px 10px 4px;font-size:10px;color:var(--text2);line-height:1.7}
+      .sopg-meta strong{color:var(--text)}
+      .sopg-actions{display:flex;gap:5px;padding:6px 10px 8px}
+      .sopg-btn{flex:1;padding:5px 6px;font-size:10px;font-weight:600;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text2);cursor:pointer;font-family:var(--f);transition:all .15s;text-align:center}
+      .sopg-btn:hover{background:var(--bg3);color:var(--text)}
+      .sopg-btn.dl{background:var(--accent);color:#fff;border-color:var(--accent)}
+      .sopg-btn.dl:hover{background:#0e8a62}
+      .sopg-btn.rm{color:#a32d2d}
+      .sopg-btn.rm:hover{background:rgba(163,45,45,.08);border-color:rgba(163,45,45,.25)}
+      .sopg-empty{padding:28px 12px;text-align:center;color:var(--text3);font-size:11px;line-height:2}
+      .sopg-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 4px}
+      .sopg-cnt-lbl{font-size:10px;color:var(--text3);font-weight:500}
+      .sopg-clr{font-size:10px;color:#a32d2d;background:none;border:none;cursor:pointer;font-family:var(--f);padding:2px 5px;border-radius:4px}
+      .sopg-clr:hover{background:rgba(163,45,45,.08)}
     </style>
 
-    <!-- Gemini KEY -->
-    <div class="sop-section">
-      <div class="sop-lbl">🔑 Gemini API ключ</div>
-      <div class="sop-key-row">
-        <input class="sop-inp" type="password" id="sop-gk" placeholder="AIza..." autocomplete="off" style="font-family:monospace;letter-spacing:1px">
-        <button class="sop-kb" onclick="sopToggleKey(this)">👁</button>
-        <button class="sop-kb" onclick="sopSaveKey()">💾</button>
-      </div>
-      <div class="sop-hint" id="sop-ks">🔒 Зберігається в localStorage</div>
+    <!-- SUB-TAB NAVIGATION -->
+    <div class="sop-ptabs">
+      <button class="sop-ptab on" id="sopt-gen"  onclick="sopPanelTab('gen')">✨ Генератор</button>
+      <button class="sop-ptab"    id="sopt-arch" onclick="sopPanelTab('arch')">📁 Збережені <span id="sopg-badge" style="display:none;background:var(--accent);color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:3px">0</span></button>
     </div>
 
-    <!-- VIDEO -->
-    <div class="sop-section">
-      <div class="sop-lbl">🎬 Відео операції</div>
-      <div class="sop-stabs">
-        <button class="sop-stab on" onclick="sopSwitchTab('file',this)">⬆ Файл</button>
-        <button class="sop-stab" onclick="sopSwitchTab('url',this)">▶ YouTube</button>
-      </div>
-      <div id="sop-tp-file">
-        <div class="sop-uz" id="sop-uz">
-          <input type="file" id="sop-vf" accept="video/*">
-          <div style="font-size:20px;margin-bottom:4px">🎥</div>
-          <div style="font-size:11px;color:var(--text2)">Перетягніть або натисніть</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">MP4 · MOV · до 100 МБ</div>
+    <!-- ══ PANE: GENERATOR ══ -->
+    <div class="sop-pane on" id="sopp-gen">
+
+      <div class="sop-section">
+        <div class="sop-lbl">🔑 Gemini API ключ</div>
+        <div class="sop-key-row">
+          <input class="sop-inp" type="password" id="sop-gk" placeholder="AIza..." autocomplete="off" style="font-family:monospace;letter-spacing:1px">
+          <button class="sop-kb" onclick="sopToggleKey(this)">👁</button>
+          <button class="sop-kb" onclick="sopSaveKey()">💾</button>
         </div>
-        <div class="sop-fi" id="sop-fi">
-          <span>🎬</span>
-          <span class="sop-fn" id="sop-fn"></span>
-          <span class="sop-fs-lbl" id="sop-fs"></span>
-          <button class="sop-frm" onclick="sopRmFile()">✕</button>
+        <div class="sop-hint" id="sop-ks">🔒 Зберігається в localStorage</div>
+      </div>
+
+      <div class="sop-section">
+        <div class="sop-lbl">🎬 Відео операції</div>
+        <div class="sop-stabs">
+          <button class="sop-stab on" onclick="sopSwitchTab('file',this)">⬆ Файл</button>
+          <button class="sop-stab" onclick="sopSwitchTab('url',this)">▶ YouTube</button>
+        </div>
+        <div id="sop-tp-file">
+          <div class="sop-uz" id="sop-uz">
+            <input type="file" id="sop-vf" accept="video/*">
+            <div style="font-size:20px;margin-bottom:4px">🎥</div>
+            <div style="font-size:11px;color:var(--text2)">Перетягніть або натисніть</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">MP4 · MOV · до 100 МБ</div>
+          </div>
+          <div class="sop-fi" id="sop-fi">
+            <span>🎬</span>
+            <span class="sop-fn" id="sop-fn"></span>
+            <span class="sop-fs-lbl" id="sop-fs"></span>
+            <button class="sop-frm" onclick="sopRmFile()">✕</button>
+          </div>
+        </div>
+        <div id="sop-tp-url" style="display:none">
+          <input class="sop-inp" type="text" id="sop-yu" placeholder="https://youtube.com/watch?v=...">
+          <div class="sop-hint">⚠ Лише публічні відео до 15 хв</div>
         </div>
       </div>
-      <div id="sop-tp-url" style="display:none">
-        <input class="sop-inp" type="text" id="sop-yu" placeholder="https://youtube.com/watch?v=...">
-        <div class="sop-hint">⚠ Лише публічні відео до 15 хв</div>
+
+      <div class="sop-section">
+        <div class="sop-lbl">⚙ Параметри</div>
+        <div style="margin-bottom:6px">
+          <div class="sop-hint" style="margin-bottom:2px">Назва операції</div>
+          <input class="sop-inp" type="text" id="sop-opname" placeholder="Переналадка прес-форм ТПА">
+        </div>
+        <div class="sop-row2" style="margin-bottom:6px">
+          <div>
+            <div class="sop-hint" style="margin-bottom:2px">Склав</div>
+            <input class="sop-inp" type="text" id="sop-author" placeholder="П.І.Б.">
+          </div>
+          <div>
+            <div class="sop-hint" style="margin-bottom:2px">Погодив</div>
+            <input class="sop-inp" type="text" id="sop-approver" placeholder="П.І.Б.">
+          </div>
+        </div>
+        <div style="margin-bottom:6px">
+          <div class="sop-hint" style="margin-bottom:2px">Компанія</div>
+          <input class="sop-inp" type="text" id="sop-company" placeholder="DLight">
+        </div>
+        <div class="sop-row2" style="margin-bottom:6px">
+          <div>
+            <div class="sop-hint" style="margin-bottom:2px">Номер СОП</div>
+            <input class="sop-inp" type="text" id="sop-docnum" placeholder="СОП-001">
+          </div>
+          <div>
+            <div class="sop-hint" style="margin-bottom:2px">Версія</div>
+            <input class="sop-inp" type="text" id="sop-version" placeholder="1.0">
+          </div>
+        </div>
+        <div style="margin-bottom:6px">
+          <div class="sop-hint" style="margin-bottom:2px">Мова</div>
+          <select class="sop-inp" id="sop-lang">
+            <option value="uk">Українська</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <div class="sop-hint" style="margin-bottom:2px">Додаткові інструкції</div>
+          <textarea class="sop-inp" id="sop-extra" rows="2" placeholder="Наприклад: акцент на LOTO..."></textarea>
+        </div>
       </div>
+
+      <div style="padding:10px 12px">
+        <button class="sop-gb" id="sop-gb" onclick="sopGenerate()">
+          <div class="sop-spin" id="sop-spin"></div>
+          <span id="sop-gbt">✨ Згенерувати СОП</span>
+        </button>
+        <div class="sop-pbw" id="sop-pw">
+          <div class="sop-pb"><div class="sop-pf" id="sop-pf"></div></div>
+          <div class="sop-pl" id="sop-pl"></div>
+        </div>
+        <div class="sop-err" id="sop-err"></div>
+      </div>
+
+      <div class="sop-res" id="sop-res">
+        <div class="sop-res-hdr">
+          <span class="sop-res-ttl">✅ СОП готовий</span>
+          <div style="display:flex;gap:5px">
+            <button class="sop-dlb" style="background:var(--bg2);color:var(--text);border:.5px solid var(--border2)" onclick="sopSaveToArch()">📁 Зберегти</button>
+            <button class="sop-dlb" onclick="sopDownload()">⬇ xlsx</button>
+          </div>
+        </div>
+        <div id="sop-preview-wrap"></div>
+      </div>
+
+    </div><!-- /sopp-gen -->
+
+    <!-- ══ PANE: ARCHIVE ══ -->
+    <div class="sop-pane" id="sopp-arch">
+      <div class="sopg-topbar">
+        <span class="sopg-cnt-lbl" id="sopg-cnt">Збережено: 0 СОП</span>
+        <button class="sopg-clr" onclick="sopClearArch()" title="Очистити архів">🗑 Очистити</button>
+      </div>
+      <div id="sopg-list"></div>
     </div>
 
-    <!-- SOP PARAMS -->
-    <div class="sop-section">
-      <div class="sop-lbl">⚙ Параметри</div>
-      <div style="margin-bottom:6px">
-        <div class="sop-hint" style="margin-bottom:3px">Назва операції</div>
-        <input class="sop-inp" type="text" id="sop-opname" placeholder="Переналадка прес-форм ТПА">
-      </div>
-      <div class="sop-row2" style="margin-bottom:6px">
-        <div>
-          <div class="sop-hint" style="margin-bottom:2px">Склав</div>
-          <input class="sop-inp" type="text" id="sop-author" placeholder="П.І.Б.">
-        </div>
-        <div>
-          <div class="sop-hint" style="margin-bottom:2px">Погодив</div>
-          <input class="sop-inp" type="text" id="sop-approver" placeholder="П.І.Б.">
-        </div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div class="sop-hint" style="margin-bottom:2px">Компанія</div>
-        <input class="sop-inp" type="text" id="sop-company" placeholder="DLight">
-      </div>
-      <div class="sop-row2" style="margin-bottom:6px">
-        <div>
-          <div class="sop-hint" style="margin-bottom:2px">Номер СОП</div>
-          <input class="sop-inp" type="text" id="sop-docnum" placeholder="СОП-001">
-        </div>
-        <div>
-          <div class="sop-hint" style="margin-bottom:2px">Версія</div>
-          <input class="sop-inp" type="text" id="sop-version" placeholder="1.0">
-        </div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div class="sop-hint" style="margin-bottom:2px">Мова</div>
-        <select class="sop-inp" id="sop-lang">
-          <option value="uk">Українська</option>
-          <option value="en">English</option>
-        </select>
-      </div>
-      <div>
-        <div class="sop-hint" style="margin-bottom:2px">Додаткові інструкції</div>
-        <textarea class="sop-inp" id="sop-extra" rows="2" placeholder="Наприклад: акцент на LOTO..."></textarea>
-      </div>
-    </div>
-
-    <div style="padding:10px 12px">
-      <button class="sop-gb" id="sop-gb" onclick="sopGenerate()">
-        <div class="sop-spin" id="sop-spin"></div>
-        <span id="sop-gbt">✨ Згенерувати СОП</span>
-      </button>
-      <div class="sop-pbw" id="sop-pw">
-        <div class="sop-pb"><div class="sop-pf" id="sop-pf"></div></div>
-        <div class="sop-pl" id="sop-pl"></div>
-      </div>
-      <div class="sop-err" id="sop-err"></div>
-    </div>
-
-    <!-- RESULT PREVIEW -->
-    <div class="sop-res" id="sop-res">
-      <div class="sop-res-hdr">
-        <span class="sop-res-ttl">✅ СОП готовий</span>
-        <button class="sop-dlb" onclick="sopDownload()">⬇ xlsx</button>
-      </div>
-      <div id="sop-preview-wrap"></div>
-    </div>
   </div>
 </div>
 </div><!-- /.main -->
@@ -4139,6 +4187,105 @@ function exportSOPRegistry(){
 ══════════════════════════════════════════ */
 (function(){
   let sopFile=null, sopTab='file', sopData=null;
+
+  /* ── ARCHIVE ── */
+  let SOP_ARCH = [];
+  try { SOP_ARCH = JSON.parse(localStorage.getItem('vsm_sop_arch') || '[]'); } catch(e) {}
+
+  window.sopPanelTab = function(t) {
+    ['gen','arch'].forEach(k => {
+      document.getElementById('sopt-'+k).classList.toggle('on', k===t);
+      document.getElementById('sopp-'+k).classList.toggle('on', k===t);
+    });
+    if(t === 'arch') sopRenderArch();
+  };
+
+  function sopArchSave() {
+    try { localStorage.setItem('vsm_sop_arch', JSON.stringify(SOP_ARCH)); } catch(e) {}
+  }
+  function sopUpdateBadge() {
+    const b = document.getElementById('sopg-badge');
+    const cnt = document.getElementById('sopg-cnt');
+    if(b) { b.style.display = SOP_ARCH.length ? '' : 'none'; b.textContent = SOP_ARCH.length; }
+    if(cnt) cnt.textContent = 'Збережено: ' + SOP_ARCH.length + ' СОП';
+  }
+
+  window.sopSaveToArch = function() {
+    if(!sopData) return;
+    const docNum = (document.getElementById('sop-docnum').value||'').trim() || 'СОП-?';
+    const ei = SOP_ARCH.findIndex(a => a.num === docNum);
+    const entry = {
+      id:'arch_'+Date.now(), num:docNum,
+      name: sopData.operation_name || 'Операція',
+      version: (document.getElementById('sop-version').value||'1.0').trim(),
+      company: sopData.company||'', author: sopData.author||'',
+      approver: sopData.approver||'',
+      date: new Date().toLocaleDateString('uk-UA'), ts: Date.now(),
+      data: sopData,
+    };
+    if(ei >= 0) { SOP_ARCH[ei]=entry; window.toast&&window.toast('СОП '+docNum+' оновлено в архіві','ok'); }
+    else { SOP_ARCH.unshift(entry); window.toast&&window.toast('📁 СОП '+docNum+' збережено','ok'); }
+    sopArchSave(); sopUpdateBadge();
+    sopPanelTab('arch');
+  };
+
+  window.sopRenderArch = function() {
+    sopUpdateBadge();
+    const list = document.getElementById('sopg-list');
+    if(!list) return;
+    if(!SOP_ARCH.length) {
+      list.innerHTML='<div class="sopg-empty">📂 Архів порожній<br>Згенеруйте СОП і натисніть<br><strong>📁 Зберегти</strong></div>';
+      return;
+    }
+    list.innerHTML = SOP_ARCH.map((a,i) => {
+      const steps = a.data&&a.data.sections ? a.data.sections.flatMap(s=>s.steps||[]).length : 0;
+      const total = a.data&&a.data.sections ? a.data.sections.flatMap(s=>s.steps||[]).reduce((x,s)=>x+(s.time_sec||0),0) : 0;
+      return `<div class="sopg-card">
+        <div class="sopg-hdr" onclick="sopgToggle(${i})">
+          <span class="sopg-num">${sopEsc(a.num)}</span>
+          <span class="sopg-name" title="${sopEsc(a.name)}">${sopEsc(a.name)}</span>
+          <span class="sopg-date">${a.date}</span>
+        </div>
+        <div class="sopg-body" id="sopg-body-${i}">
+          <div class="sopg-meta">
+            <strong>Компанія:</strong> ${sopEsc(a.company||'—')}<br>
+            <strong>Склав:</strong> ${sopEsc(a.author||'—')} &nbsp;|&nbsp; <strong>Погодив:</strong> ${sopEsc(a.approver||'—')}<br>
+            <strong>Версія:</strong> ${sopEsc(a.version||'—')} &nbsp;|&nbsp; <strong>Кроків:</strong> ${steps} &nbsp;|&nbsp; <strong>Час:</strong> ${total} сек
+          </div>
+          <div class="sopg-actions">
+            <button class="sopg-btn dl" onclick="sopgDownload(${i})">⬇ xlsx</button>
+            <button class="sopg-btn" onclick="sopgPreview(${i})">👁 Перегляд</button>
+            <button class="sopg-btn rm" onclick="sopgDelete(${i})">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  window.sopgToggle=function(i){const b=document.getElementById('sopg-body-'+i);if(b)b.classList.toggle('open');};
+  window.sopgDelete=function(i){
+    const a=SOP_ARCH[i];if(!a)return;
+    if(!confirm('Видалити СОП '+a.num+' з архіву?'))return;
+    SOP_ARCH.splice(i,1);sopArchSave();sopRenderArch();
+    window.toast&&window.toast('Видалено з архіву','ok');
+  };
+  window.sopClearArch=function(){
+    if(!SOP_ARCH.length)return;
+    if(!confirm('Очистити весь архів? Дія незворотна.'))return;
+    SOP_ARCH=[];sopArchSave();sopRenderArch();
+  };
+  window.sopgDownload=function(i){
+    const a=SOP_ARCH[i];if(!a||!a.data)return;
+    const prev=sopData;sopData=a.data;sopDownload();sopData=prev;
+  };
+  window.sopgPreview=function(i){
+    const a=SOP_ARCH[i];if(!a||!a.data)return;
+    sopPanelTab('gen');sopData=a.data;sopRender(a.data);
+    document.getElementById('sop-res').classList.add('show');
+    setTimeout(()=>{const g=document.getElementById('sopp-gen');if(g)g.scrollTop=9999;},50);
+  };
+  window.addEventListener('load',()=>sopUpdateBadge());
+  /* ── /ARCHIVE ── */
 
   /* Auto-fill SOP number when tab opens */
   const origRtab = window.rtab;
