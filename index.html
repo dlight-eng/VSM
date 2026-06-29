@@ -548,6 +548,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
           <button class="sop-kb" onclick="sopSaveKey()">💾</button>
         </div>
         <div class="sop-hint" id="sop-ks">🔒 Зберігається в localStorage</div>
+      <div class="sop-hint" id="sop-model-hint" style="margin-top:4px;color:var(--accent)"></div>
       </div>
 
       <div class="sop-section">
@@ -4515,6 +4516,12 @@ function exportSOPRegistry(){
   /* load saved key */
   window.addEventListener('load',()=>{
     try{const k=localStorage.getItem('sop_gk');if(k)document.getElementById('sop-gk').value=k;}catch(e){}
+    try{
+      const idx=+(localStorage.getItem('sop_model_idx')||'0');
+      const models=['gemini-2.5-flash','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-flash-8b'];
+      const mh=document.getElementById('sop-model-hint');
+      if(mh) mh.textContent='Модель: '+models[idx%models.length];
+    }catch{}
   });
 
   window.sopToggleKey=function(btn){
@@ -4617,6 +4624,60 @@ ${nameStr}
 Тільки JSON.`;
   }
 
+
+/* ── Gemini Smart Model Selector with fallback ── */
+const _SOP_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+];
+let _sopModelIdx = 0;
+try{const s=localStorage.getItem('sop_model_idx');if(s!==null)_sopModelIdx=+s;}catch{}
+
+async function sopGeminiCall(apiKey, bodyObj, onProgress){
+  const base='https://generativelanguage.googleapis.com/v1beta/models/';
+  let lastErr=null;
+  for(let attempt=0;attempt<_SOP_MODELS.length;attempt++){
+    const idx=(_sopModelIdx+attempt)%_SOP_MODELS.length;
+    const model=_SOP_MODELS[idx];
+    if(onProgress) onProgress('Модель: '+model+'...');
+    try{
+      const resp=await fetch(base+model+':generateContent?key='+apiKey,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyObj)
+      });
+      const data=await resp.json();
+      if(resp.ok){
+        /* save the working model index */
+        _sopModelIdx=idx;
+        try{localStorage.setItem('sop_model_idx',String(idx));}catch{}
+        return data;
+      }
+      const msg=(data?.error?.message||'');
+      /* model-specific errors → try next model */
+      if(resp.status===404||msg.includes('not found')||msg.includes('no longer available')||
+         msg.includes('deprecated')||msg.includes('not supported for generateContent')){
+        lastErr=new Error(model+': '+msg); continue;
+      }
+      /* high demand / quota → try next model too */
+      if(msg.includes('high demand')||msg.includes('overloaded')||resp.status===503||resp.status===429){
+        lastErr=new Error(model+': '+msg); continue;
+      }
+      /* auth / billing → no point retrying */
+      throw new Error(msg||'HTTP '+resp.status);
+    }catch(e){
+      const m=e.message||'';
+      if(m.includes('not found')||m.includes('no longer available')||m.includes('deprecated')||
+         m.includes('high demand')||m.includes('overloaded')){
+        lastErr=e; continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr||new Error('Всі моделі Gemini недоступні. Перевірте API ключ та спробуйте пізніше.');
+}
+/* ── /Gemini Smart Model Selector ── */
+
   window.sopGenerate=async function(){
     sopHErr();
     document.getElementById('sop-res').classList.remove('show');
@@ -4638,15 +4699,12 @@ ${nameStr}
         sopSetP(35,'Передача YouTube...');
         parts.push({file_data:{mime_type:'video/mp4',file_uri:yu}});
       }
-      sopSetP(70,'Gemini аналізує...');
-      const resp=await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`,
-        {method:'POST',headers:{'Content-Type':'application/json'},
-         body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}})}
+      sopSetP(70,'Аналіз відео...');
+      const data=await sopGeminiCall(key,
+        {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}},
+        (msg)=>{sopSetP(75,msg);}
       );
       sopSetP(88,'Обробка відповіді...');
-      const data=await resp.json();
-      if(!resp.ok)throw new Error(data?.error?.message||'HTTP '+resp.status);
       let raw=(data?.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
       let parsed;try{parsed=JSON.parse(raw);}catch(e){throw new Error('Некоректна відповідь. Спробуйте ще раз.');}
       sopData={...parsed,
