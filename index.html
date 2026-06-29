@@ -4596,23 +4596,24 @@ function exportSOPRegistry(){
     const opName=(document.getElementById('sop-opname').value||'').trim();
     const langStr=lang==='uk'?'українською':'in English';
     const nameStr=opName?`Назва операції: "${opName}".`:'';
-    return `Ти — експерт з Lean-виробництва. Уважно переглянь відео та витягни інформацію про операцію.
+    return `IMPORTANT: Your response must be ONLY a valid JSON object. No markdown, no backticks, no explanations before or after. Start your response with { and end with }.
 
+Ти — експерт з Lean-виробництва. Уважно переглянь відео та витягни детальну інформацію про виробничу операцію.
 ${nameStr}
 
-Поверни ВИКЛЮЧНО валідний JSON (без markdown):
+Поверни ТІЛЬКИ цей JSON (починай відповідь одразу з {):
 {
-  "operation_name": "Тип роботи — назва",
-  "ppe": "ЗІЗ через кому",
-  "tools": "Інструменти через кому",
-  "materials": "Матеріали через кому",
+  "operation_name": "назва операції ${langStr}",
+  "ppe": "перелік ЗІЗ через кому",
+  "tools": "інструменти та обладнання через кому",
+  "materials": "матеріали та компоненти через кому",
   "sections": [
     {
-      "name": "Назва етапу",
+      "name": "назва етапу",
       "steps": [
         {
-          "step": "1. Назва кроку",
-          "key_points": "⚠ вимога безпеки\\n✓ вимога якості",
+          "step": "1. конкретна дія оператора",
+          "key_points": "⚠ вимога безпеки\n✓ критерій якості",
           "time_sec": 30
         }
       ]
@@ -4620,8 +4621,15 @@ ${nameStr}
   ]
 }
 
-Вимоги (${langStr}): 3–6 етапів, 2–8 кроків на етап, ⚠ для безпеки та ✓ для якості через \\n.${extra?'\nДодатково: '+extra:''}
-Тільки JSON.`;
+Правила ${langStr}:
+- Мінімум 3, максимум 6 логічних етапів (sections)
+- Кожен етап: 2–8 конкретних кроків (steps)
+- key_points: рядки розділяти символом \n, "⚠" для безпеки, "✓" для якості
+- time_sec: реалістична оцінка тривалості кроку в секундах (ціле число)
+- Якщо відео не містить виробничої операції — поверни JSON з порожнім sections: []
+${extra?'Додаткові вимоги: '+extra:''}
+
+НАГАДУВАННЯ: Відповідь починається з { і закінчується }, без будь-якого іншого тексту.`;
   }
 
 
@@ -4700,13 +4708,50 @@ async function sopGeminiCall(apiKey, bodyObj, onProgress){
         parts.push({file_data:{mime_type:'video/mp4',file_uri:yu}});
       }
       sopSetP(70,'Аналіз відео...');
-      const data=await sopGeminiCall(key,
-        {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}},
-        (msg)=>{sopSetP(75,msg);}
-      );
+      /* Try with responseMimeType first, fallback without it */
+      let data;
+      try{
+        data=await sopGeminiCall(key,
+          {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192,responseMimeType:'application/json'}},
+          (msg)=>{sopSetP(75,msg);}
+        );
+      }catch(e1){
+        if(e1.message&&(e1.message.includes('responseMimeType')||e1.message.includes('mimeType'))){
+          sopSetP(76,'Retry без JSON mode...');
+          data=await sopGeminiCall(key,
+            {contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192}},
+            (msg)=>{sopSetP(78,msg);}
+          );
+        }else{ throw e1; }
+      }
       sopSetP(88,'Обробка відповіді...');
-      let raw=(data?.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-      let parsed;try{parsed=JSON.parse(raw);}catch(e){throw new Error('Некоректна відповідь. Спробуйте ще раз.');}
+      const rawText=(data?.candidates?.[0]?.content?.parts?.[0]?.text||'');
+      let raw=rawText.trim();
+      /* Strip markdown code fences */
+      raw=raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+      /* Extract JSON object if wrapped in extra text */
+      if(!raw.startsWith('{')){
+        const m=raw.match(/\{[\s\S]*\}/);
+        if(m) raw=m[0];
+      }
+      let parsed;
+      try{ parsed=JSON.parse(raw); }
+      catch(e){
+        /* Last resort: try to fix common issues */
+        try{
+          const fixed=raw
+            .replace(/,\s*}/g,'}').replace(/,\s*]/g,']')  /* trailing commas */
+            .replace(/(['"])?([a-zA-Z_]\w*)(['"])?:/g,'"$2":')  /* unquoted keys */
+            .replace(/:\s*'([^']*)'/g,':"$1"');  /* single quotes */
+          parsed=JSON.parse(fixed);
+        }catch(e2){
+          console.error('Raw Gemini response:', rawText);
+          throw new Error('Gemini повернув некоректний формат. Спробуйте ще раз або перефразуйте назву операції.');
+        }
+      }
+      /* Validate structure */
+      if(!parsed.sections) parsed.sections=[];
+      if(!Array.isArray(parsed.sections)) parsed.sections=[];
       sopData={...parsed,
         author:(document.getElementById('sop-author').value||'').trim(),
         approver:(document.getElementById('sop-approver').value||'').trim(),
