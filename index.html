@@ -252,10 +252,20 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
     </button>
     <div class="hdd-menu" id="dd-file-menu">
       <button class="hdd-item" onclick="saveMap();closeDD()">
-        <span class="ick">💾</span><span class="iname">Зберегти</span><span class="ikbd">Ctrl+S</span>
+        <span class="ick">💾</span><span class="iname">Зберегти локально</span><span class="ikbd">Ctrl+S</span>
       </button>
       <button class="hdd-item" onclick="saveToSheets();closeDD()">
         <span class="ick">📊</span><span class="iname">Зберегти в Sheets</span>
+      </button>
+      <div class="hdd-sep"></div>
+      <button class="hdd-item" onclick="gistSave();closeDD()">
+        <span class="ick">☁</span><span class="iname">Зберегти в Gist</span><span class="ikbd">Ctrl+⇧+S</span>
+      </button>
+      <button class="hdd-item" onclick="gistLoad();closeDD()">
+        <span class="ick">☁</span><span class="iname">Відкрити з Gist</span>
+      </button>
+      <button class="hdd-item" onclick="gistSettings();closeDD()">
+        <span class="ick">🔑</span><span class="iname">GitHub токен...</span>
       </button>
       <div class="hdd-sep"></div>
       <button class="hdd-item" onclick="exportJSON();closeDD()">
@@ -693,6 +703,112 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 
 <script>
 'use strict';
+
+/* ═══════════════════════════════════════════════════════════════
+   VDB — IndexedDB wrapper з localStorage fallback
+   API: await VDB.get(store,key) | VDB.set(store,key,val) | VDB.del(store,key)
+   Stores: 'maps' | 'sop' | 'layout' | 'sync' | 'prefs'
+═══════════════════════════════════════════════════════════════ */
+const VDB = (() => {
+  const NAME = 'vsm_db', VER = 1;
+  const STORES = ['maps','sop','layout','sync','prefs'];
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      if (typeof indexedDB === 'undefined') { rej(new Error('no-idb')); return; }
+      const req = indexedDB.open(NAME, VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        STORES.forEach(s => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s); });
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  async function get(store, key) {
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const req = db.transaction(store, 'readonly').objectStore(store).get(key);
+        req.onsuccess = () => res(req.result ?? null);
+        req.onerror   = () => rej(req.error);
+      });
+    } catch {
+      try { const v = localStorage.getItem('_vdb_'+store+'_'+key); return v ? JSON.parse(v) : null; } catch { return null; }
+    }
+  }
+
+  async function set(store, key, value) {
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const req = db.transaction(store, 'readwrite').objectStore(store).put(value, key);
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+      });
+    } catch {
+      try { localStorage.setItem('_vdb_'+store+'_'+key, JSON.stringify(value)); } catch {}
+    }
+  }
+
+  async function del(store, key) {
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const req = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+      });
+    } catch {
+      try { localStorage.removeItem('_vdb_'+store+'_'+key); } catch {}
+    }
+  }
+
+  async function keys(store) {
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const req = db.transaction(store, 'readonly').objectStore(store).getAllKeys();
+        req.onsuccess = () => res(req.result || []);
+        req.onerror   = () => rej(req.error);
+      });
+    } catch { return []; }
+  }
+
+  /* Одноразова міграція з localStorage → IndexedDB */
+  async function migrate() {
+    if (localStorage.getItem('_vdb_ok')) return;
+    try {
+      /* Мігруємо карти */
+      const raw = localStorage.getItem('vsm_maps');
+      if (raw) {
+        const maps = JSON.parse(raw);
+        for (const [name, state] of Object.entries(maps)) {
+          await set('maps', name, state);
+        }
+      }
+      /* Мігруємо архів СОП */
+      const arch = localStorage.getItem('vsm_sop_arch');
+      if (arch) await set('sop', 'arch', JSON.parse(arch));
+
+      localStorage.setItem('_vdb_ok', '1');
+      console.log('[VDB] ✅ Міграція з localStorage завершена');
+    } catch(e) {
+      console.warn('[VDB] Міграція не вдалась:', e);
+    }
+  }
+
+  /* Запускаємо міграцію у фоні — не блокує завантаження */
+  setTimeout(migrate, 800);
+
+  return { get, set, del, keys };
+})();
+/* ═══════════════════════════════════════════════════════════════ */
+
+
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
@@ -3211,7 +3327,16 @@ function showGrpProps(){
 }
 
 let _snapT=null;
-function snapDebounced(){clearTimeout(_snapT);_snapT=setTimeout(snapshot,600)}
+function snapDebounced(){
+  clearTimeout(_snapT);
+  _snapT = setTimeout(() => {
+    snapshot();
+    /* Синхронізуємо стан з Layout Designer */
+    VDB.set('sync','vsm_state', getState()).catch(()=>{});
+    if (typeof _lyBC !== 'undefined' && _lyBC)
+      _lyBC.postMessage({ type:'state', state: getState() });
+  }, 600);
+}
 function setP(id,k,v){const el=ELS.find(e=>e.id===id);if(!el)return;el[k]=(isNaN(+v)||v===''||['label','note'].includes(k))?v:+v;snapDebounced();renderAll()}
 function updGrp(id,k,v){
   const g=GROUPS.find(x=>x.id===id);if(!g)return;
@@ -3574,15 +3699,47 @@ function loadState(s){
   setTimeout(()=>{fitView();}, 150);
   setTimeout(snapshot,200);
 }
-function allMaps(){try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}}
-function saveMap(){const n=document.getElementById('mapName').value.trim()||'VSM';const m=allMaps();m[n]=getState();localStorage.setItem('vsm_maps',JSON.stringify(m));toast('Збережено: '+n,'ok')}
-function loadMap(n){const m=allMaps();if(m[n]){loadState(m[n]);toast('Відкрито: '+n,'ok')}}
-function delMap(n){const m=allMaps();delete m[n];localStorage.setItem('vsm_maps',JSON.stringify(m));renderMaps();toast('Видалено')}
+function allMaps(){
+  /* Index зберігається в localStorage для sync доступу в UI */
+  try{return JSON.parse(localStorage.getItem('vsm_maps')||'{}')}catch{return{}}
+}
+async function saveMap(){
+  const n = document.getElementById('mapName').value.trim() || 'VSM';
+  const state = getState();
+  /* Index з мета-даними — в localStorage (sync, малий розмір) */
+  const idx = allMaps();
+  idx[n] = { ts: Date.now(), name: n, elCount: (state.ELS||[]).length };
+  localStorage.setItem('vsm_maps', JSON.stringify(idx));
+  /* Повний стан карти — в IndexedDB (великий розмір) */
+  await VDB.set('maps', n, state);
+  toast('Збережено: ' + n, 'ok');
+  renderMaps();
+}
+async function loadMap(n){
+  /* Спочатку з IDB, fallback до localStorage index */
+  let state = await VDB.get('maps', n);
+  if (!state) {
+    const idx = allMaps();
+    state = idx[n];
+  }
+  if (!state) { toast('Карту не знайдено', 'err'); return; }
+  loadState(state);
+  document.getElementById('mapName').value = n;
+  toast('Відкрито: ' + n, 'ok');
+}
+async function delMap(n){
+  const idx = allMaps();
+  delete idx[n];
+  localStorage.setItem('vsm_maps', JSON.stringify(idx));
+  await VDB.del('maps', n);
+  renderMaps();
+  toast('Видалено', 'ok');
+}
 function renderMaps(){
   const m=allMaps(),ks=Object.keys(m),c=document.getElementById('sc');
   if(!ks.length){c.innerHTML='<div class="emaps">Немає збережених карт.<br>Натисніть «Зберегти».</div>';return}
   c.innerHTML=`<button class="abtn" style="margin-bottom:8px" onclick="saveMap()">+ Зберегти поточну</button>
-    <div class="sh" style="border-top:none;padding-top:0">Збережені (${ks.length})</div>`+
+    <div class="sh" style="border-top:none;padding-top:0">Збережені (${ks.length}) <span id="gist-badge" style="font-size:10px;margin-left:6px"></span></div>`+
     ks.map(n=>{const ts=m[n].ts?new Date(m[n].ts).toLocaleDateString('uk-UA'):'';return`<div class="mrow" onclick="loadMap('${n.replace(/'/g,"\\'")}')"><span>🗺</span><div style="flex:1;overflow:hidden"><div class="mrn">${n}</div><div class="mrd">${ts}·${(m[n].ELS||[]).length}ел.</div></div><button class="mdb" onclick="event.stopPropagation();if(confirm('Видалити?'))delMap('${n.replace(/'/g,"\\'")}')">✕</button></div>`}).join('');
 }
 function exportJSON(){const a=document.createElement('a');const n=(document.getElementById('mapName').value.trim()||'vsm').replace(/[^\w\-]/g,'_');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(getState(),null,2));a.download=n+'.vsm.json';a.click();toast('JSON збережено','ok')}
@@ -3593,13 +3750,26 @@ function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileRe
 ══════════════════════════════════════ */
 window.addEventListener('load',()=>{
   const k=localStorage.getItem('vsm_api_key')||'';if(k)document.getElementById('aik').value=k;
-  const m=allMaps(),ks=Object.keys(m);
-  if(ks.length){
-    loadState(m[ks[ks.length-1]]);
-  } else {
-    renderAll();showProps();
-    setTimeout(fitView,200);
-  }
+  /* Завантажуємо останню збережену карту з IndexedDB */
+  (async () => {
+    const idx = allMaps();
+    const ks = Object.keys(idx);
+    if (ks.length) {
+      /* Беремо останню за timestamp */
+      const last = ks.reduce((a,b) => ((idx[a].ts||0) > (idx[b].ts||0) ? a : b));
+      const state = await VDB.get('maps', last);
+      if (state) {
+        loadState(state);
+        document.getElementById('mapName').value = last;
+      } else {
+        /* Fallback: стан міг бути в старому форматі index */
+        if (idx[last].ELS) loadState(idx[last]);
+      }
+    } else {
+      renderAll(); showProps();
+      setTimeout(fitView, 200);
+    }
+  })();
 });
 function saveKey(){const k=document.getElementById('aik').value.trim();localStorage.setItem('vsm_api_key',k);toast(k?'Ключ збережено':'Ключ очищено',k?'ok':'')}
 async function runAi(){
@@ -4225,13 +4395,16 @@ function sopToggleLink(opId,docId){
   else op.sopIds.push(docId);
   snapDebounced();renderSOPBody();
 }
-function sopLinkOp(opId){
+async function sopLinkOp(opId){
   const op = SOP_OPS.find(o=>o.id===opId);
   if(!op) return;
 
   // Merge SOP_ARCH + SOP_DOCS into one picker list (deduplicated by num)
   let archList = [];
-  try { archList = JSON.parse(localStorage.getItem('vsm_sop_arch')||'[]'); } catch(e){}
+  try {
+    const _a = await VDB.get('sop','arch');
+    archList = Array.isArray(_a) ? _a : (JSON.parse(localStorage.getItem('vsm_sop_arch')||'[]'));
+  } catch { archList = []; }
 
   // Build combined list: arch entries first, then SOP_DOCS not already in arch
   const combined = [];
@@ -4400,7 +4573,13 @@ function exportSOPRegistry(){
 
   /* ── ARCHIVE ── */
   let SOP_ARCH = [];
-  try { SOP_ARCH = JSON.parse(localStorage.getItem('vsm_sop_arch') || '[]'); } catch(e) {}
+  (async () => {
+    try {
+      const _a = await VDB.get('sop','arch');
+      SOP_ARCH = Array.isArray(_a) ? _a : (JSON.parse(localStorage.getItem('vsm_sop_arch')||'[]'));
+    } catch { SOP_ARCH = []; }
+    sopUpdateBadge();
+  })();
 
   window.sopPanelTab = function(t) {
     ['gen','arch'].forEach(k => {
@@ -4411,7 +4590,9 @@ function exportSOPRegistry(){
   };
 
   function sopArchSave() {
-    try { localStorage.setItem('vsm_sop_arch', JSON.stringify(SOP_ARCH)); } catch(e) {}
+    VDB.set('sop','arch', SOP_ARCH).catch(() => {
+      try { localStorage.setItem('vsm_sop_arch', JSON.stringify(SOP_ARCH)); } catch {}
+    });
   }
   function sopUpdateBadge() {
     const b = document.getElementById('sopg-badge');
@@ -4596,23 +4777,49 @@ function exportSOPRegistry(){
     const opName=(document.getElementById('sop-opname').value||'').trim();
     const langStr=lang==='uk'?'українською':'in English';
     const nameStr=opName?`Назва операції: "${opName}".`:'';
-    return `IMPORTANT: Your response must be ONLY a valid JSON object. No markdown, no backticks, no explanations before or after. Start your response with { and end with }.
+    return `IMPORTANT: Your response must be ONLY a raw valid JSON object. No markdown, no code fences, no backticks, no commentary before or after. Your response MUST start with { and end with }.
 
-Ти — експерт з Lean-виробництва. Уважно переглянь відео та витягни детальну інформацію про виробничу операцію.
+Ти — старший інженер-технолог та експерт з Lean-виробництва (TPS, TWI, стандартизована робота). Ретельно переглянь це відео та розроби детальну Стандартну Операційну Процедуру (СОП) ${langStr}.
+
 ${nameStr}
 
-Поверни ТІЛЬКИ цей JSON (починай відповідь одразу з {):
+ЗАВДАННЯ:
+1. Визнач усі логічні ЕТАПИ операції (наприклад: Підготовка → Основна робота → Контроль → Завершення)
+2. Для кожного етапу детально опиши КРОКИ — конкретні дії оператора у правильній послідовності
+3. Для кожного кроку визнач:
+   - Точну дію (дієслово + об'єкт + спосіб): "Встановити заготовку в лівий затискач до упору"
+   - Вимоги безпеки (починати з ⚠): небезпечні зони, ЗІЗ для цього кроку, LOTO, гострі кромки
+   - Критерії якості (починати з ✓): розміри, зусилля, колір, звук, відчуття, візуальний контроль
+   - Реалістичний час виконання в секундах (переглянь відео уважно)
+4. Визнач ВЕСЬ необхідний захист (ЗІЗ), інструменти та матеріали
+
+СТРУКТУРА ВІДПОВІДІ — тільки цей JSON:
 {
-  "operation_name": "назва операції ${langStr}",
-  "ppe": "перелік ЗІЗ через кому",
-  "tools": "інструменти та обладнання через кому",
-  "materials": "матеріали та компоненти через кому",
+  "operation_name": "тип роботи — конкретна назва операції ${langStr}",
+  "ppe": "захисні окуляри, рукавиці нітрилові, захисне взуття (перелічи все що видно або потрібно)",
+  "tools": "назва інструменту 1, назва інструменту 2 (перелічи все обладнання та пристосування)",
+  "materials": "матеріал/деталь 1 (кількість), матеріал 2 (перелічи з кількістю якщо видно)",
   "sections": [
     {
-      "name": "назва етапу",
+      "name": "1. Назва етапу (коротко, іменник)",
       "steps": [
         {
-          "step": "1. конкретна дія оператора",
+          "step": "1.1. [Дієслово] [Що робити] [Як/Куди/До якого стану]",
+          "key_points": "⚠ небезпека або вимога безпеки для цього кроку\n✓ критерій прийому або перевірка якості\n✓ додатковий критерій якщо є",
+          "time_sec": 15
+        },
+        {
+          "step": "1.2. Наступний крок",
+          "key_points": "⚠ вимога безпеки\n✓ критерій якості",
+          "time_sec": 20
+        }
+      ]
+    },
+    {
+      "name": "2. Наступний етап",
+      "steps": [
+        {
+          "step": "2.1. Крок виконання",
           "key_points": "⚠ вимога безпеки\n✓ критерій якості",
           "time_sec": 30
         }
@@ -4621,15 +4828,18 @@ ${nameStr}
   ]
 }
 
-Правила ${langStr}:
-- Мінімум 3, максимум 6 логічних етапів (sections)
-- Кожен етап: 2–8 конкретних кроків (steps)
-- key_points: рядки розділяти символом \n, "⚠" для безпеки, "✓" для якості
-- time_sec: реалістична оцінка тривалості кроку в секундах (ціле число)
-- Якщо відео не містить виробничої операції — поверни JSON з порожнім sections: []
-${extra?'Додаткові вимоги: '+extra:''}
+ПРАВИЛА ЗАПОВНЕННЯ ${langStr}:
+— sections: від 3 до 6 логічних етапів операції
+— steps: від 3 до 10 кроків на кожен етап
+— step: починати з номера "Х.Х.", використовувати активне дієслово, бути максимально конкретним
+— key_points: ОБОВ'ЯЗКОВО мінімум один рядок ⚠ та один рядок ✓ для кожного кроку; розділяти символом \n
+— time_sec: ціле число секунд, оцінювати реалістично за відео (не менше 3, не більше 300 на крок)
+— Якщо крок виконується обома руками — вкажи це явно
+— Якщо є налаштування параметрів (тиск, температура, зусилля) — вкажи конкретні значення
+— Якщо відео не містить виробничої операції — поверни JSON з "sections": []
+${extra?'\nДОДАТКОВІ ВИМОГИ ЗАМОВНИКА: '+extra:''}
 
-НАГАДУВАННЯ: Відповідь починається з { і закінчується }, без будь-якого іншого тексту.`;
+НАГАДУВАННЯ: Перша літера відповіді — символ {. Остання — символ }. Ніякого тексту до або після JSON.`;
   }
 
 
@@ -4933,15 +5143,276 @@ async function sopGeminiCall(apiKey, bodyObj, onProgress){
 })();
 /* ── Layout Designer bridge ── */
 function openLayoutDesigner(){
-  try{ localStorage.setItem('vsm_state_for_layout', JSON.stringify(getState())); }catch(e){}
+  VDB.set('sync','vsm_state', getState()).catch(()=>{});
   const w = window.open('layout-designer.html','layout_designer','width=1440,height=900,menubar=no,toolbar=no,location=no');
   if(!w) alert('Дозвольте відкриття спливаючих вікон для цього сайту');
 }
 window.addEventListener('storage', function(e){
   if(e.key==='vsm_layout_ping'){
-    try{ localStorage.setItem('vsm_state_for_layout', JSON.stringify(getState())); }catch(ex){}
+    VDB.set('sync','vsm_state', getState()).catch(()=>{});
   }
 });
+
+/* ══════════════════════════════════════════════════════════════
+   GITHUB GIST — хмарне збереження карт VSM
+   Дані зберігаються у вашому приватному Gist на GitHub
+══════════════════════════════════════════════════════════════ */
+
+/* ── helpers ── */
+function gistGetToken(){ return localStorage.getItem('gh_token')||''; }
+function gistGetId()   { return localStorage.getItem('gh_gist_id')||''; }
+
+function gistShowStatus(msg, ok){
+  const el = document.getElementById('gist-status');
+  if(el){ el.textContent = msg; el.style.color = ok ? 'var(--ok)' : 'var(--err)'; }
+}
+
+/* ── Settings modal ── */
+function gistSettings(){
+  const token = gistGetToken();
+  const gistId = gistGetId();
+  omod(`
+    <div class="modt">☁ GitHub Gist — налаштування</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+      Карти зберігатимуться у <b>приватному Gist</b> вашого GitHub акаунту.<br>
+      Токен зберігається лише локально у браузері.
+    </p>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">
+        GitHub Personal Access Token
+        <a href="https://github.com/settings/tokens/new?scopes=gist&description=VSM+Constructor" 
+           target="_blank" style="color:var(--accent);font-weight:400;margin-left:6px">↗ Створити токен</a>
+      </label>
+      <input id="gist-token-inp" type="password" value="${token}"
+        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+        style="width:100%;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);
+               font-family:monospace;font-size:12px;letter-spacing:1px;box-sizing:border-box;
+               background:var(--bg);color:var(--text)">
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">
+        Scope: потрібен лише <code>gist</code>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">
+        Gist ID <span style="font-weight:400;color:var(--text3)">(залиште порожнім для створення нового)</span>
+      </label>
+      <input id="gist-id-inp" type="text" value="${gistId}"
+        placeholder="a1b2c3d4e5f6..."
+        style="width:100%;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);
+               font-family:monospace;font-size:12px;box-sizing:border-box;
+               background:var(--bg);color:var(--text)">
+    </div>
+    <div id="gist-status" style="font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <div class="modbts">
+      <button class="mbtn" onclick="cmod()">Скасувати</button>
+      <button class="mbtn" style="background:var(--accent);color:#fff;border-color:var(--accent)"
+        onclick="gistSaveSettings()">Зберегти</button>
+    </div>
+  `);
+}
+
+function gistSaveSettings(){
+  const token = document.getElementById('gist-token-inp')?.value.trim() || '';
+  const id    = document.getElementById('gist-id-inp')?.value.trim() || '';
+  if(!token){ gistShowStatus('⚠ Введіть токен', false); return; }
+  localStorage.setItem('gh_token', token);
+  localStorage.setItem('gh_gist_id', id);
+  cmod();
+  toast('GitHub токен збережено', 'ok');
+}
+
+/* ── Save to Gist ── */
+async function gistSave(){
+  const token = gistGetToken();
+  if(!token){ gistSettings(); return; }
+
+  const mapName = document.getElementById('mapName')?.value.trim() || 'VSM';
+  const state = getState();
+  const filename = 'vsm_' + mapName.replace(/[^a-zA-Zа-яА-Я0-9_\-]/g,'_') + '.json';
+  const content_data = JSON.stringify({ name: mapName, ts: Date.now(), state }, null, 2);
+
+  const btn = event?.currentTarget;
+  toast('Збереження в Gist...', 'ok');
+
+  try {
+    const gistId = gistGetId();
+    let url = 'https://api.github.com/gists';
+    let method = 'POST';
+    let body = {
+      description: 'VSM Constructor — ' + mapName,
+      public: false,
+      files: { [filename]: { content: content_data } }
+    };
+
+    if(gistId){
+      url = 'https://api.github.com/gists/' + gistId;
+      method = 'PATCH';
+      body = { files: { [filename]: { content: content_data } } };
+    }
+
+    const resp = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if(!resp.ok){
+      const err = await resp.json();
+      throw new Error(err.message || 'HTTP ' + resp.status);
+    }
+
+    const data = await resp.json();
+
+    /* Зберігаємо Gist ID для наступних оновлень */
+    if(!gistId){
+      localStorage.setItem('gh_gist_id', data.id);
+      toast('✅ Gist створено: ' + data.id.slice(0,8) + '...', 'ok');
+    } else {
+      toast('✅ Збережено в Gist', 'ok');
+    }
+
+    /* Також зберігаємо в IDB для офлайн доступу */
+    await VDB.set('maps', mapName, state);
+    const idx = allMaps();
+    idx[mapName] = { ts: Date.now(), name: mapName, elCount: (state.ELS||[]).length, gistId: data.id };
+    localStorage.setItem('vsm_maps', JSON.stringify(idx));
+    renderMaps();
+
+  } catch(e) {
+    toast('Помилка Gist: ' + e.message, 'err');
+    console.error('[Gist]', e);
+  }
+}
+
+/* ── Load from Gist ── */
+async function gistLoad(){
+  const token = gistGetToken();
+  if(!token){ gistSettings(); return; }
+
+  const gistId = gistGetId();
+  if(!gistId){
+    toast('Gist ID не вказано — спочатку збережіть карту', 'err');
+    gistSettings();
+    return;
+  }
+
+  toast('Завантаження з Gist...', 'ok');
+
+  try {
+    const resp = await fetch('https://api.github.com/gists/' + gistId, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    if(!resp.ok){
+      const err = await resp.json();
+      throw new Error(err.message || 'HTTP ' + resp.status);
+    }
+
+    const gist = await resp.json();
+    const files = Object.values(gist.files);
+
+    if(!files.length){ throw new Error('Gist порожній'); }
+
+    /* Показуємо список файлів якщо їх більше одного */
+    if(files.length === 1){
+      await gistLoadFile(files[0]);
+    } else {
+      gistPickFile(files, gist.description);
+    }
+
+  } catch(e) {
+    toast('Помилка завантаження: ' + e.message, 'err');
+    console.error('[Gist]', e);
+  }
+}
+
+async function gistLoadFile(file){
+  try {
+    /* Завантажуємо вміст файлу */
+    let content_text = file.content;
+    if(!content_text && file.raw_url){
+      const r = await fetch(file.raw_url);
+      content_text = await r.text();
+    }
+    const parsed = JSON.parse(content_text);
+    const state = parsed.state || parsed; /* підтримка старого формату */
+    const mapName = parsed.name || file.filename.replace('.json','');
+
+    loadState(state);
+    if(document.getElementById('mapName'))
+      document.getElementById('mapName').value = mapName;
+
+    /* Кешуємо в IDB */
+    await VDB.set('maps', mapName, state);
+    const idx = allMaps();
+    idx[mapName] = { ts: Date.now(), name: mapName, elCount: (state.ELS||[]).length };
+    localStorage.setItem('vsm_maps', JSON.stringify(idx));
+    renderMaps();
+
+    toast('✅ Завантажено: ' + mapName, 'ok');
+  } catch(e) {
+    toast('Помилка читання файлу: ' + e.message, 'err');
+  }
+}
+
+function gistPickFile(files, title){
+  omod(`
+    <div class="modt">☁ Оберіть карту з Gist</div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:10px">${title||''}</p>
+    <div style="max-height:320px;overflow-y:auto">
+      ${files.map((f,i) => `
+        <div onclick="gistLoadFile(${JSON.stringify(f).replace(/"/g,'&quot;')});cmod()"
+          style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                 border:.5px solid var(--border);border-radius:var(--r);cursor:pointer;
+                 margin-bottom:6px;background:var(--bg);transition:background .12s"
+          onmouseover="this.style.background='var(--bg3)'"
+          onmouseout="this.style.background='var(--bg)'">
+          <span style="font-size:18px">🗺</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${f.filename}</div>
+            <div style="font-size:10px;color:var(--text3)">${Math.round((f.size||0)/1024*10)/10} КБ</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="modbts"><button class="mbtn" onclick="cmod()">Скасувати</button></div>
+  `);
+}
+
+/* ── Показуємо статус Gist у меню Карти ── */
+function gistUpdateBadge(){
+  const token = gistGetToken();
+  const id = gistGetId();
+  const el = document.getElementById('gist-badge');
+  if(el){
+    if(token && id){
+      el.textContent = '☁ ' + id.slice(0,6) + '...';
+      el.style.color = 'var(--ok)';
+    } else if(token){
+      el.textContent = '☁ токен є, Gist не вибрано';
+      el.style.color = 'var(--warn)';
+    } else {
+      el.textContent = '☁ не налаштовано';
+      el.style.color = 'var(--text3)';
+    }
+  }
+}
+window.addEventListener('load', gistUpdateBadge);
+
+/* ── Ctrl+Shift+S — швидке збереження в Gist ── */
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.shiftKey && e.key === 'S'){
+    e.preventDefault();
+    gistSave();
+  }
+});
+/* ══ /GITHUB GIST ══ */
 
 </script>
 
