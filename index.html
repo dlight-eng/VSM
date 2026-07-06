@@ -1082,7 +1082,7 @@ const DEFS={
   supplier:{label:'Постачальник',lead:5},
   customer:{label:'Клієнт',demand:500},
   process:{label:'Процес',ct:60,co:30,uptime:85,operators:1,shifts:1,inv_out:0,tct:0,tco:0,top:0},
-  inventory:{label:'',qty:500,days:2},
+  inventory:{label:'',qty:500,days:2,note:''},
   supermarket:{label:'Супермаркет',qty:200,days:1},
   kaizen:{label:'Kaizen',note:''},
   operator:{label:'Оператор'},
@@ -1178,8 +1178,29 @@ const SYM={
     <rect x="${x+w-50}" y="${y+h-16}" width="48" height="14" rx="2" fill="#e24b4a"/>
     <text x="${x+w-26}" y="${y+h-9}" text-anchor="middle" dominant-baseline="central"
       font-size="7" fill="#fff" font-family="Arial,sans-serif" font-weight="700">BOTTLENECK</text>`:''}
-    <text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central"
-      font-size="11" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.label}</text>
+    ${(()=>{
+      const lbl=el.label||'';
+      const maxCh=20; // chars per line at font-size 11 in 150px
+      if(lbl.length<=maxCh){
+        return `<text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central"
+          font-size="11" fill="#111" font-family="Arial,sans-serif" font-weight="700">${lbl}</text>`;
+      }
+      // Split into up to 2 lines
+      const words=lbl.split(' ');
+      let line1='',line2='';
+      for(const w2 of words){
+        if((line1+' '+w2).trim().length<=maxCh) line1=(line1+' '+w2).trim();
+        else { line2=(line2+' '+w2).trim(); }
+      }
+      if(!line2 && lbl.length>maxCh){ line1=lbl.slice(0,maxCh-1)+'…'; }
+      return line2
+        ? `<text x="${x+w/2}" y="${y+9}" text-anchor="middle" dominant-baseline="central"
+            font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="700">${line1}</text>
+           <text x="${x+w/2}" y="${y+20}" text-anchor="middle" dominant-baseline="central"
+            font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="700">${line2.length>maxCh?line2.slice(0,maxCh-1)+'…':line2}</text>`
+        : `<text x="${x+w/2}" y="${y+14}" text-anchor="middle" dominant-baseline="central"
+            font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="700">${line1}</text>`;
+    })()}
     <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#111" stroke-width="1.5"/>
     <line x1="${x+w/2}" y1="${y+24}" x2="${x+w/2}" y2="${y+64}" stroke="#111" stroke-width="1"/>
     <text x="${x+6}" y="${y+34}" dominant-baseline="central" font-size="9" fill="#111" font-family="Arial,sans-serif">CT: <tspan font-weight="700">${el.ct}s</tspan>${tct>0?` <tspan fill="${tct<=taktRef?'#0c6b4e':'#a02d2d'}" font-size="8" font-weight="700">→${tct}s</tspan>`:''}</text>
@@ -1195,10 +1216,20 @@ const SYM={
       >▲CT&gt;${ttk?'TaktFS':'Takt'}</text>`:''}
     ${tctBar}${opsBadge}`},
 
-  inventory(el,s){const{x,y}=el;return`${s?sRing(el):''}
+  inventory(el,s){const{x,y}=el;
+    const noteLines=(el.note||'').split(' ').reduce((acc,w2)=>{
+      const last=acc[acc.length-1]||'';
+      if((last+' '+w2).trim().length<=16) acc[acc.length-1]=(last+' '+w2).trim();
+      else acc.push(w2);
+      return acc;
+    },['']).filter(Boolean).slice(0,2);
+    const noteH=noteLines.length*11;
+    return`${s?sRing(el):''}
     <polygon points="${x+46},${y+2} ${x+91},${y+58} ${x+1},${y+58}" fill="#fff" stroke="#111" stroke-width="2"/>
     <text x="${x+46}" y="${y+38}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#111" font-family="Arial,sans-serif" font-weight="700">${el.qty}</text>
-    <text x="${x+46}" y="${y+68}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.days} дн</text>`},
+    <text x="${x+46}" y="${y+68}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#111" font-family="Arial,sans-serif" font-weight="600">${el.days} дн</text>
+    ${noteLines.map((ln,i)=>`<text x="${x+46}" y="${y+80+i*11}" text-anchor="middle" dominant-baseline="central" font-size="8.5" fill="#555" font-family="Arial,sans-serif">${ln}</text>`).join('')}
+    `},
 
   supermarket(el,s){const{x,y}=el,w=104,sh=36;return`${s?sRing(el):''}
     <rect x="${x}" y="${y+5}" width="${w}" height="${sh}" fill="#fff" stroke="#111" stroke-width="2"/>
@@ -3202,8 +3233,8 @@ const FLDS={
     {k:'shifts',l:'Змін',t:'number',r:1},{k:'top',l:'Операторів цільо.',t:'number',r:1},
     {k:'inv_out',l:'Запас на виході',t:'number'},
   ],
-  inventory:[{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
-  supermarket:[{k:'label',l:'Назва',t:'text'},{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1}],
+  inventory:[{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1},{k:'note',l:'Опис запасу (матеріал, деталь)',t:'text'}],
+  supermarket:[{k:'label',l:'Назва',t:'text'},{k:'qty',l:'Кількість (шт)',t:'number',r:1},{k:'days',l:'Днів запасу',t:'number',r:1},{k:'note',l:'Опис (матеріал, деталь)',t:'text'}],
   kaizen:[{k:'label',l:'Назва',t:'text'},{k:'note',l:'Примітка',t:'text'}],
   operator:[{k:'label',l:'Ім\'я / роль',t:'text'}],
   truck:[{k:'label',l:'Маршрут',t:'text'}],
