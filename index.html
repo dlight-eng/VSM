@@ -19,9 +19,9 @@
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
-.app{display:flex;flex-direction:column;height:100vh}
+.app{display:flex;flex-direction:column;height:100vh;overflow:visible}
 /* header */
-.hdr{height:42px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none}
+.hdr{height:42px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--bg2);border-bottom:.5px solid var(--border2);flex-shrink:0;user-select:none;overflow:visible;position:relative;z-index:200}
 .logo{font-weight:700;font-size:12px;white-space:nowrap}.logo em{color:var(--accent);font-style:normal}
 .hsep{width:.5px;height:18px;background:var(--border2);margin:0 2px}
 /* Dropdown menus in header */
@@ -30,7 +30,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:13px}
 .hdd-btn:hover,.hdd-btn.open{background:var(--bg3);color:var(--text);border-color:var(--border2)}
 .hdd-btn.has-active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
 .hdd-btn .arr{font-size:8px;opacity:.5;margin-left:1px}
-.hdd-menu{position:absolute;top:calc(100% + 4px);left:0;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:170px;padding:3px;display:none}
+.hdd-menu{position:absolute;top:calc(100% + 4px);left:0;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:1000;min-width:190px;padding:3px;display:none}
 .hdd-menu.open{display:block}
 .hdd-item{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:3px;cursor:pointer;font-size:11px;color:var(--text);white-space:nowrap;user-select:none;background:none;border:none;width:100%;text-align:left;font-family:var(--f)}
 .hdd-item:hover{background:var(--bg3)}
